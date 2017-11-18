@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<table xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" id="10" name="CountTable" displayName="CountTable" ref="K1:K2" tableType="queryTable" totalsRowShown="0" headerRowDxfId="359" dataDxfId="358"><tableColumns count="1"><tableColumn id="1" uniqueName="1" name="num_retrieved" queryTableFieldId="3" dataDxfId="357"/></tableColumns><tableStyleInfo showFirstColumn="0" showLastColumn="0" showRowStripes="0" showColumnStripes="0"/></table>

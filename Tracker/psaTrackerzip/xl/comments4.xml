@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<comments xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><authors><author>Loera, Maria</author></authors><commentList><comment ref="A24" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t>Loera, Maria:</t></r><r><rPr><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t xml:space="preserve">
+Can be blank, value, sql wildcards (%=match any,_=match char,[ab]=match chars in list) or comma-separated list.If  date,budg_yr, or last_updt_tmsp are  blank, just uses the green and orange tables; other blanks ignored. </t></r></text></comment><comment ref="I24" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t>Loera, Maria:</t></r><r><rPr><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t xml:space="preserve">
+Section that can be used to filter budget splits by data range
+</t></r></text></comment><comment ref="K24" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t>Loera, Maria:</t></r><r><rPr><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t xml:space="preserve">
+Section used to compare proposal values with budget splits values. 
+It includes org_code, pgm_ele_code, pm_ibm_logn_id, and object class. 
+When a cell is highlited that means that the values of proposals and budget splits differ. </t></r></text></comment><comment ref="S24" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t>Loera, Maria:</t></r><r><rPr><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t xml:space="preserve">
+Section used to restrict information by different parameters such as: 
+solicitation, proposal status, nature of request and division abbreviation</t></r></text></comment><comment ref="M25" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t>Loera, Maria:
+Project Codes:</t></r><r><rPr><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t xml:space="preserve">
+I:Individual 
+L:collab lead
+N:collan non-lead
+</t></r></text></comment><comment ref="W25" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t>Loera, Maria:</t></r><r><rPr><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t xml:space="preserve">
+rcome_str_abbr is the same as awd_istr_abbr </t></r></text></comment><comment ref="AA25" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t>Loera, Maria:</t></r><r><rPr><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t xml:space="preserve">
+I: Individual proposal
+L&amp;N : Project
+L:Lead
+N:Non lead</t></r></text></comment><comment ref="AB25" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t>Loera, Maria:</t></r><r><rPr><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t xml:space="preserve">
+Direct link to ejacket</t></r></text></comment><comment ref="A26" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t>Loera, Maria:</t></r><r><rPr><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t xml:space="preserve">
+Budg year, 4-digt
+ e.g. 2017
+</t></r></text></comment><comment ref="C26" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t>Loera, Maria:</t></r><r><rPr><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t xml:space="preserve">
+Enter date range proposals were received by NSF.  
+Tip: Use narrow date ranges for faster queries.
+</t></r></text></comment><comment ref="A27" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t>Loera, Maria:</t></r><r><rPr><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t xml:space="preserve">
+8-digit org code, but you can use wildcards to restrict to directorate (05% for CISE) or divisions (050[125]% is CCF, IIS, &amp; CNS)</t></r></text></comment><comment ref="C27" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t>Loera, Maria:</t></r><r><rPr><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t xml:space="preserve">
+Enter date range proposals were DD Concurred.
+Use narrow date ranges for faster queries.
+</t></r></text></comment><comment ref="A28" authorId="0" shapeId="0"><text><r><rPr><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t>Funding Program
+e.g. 7796,7797,7798</t></r></text></comment><comment ref="C28" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t>Loera, Maria:</t></r><r><rPr><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t xml:space="preserve">
+Include the NSF or PD that is part of the id for solicitations or program descriptions. Google can help you find ids.</t></r></text></comment><comment ref="A29" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t>Loera, Maria:</t></r><r><rPr><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t xml:space="preserve">
+4-digit object class.  Common possibilities
+ 4101 - Personnel Mobility
+ 4110 - Research Grants
+ 4118 - SBIR Grant
+ 4144 - Equipment Grant
+ 4160 - Conference</t></r></text></comment><comment ref="C29" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t xml:space="preserve">Loera, Ma
+</t></r><r><rPr><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t>8-digit org code, but you can use wildcards to restrict to directorate (05% for CISE) or divisions (050[125]0000 is CCF, IIS, &amp; CNS)</t></r></text></comment><comment ref="A30" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t>Loera, Maria:</t></r><r><rPr><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t xml:space="preserve">
+Assigned PO
+e.g. JSNOEYI</t></r></text></comment><comment ref="C30" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t>Loera, Maria:</t></r><r><rPr><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t xml:space="preserve">
+Can restrict proposals by division abbreviation instead of numeric org code.
+</t></r></text></comment><comment ref="A31" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t>Loera, Maria:</t></r><r><rPr><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t xml:space="preserve">
+Include PRCS
+It can be one or a list: 
+e.g. 7923, 7924
+</t></r></text></comment><comment ref="C31" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t>Loera, Maria:</t></r><r><rPr><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t xml:space="preserve">
+4-digit
+Submitted program</t></r></text></comment><comment ref="A32" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t>Loera, Maria:</t></r><r><rPr><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t xml:space="preserve">
+Exclude PRCs code, this will exclude budget splits that contain the entered PRCS
+e.g. 7923,7924</t></r></text></comment><comment ref="C32" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t>Loera, Maria:</t></r><r><rPr><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t xml:space="preserve">
+20 possibilities
+ PEND: all types of pending
+ DECL: decline concurred by DD
+ AWD, RCOM, CLO: awarded, recommended, or closed
+ WTH, RTNR: all types of withdrawn/return without review
+ ENC,INVT,DSCR,NIVT:
+ full prop encouraged/invited/discouraged/not invited
+ CAN,DAWD,DEL,ERR,INAP,OCGI,PRTN,WPRE,ZER: uncommon on proposals</t></r></text></comment><comment ref="A33" authorId="0" shapeId="0"><text><r><rPr><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t>If this is not blank, retrieves only the splits that have been updated after the indicated date &amp; time</t></r></text></comment><comment ref="C33" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t>Loera, Maria:</t></r><r><rPr><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t xml:space="preserve">
+4-digit object class.  Common possibilities
+ 4101 - Personnel Mobility
+ 4110 - Research Grants
+ 4118 - SBIR Grant
+ 4144 - Equipment Grant
+ 4160 - Conference</t></r></text></comment><comment ref="A34" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t>Loera, Maria:</t></r><r><rPr><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t xml:space="preserve">
+Award instrument abbreviation
+e.g.STND, CONT, CTR, CAGR, IGPA</t></r></text></comment><comment ref="C34" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t>Loera, Maria:</t></r><r><rPr><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t xml:space="preserve">
+There are 14 types possible here
+ NEW,RNEW,ABR: new, renew, or accomplishment-based renewal
+ SUPP,INCR,FRWD: supplement / increment / forward fund
+ TRSF: PI transfer 
+ EXT,GEXT,CREX: no cost, grantee, or creativity extension
+ RDCT,CNCL: reduction, cancelation
+ BOA,OTHR: basic ordering agreement, other admin action</t></r></text></comment><comment ref="C35" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t>Loera, Maria:</t></r><r><rPr><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t xml:space="preserve">
+Assigned PO
+7-letter ibm login id, not the 8-letter lan id.
+e.g. JSNOEYI</t></r></text></comment><comment ref="C36" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t>Loera, Maria:</t></r><r><rPr><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t xml:space="preserve">
+4-digit
+Small: 7923
+Medium: 7924
+Large: 7925
+Include 7936 or exclude ~7936
+</t></r></text></comment><comment ref="C37" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t>Loera, Maria:</t></r><r><rPr><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t xml:space="preserve">
+e.g.%SMALL% to include title that includes word and ~%SMALL% to exclude prop titles that contain SMALL</t></r></text></comment><comment ref="F44" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t>Loera, Maria:</t></r><r><rPr><sz val="9"/><color indexed="81"/><rFont val="Tahoma"/><family val="2"/></rPr><t xml:space="preserve">
+This section is used to add additional budget splits or exclude budget splits. 
+User can include or exclude budget splits using prop_id(required), budg_yr(optional), and splt_id(optional)
+
+*Note: the results from this section do not consider  budg_splts or proposals  parameters to restrict data.</t></r></text></comment></commentList></comments>

@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<table xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" id="6" name="omit_prop_ids" displayName="omit_prop_ids" ref="B20:B21" insertRow="1" totalsRowShown="0" dataDxfId="193" tableBorderDxfId="192"><autoFilter ref="B20:B21"/><tableColumns count="1"><tableColumn id="1" name="prop_id" dataDxfId="191"/></tableColumns><tableStyleInfo name="TableStyleMedium5" showFirstColumn="0" showLastColumn="0" showRowStripes="1" showColumnStripes="0"/></table>

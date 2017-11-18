@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<table xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" id="5" name="add_prop_ids" displayName="add_prop_ids" ref="A20:A21" insertRow="1" totalsRowShown="0" dataDxfId="190"><autoFilter ref="A20:A21"/><tableColumns count="1"><tableColumn id="1" name="prop_id" dataDxfId="189"/></tableColumns><tableStyleInfo name="TableStyleMedium7" showFirstColumn="0" showLastColumn="0" showRowStripes="1" showColumnStripes="0"/></table>

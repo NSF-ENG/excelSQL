@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<comments xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><authors><author>Jack Snoeyink</author></authors><commentList><comment ref="C8" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t>The chosen proposals are the AND of all entered restrictions.</t></r></text></comment><comment ref="E8" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t>Any parameter can be omitted; ANDs all given restrictions.
+Non-date parameters can be:
+1. a single value (SQL EQUALS)
+2. a list of values separated by commas (SQL IN)
+3. an expression with SQL wildcards: (SQL LIKE)
+   % match all, _ match 1 character, [125] match char  from set.
+4. Precede the above by ~ to negate. (NOT EQUALS/IN/LIKE)</t></r></text></comment><comment ref="H8" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t>Y means construct an outlook email with this tab as an attachment when the email button below is pressed.  You will enter the recipient, subject and mail body in Outlook.</t></r></text></comment><comment ref="I8" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t>Click Tab name to visit a non-hidden tab.
+
+To visit a hidden tab, first change H to n or blank under 'Ref?'.</t></r></text></comment><comment ref="J8" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t xml:space="preserve">Refresh?  Has 5 options:
+ blank (default): refresh data on next GO 
+ n/No: no refresh, and keep tab visible
+ H/Hide: hide tab, but preserve data
+ C: clear data and hide tab
+ X: permanently delete tab (asks for confirmation)
+
+Notes: ctrl-D  (fill down) helps to set or clear many values.
+To clear all data, use the Reset button. 
+Tabs may also be deleted by selecting them along the bottom of the workbook, right clicking to delete (confirming once), then deleting the corresponding rows in this table. </t></r></text></comment><comment ref="K8" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t>Limits the number of rows retrieved to avoid asking for too much data. (E.g., limit DDReviews to a few hundred.)</t></r></text></comment><comment ref="L8" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t>Number of rows last retrieved by query for each tab.</t></r></text></comment><comment ref="M8" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t xml:space="preserve">Query status: 4 options
+ - querying...
+ - unsuccessful
+ - completion time (if in last 24 hours) 
+ - date (if completed &gt; 24 hours ago.) </t></r></text></comment><comment ref="C9" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t xml:space="preserve">Enter date range proposals were received by NSF.  
+Either specify a time, or remember that days begin at midnight and add a day to end dates. 
+
+Use narrow date ranges for faster queries.
+</t></r></text></comment><comment ref="C10" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t xml:space="preserve">Enter date range proposals were DD Concurred.  
+Either specify a time, or remember that days begin at midnight and add a day to end dates. 
+
+Use narrow date ranges for faster queries.
+</t></r></text></comment><comment ref="C11" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t xml:space="preserve">Include the NSF or PD that is part of the id for solicitations or program descriptions. Google can help you find ids.
+You can list ids separated by commas; Extra spaces will be removed.
+</t></r></text></comment><comment ref="C12" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t>8-digit org code, but you can use wildcards to restrict to directorate (05% for CISE) or divisions (050[125]0000 is CCF, IIS, &amp; CNS)</t></r></text></comment><comment ref="C13" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t>Can restrict proposals by division abbreviation instead of numeric org code.</t></r></text></comment><comment ref="C14" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t>4-digit program element code.</t></r></text></comment><comment ref="C15" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t>7-letter ibm login id, not the 8-letter lan id.</t></r></text></comment><comment ref="C16" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t>Here are all 20 possibilities, in case you are curious
+ PEND: all types of pending
+ DECL: decline concurred by DD
+ AWD, RCOM, CLO: awarded, recommended, or closed
+ WTH, RTNR: all types of withdrawn/return without review
+ ENC,INVT,DSCR,NIVT: full prop encouraged/invited/discouraged/not invited
+ CAN,DAWD,DEL,ERR,INAP,OCGI,PRTN,WPRE,ZER: uncommon on proposals</t></r></text></comment><comment ref="C17" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t>There are 14 types possible here
+ NEW,RNEW,ABR: new, renew, or accomplishment-based renewal
+ SUPP,INCR,FRWD: supplement / increment / forward fund
+ TRSF: PI transfer 
+ EXT,GEXT,CREX: no cost, grantee, or creativity extension
+ RDCT,CNCL: reduction, cancelation
+ BOA,OTHR: basic ordering agreement, other admin action</t></r></text></comment><comment ref="C18" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t>4-digit object class.  Common possibilities
+ 4101 - Personnel Mobility
+ 4110 - Research Grants
+ 4118 - SBIR Grant
+ 4144 - Equipment Grant
+ 4160 - Conference</t></r></text></comment><comment ref="C19" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t>letter+6-digit id: Letter can be upper or lower case.
+   p=panel, v=site visit, c=committee of visitors.
+E.g., P% would retrieve panels only, no site visits</t></r></text></comment><comment ref="C20" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t>10-digit institution id</t></r></text></comment><comment ref="C21" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t xml:space="preserve">9-digit PI id.  
+Note: you can copy a column of ids from, say, All Personnel, and use Paste CSV to paste a comma separated list. 
+</t></r></text></comment><comment ref="C22" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t>%Medium%  or %GOALI% can be used to restrict proposals to those that follow title conventions; ~%GOALI% to exclude.</t></r></text></comment><comment ref="C23" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t>4-digit PRCs. The PRC table doesn't have an index, so this query slow; use a narrow date range</t></r></text></comment><comment ref="C24" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t>Original routing PECs retrieves proposals by both primary and secondary PEC.  It is a slow query, but useful to find possible transfers.  Use a narrow date range, and optionally exclude the primary PEC above.</t></r></text></comment><comment ref="C25" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t xml:space="preserve">This is a rudimentary way to bookmark and save favorite queries.  Remember to save if you want to preserve your bookmarks.
+</t></r></text></comment><comment ref="C28" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t xml:space="preserve">Listing any proposal id from a collaborative project will bring in all proposals from the project.  
+E.g., add in ad hoc only projects to compare with those on panels...
+
+Include/exclude lists must be less than about 1200 ids. </t></r></text></comment><comment ref="E28" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t>Proposals to exclude, such as that travel grant that was awarded under the core solicitation, or the subaward you declined while awarding the lead.  
+Unlike the Include list,  Exclude is by proposal; to exclude a collaboration, you must least each proposal in the collaboration.  (Only way to support the scenario of excluding a non-lead.)
+
+Again, limit Include+Exclude to at most 1200 ids.</t></r></text></comment><comment ref="H29" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t xml:space="preserve">Create an email with selected results attached.  
+Use this to send data only; Input tab recording parameters is included but hidden. 
+[PC only, Mac version to come.]
+</t></r></text></comment><comment ref="J30" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t>Run queries for refreshable tabs.  
+No need to reset first.</t></r></text></comment><comment ref="M30" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t xml:space="preserve">Clears data from all tabs, hidden or not.
+</t></r></text></comment></commentList></comments>

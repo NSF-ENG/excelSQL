@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<table xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" id="6" name="EpscorTable" displayName="EpscorTable" ref="B11:B39" totalsRowShown="0" headerRowDxfId="2" dataDxfId="1"><autoFilter ref="B11:B39"/><tableColumns count="1"><tableColumn id="1" name="Epscor" dataDxfId="0"/></tableColumns><tableStyleInfo name="TableFall" showFirstColumn="0" showLastColumn="0" showRowStripes="1" showColumnStripes="0"/></table>

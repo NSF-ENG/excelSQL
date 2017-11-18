@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<comments xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><authors><author>Jack Snoeyink</author></authors><commentList><comment ref="U5" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t xml:space="preserve">Non-zero when cover sheets that don't match budgets, and when subawards have subawards.  (Should that even be possible? It is the proposal organization that makes the reps and certs!)
+</t></r></text></comment><comment ref="W5" authorId="0" shapeId="0"><text><r><rPr><b/><sz val="10"/><color indexed="9"/><rFont val="Corbel"/><family val="2"/></rPr><t xml:space="preserve">Small amounts due to rounding; larger amounts are usually subcontracts without separate budgets, often because consultants or services are listed as subawards in budget justification. 
+</t></r></text></comment></commentList></comments>
