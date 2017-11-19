@@ -1,3 +1,11 @@
+-- RoboRA sql code   Jack Snoeyink Nov 2017
+-- Commments with [name and ]name delimit code that will be copied into the hidden SQL worksheet of RoboRA.xlsm
+-- You can simply copy the entire thing into the clipboard click "Paste SQL code" on that sheet.
+-- All other code is for testing. 
+-- When SQL has run-time parameters, either break into static strings to use in VBA as str1 & param & str2 
+--    or use @varnames that will be declared before your string
+--    "declare @varname char(7), @datename datetime" & vbNewline & "SELECT @varname = " & param1 &" @datename = "& Now
+
 SET NOCOUNT ON 
 -- DROP TABLE #myPid, #myLead, #myPRCs
 SELECT DISTINCT CASE WHEN p.lead_prop_id IS NULL THEN 'I' WHEN p.lead_prop_id <> p.prop_id THEN 'N' ELSE 'L' END AS ILN,
@@ -11,15 +19,35 @@ pp.panl_id in ('p172027','p170288','p180207')
 CREATE INDEX myPid_idx ON #myPid(prop_id)
 --select count(*) from #myPid
 
+--[revtable
+if object_id('tempdb.guest.revScores') is null 
+  exec('create table tempdb.guest.revScores(yn char(5) primary key, string varchar(10), score real null) insert into tempdb.guest.revScores
+select ''NNNNN'', ''R'',  null  union all select ''NNNNY'', ''P'', 1 union all 
+select ''NNNYN'', ''F'',    3   union all select ''NNNYY'', ''F/P'', 2 union all
+select ''NNYNN'', ''G'',    5   union all select ''NNYNY'', ''G/P'', 2.98 union all
+select ''NNYYN'', ''G/F'',  4   union all select ''NNYYY'', ''G/F/P'', 2.99 union all
+select ''NYNNN'', ''V'',    7   union all select ''NYNNY'', ''V/P'', 3.98 union all
+select ''NYNYN'', ''V/F'', 4.98 union all select ''NYNYY'', ''V/F/P'', 3.65 union all
+select ''NYYNN'', ''V/G'',  6   union all select ''NYYNY'', ''V/G/P'', 4.32 union all
+select ''NYYYN'',''V/G/F'',4.99 union all select ''NYYYY'', ''V/G/F/P'', 3.97 union all
+select ''YNNNN'', ''E'',    9   union all select ''YNNNY'', ''E/P'', 4.992 union all
+select ''YNNYN'', ''E/F'', 5.98 union all select ''YNNYY'', ''E/F/P'', 4.325 union all
+select ''YNYNN'', ''E/G'', 6.98 union all select ''YNYNY'', ''E/G/P'', 4.995 union all
+select ''YNYYN'',''E/G/F'',5.66 union all select ''YNYYY'', ''E/G/F/P'', 4.5 union all
+select ''YYNNN'', ''E/V'',  8   union all select ''YYNNY'', ''E/V/P'', 5.666 union all
+select ''YYNYN'',''E/V/F'',6.33 union all select ''YYNYY'', ''E/V/F/P'', 4.996 union all
+select ''YYYNN'',''E/V/G'',6.99 union all select ''YYYNY'', ''E/V/G/P'', 5.5 union all
+select ''YYYYN'', ''E/V/G/F'', 5.99 union all select ''YYYYY'', ''E/V/G/F/P'', 4.997')
+--]revtable
 
--------- add collabs
+-- add collabs not already there
+--[RA_leads
 INSERT INTO #myPid 
 SELECT DISTINCT CASE WHEN p.lead_prop_id IS NULL THEN 'I' WHEN p.lead_prop_id <> p.prop_id THEN 'N' ELSE 'L' END AS ILN,
 isnull(p.lead_prop_id,p.prop_id) AS lead, p.prop_id, p.pi_id, p.inst_id
 FROM #myPid pid
 JOIN csd.prop p ON p.lead_prop_id = pid.lead
-WHERE pid.ILN < 'M' 
-AND NOT EXISTS (SELECT * FROM #myPid px WHERE px.prop_id = p.prop_id)
+WHERE pid.ILN < 'M' AND NOT EXISTS (SELECT * FROM #myPid px WHERE px.prop_id = p.prop_id)
 
 -- project leads
 SELECT p.ILN, p.lead
@@ -38,8 +66,10 @@ FROM (SELECT p.lead, ra.last_updt_tmsp
     FROM #myLead p
     JOIN csd.ej_upld_doc_vw ej ON ej.prop_id = p.lead AND ej_doc_type_code = '034') d
 GROUP BY lead
+--]RA_leads
 
 -- PRCs for props: all
+--[RA_propPRCs
 SELECT prc.*, id=identity(18), 0 as seq
 INTO #myPRCdata
 FROM (SELECT DISTINCT p.prop_id, pa.prop_atr_code
@@ -61,6 +91,7 @@ FROM #myPRCdata pa
 GROUP BY prop_id
 DROP TABLE #myPRCStart
 CREATE INDEX myPRCs_ix ON #myPRCs(prop_id)
+--]RA_propPRCs
 
 ---- all budget revisions DROP TABLE #myBudg
 --SELECT p.prop_id, eb.revn_num, eb.budg_seq_yr, eb.budg_tot_dol, 
@@ -73,7 +104,9 @@ CREATE INDEX myPRCs_ix ON #myPRCs(prop_id)
 --ORDER BY p.prop_id, eb.revn_num, eb.budg_seq_yr 
 --CREATE INDEX myBudg_ix ON #myBudg(prop_id)
 
--- totals for project in last budget revision DROP TABLE #myPropBudg
+-- totals for project in last budget revision DROP TABLE #myPropBudg, #myProp
+--select * from #myPropBudg
+--[RA_prop
 SELECT p.prop_id, eb.revn_num as RN, SUM(eb.budg_tot_dol) as T
 ,nullif(SUM(sub_ctr_dol),0) AS sub_ctr_tot, nullif(SUM(frgn_trav_dol),0) AS frgn_trav_tot, nullif(SUM(pdoc_grnt_dol),0) AS pdoc_tot,nullif(SUM( part_dol),0) AS part_tot_dol, nullif(SUM(grad_pers_tot_cnt),0) AS grad_tot_cnt,
 nullif(SUM(sr_pers_cnt),0) AS sr_tot_cnt, nullif(SUM(sr_summ_mnth_cnt),0) AS sr_sumr_mnths, nullif(SUM(sr_acad_mnth_cnt),0) AS sr_acad_mnths, nullif(SUM(sr_cal_mnth_cnt),0) AS sr_cal_mnths
@@ -84,9 +117,156 @@ AND NOT EXISTS (SELECT eb1.revn_num FROM csd.eps_blip eb1 WHERE eb.prop_id = eb1
 GROUP BY p.prop_id, eb.revn_num
 ORDER BY p.prop_id -- eb.revn_num, eb.budg_seq_yr
 CREATE INDEX myPropBudg_ix ON #myPropBudg(prop_id)
---select * from #myPropBudg
+
+-- per-proposal data 
+SELECT pid.lead, pid.ILN, pid.prop_id,
+pi_last_name as L, pi_frst_name as F, inst_shrt_name as I, pi_emai_addr AS M, rqst_dol as D, 
+prc.R, b.T, b.RN, inst.st_code,
+id=identity(18), 0 as seq 
+INTO #myProp
+FROM #myPid pid
+JOIN csd.prop p ON p.prop_id = pid.prop_id
+LEFT JOIN csd.pi_vw pi ON pi.pi_id = p.pi_id
+LEFT JOIN csd.inst inst ON inst.inst_id = p.inst_id
+LEFT JOIN #myPRCs prc ON prc.prop_id = pid.prop_id
+LEFT JOIN #myPropBudg b ON b.prop_id = p.prop_id
+WHERE pi.prim_addr_flag='Y'
+ORDER BY lead, ILN, pid.prop_id
+CREATE INDEX myProp_idx ON #myProp(prop_id)
+SELECT lead, MIN(id) as start INTO #myPropStart FROM #myProp GROUP BY lead
+UPDATE #myProp SET seq = id-M.start FROM #myProp r, #myPropStart M WHERE r.lead = M.lead
+DROP TABLE #myPropStart
+CREATE INDEX myProp_ix ON #myProp(lead)
+--]RA_prop
+
+
+--Review scores: rev_prop and rev_prop_vw are the eJ & Fastlane databases
+-- rp holds status  rpv holds split scores and release flags
+-- pds can update rp score (but can't split), so disagreements are hard to adjudicate.
+-- Deletion from FL propagates overnight to eJ. (FL subm flag = D not to be confused with eJ stts = D)
+--Assumptions: eJ has the right review score except when it is R, when the FL score is split, or when the FL subm is D. (Check rev score flag.)
+--  rev_prop stts C should never be shown. Include in text helper sans score. 
+
+
+-- first, get all form 7 prop, panl, revr assignments that matter (C or scored.)
+-- For reviews, take FL score/string if it exists, else eJ score/string; also takes all conflicted and released reviews/assignments.
+--  the hazzard is that FL reviews can be corrected in eJ, but since this requires PO action, the PO can write it in the RA.
+--  (The problem with the other way is that eJ can't record split scores, and records assignments that have no scores, 
+--   so it is really hard to determine which deserves to count.  Choosing FL first makes an easy to state policy.)
+-- panelists on >1 panels; review credited to first.
+
+-- rp.rev_prop_rtng_code, rp.rev_stts_code, 
+--rpv.rev_rlse_flag, rpv.rev_prop_unrl_flag, rpv.rev_subm_flag,
+-- CASE WHEN rpv.rev_prop_rtng_ind IS NOT NULL THEN 1 ELSE 0 END as rcvdFL,
+ 
+-- 0/1 parameters allow summing later. We want to know:
+--  When are we releasing Conflicted, Pending, Selected, etc reviews
+--  How many are marked unreleasable, have unmarked FL reviews, are pending or selected
+--  When are the eJ ratings different from the FL ratings
+
+
+--select rp.*, rpv.* from csd.rev_prop rp
+--LEFT JOIN csd.rev_prop_vw rpv ON rpv.revr_id = rp.revr_id AND rpv.prop_id = rp.prop_id  
+--where rp.prop_id = '1651952'
+--select * from #myPid where prop_id = '1749977'
+--select * from #myRevs where lead = '1651952'
+--select * from csd.prop where prop_id = '1749977'
+
+--select * from #myRevs where diffFLeJ = 1
+--select * from #myRevs where pendSlct = 1
+--select * from #myRevs where rlsdCDNPS = 1
+--select * from #myRevs where unmkd = 1
+
+-- drop table #myRevs, #myRevMarks, #myRevPanl, #myRevSumm
+--[RA_revs
+declare @adhoc char(7), @olddate datetime
+SELECT @adhoc = '.ad hoc ',  @olddate = '1/1/2000' -- for formatting dates
+
+SELECT isnull((SELECT MIN(pp.panl_id) FROM csd.panl_prop pp 
+    JOIN csd.panl_revr pr ON pr.panl_id = pp.panl_id AND pp.panl_id like 'P%'
+    WHERE pp.prop_id = p.lead AND pr.revr_id = rp.revr_id),  @adhoc) as panl_id, p.lead, rp.revr_id, rp.rev_rtrn_date, 
+ CASE WHEN rs.score IS NOT NULL THEN rs.string ELSE rp.rev_prop_rtng_code END as string,
+ CASE WHEN rs.score IS NOT NULL THEN rs.score ELSE CASE rp.rev_prop_rtng_code WHEN 'E' THEN 9 WHEN 'V' THEN 7 
+    WHEN 'G' THEN 5 WHEN 'F' THEN 3 WHEN 'P' THEN 1 ELSE NULL END END AS score,
+ CASE WHEN rp.rev_stts_code = 'C' THEN 1 ELSE 0 END as confl,
+ CASE WHEN rp.rev_stts_code IN ('P','S') THEN 1 ELSE 0 END as pendSlct,
+ CASE WHEN rpv.rev_prop_unrl_flag = 'Y' THEN 1 ELSE 0 END as unrlsbl,
+ CASE WHEN rpv.rev_prop_rtng_ind IS NULL OR rpv.rev_rlse_flag = 'Y' OR rpv.rev_prop_unrl_flag = 'Y' THEN 0 ELSE 1 END as unmkd,
+ CASE WHEN rpv.rev_rlse_flag = 'Y' AND rp.rev_stts_code IN ('C','D','N','P','S') THEN 1 ELSE 0 END as rlsdCDNPS,
+ CASE WHEN rp.rev_stts_code IN ('C','D','N','R') OR rp.rev_prop_rtng_code = nullif(rs.string,' ') THEN 0 ELSE 1 END as diffFLeJ,
+ id=identity(18), 0 as seq
+INTO #myRevs
+FROM #myLead p
+JOIN csd.rev_prop rp ON rp.prop_id = p.lead
+LEFT JOIN csd.rev_prop_vw rpv ON rpv.revr_id = rp.revr_id AND rpv.prop_id = rp.prop_id  
+LEFT JOIN tempdb.guest.revScores rs ON rs.yn = rpv.rev_prop_rtng_ind -- this table uses the same 1-9 scale above, but handles split scores
+WHERE (rpv.rev_rlse_flag = 'Y' OR rp.rev_stts_code = 'C'OR rp.rev_prop_rtng_code IN ('E','V','G','F','P') -- has eJ review
+       OR rpv.rev_prop_rtng_ind > 'NNNNN') -- has FL review.  checked: no stts N or D come in.  R,S,P do, all good.
+  AND isnull(rpv.rev_subm_flag,'U') <> 'D' -- ignore reviews deleted on FL, even if that takes overnight to propagate to eJ.
+ORDER BY lead, confl, score DESC, revr_id -- move C last
+CREATE INDEX myRevs_ix0 ON #myRevs(lead)
+CREATE INDEX myRevs_ix1 ON #myRevs(lead, confl)
+CREATE INDEX myRevs_ix2 ON #myRevs(panl_id, lead, confl)
+
+SELECT lead, MIN(id) as 'start' INTO #myStarts FROM #myRevs GROUP BY lead
+UPDATE #myRevs SET seq = id-M.start FROM #myRevs r, #myStarts M WHERE r.lead = M.lead 
+DROP TABLE #myStarts
+
+SELECT lead,  
+nullif(sum(unrlsbl),0) as Nunrlsbl,nullif(sum(rlsdCDNPS),0) as NrlsdCDNPS, 
+nullif(sum(pendSlct),0) as NpendSlct, nullif(sum(diffFLeJ),0) as NdiffFLeJ 
+INTO #myRevMarks
+FROM #myRevs
+GROUP BY lead
+CREATE INDEX myRevMarks_ix ON #myRevMarks(lead)
+
+SELECT lead, count(DISTINCT revr_id) as Nrev, nullif(sum(unmkd),0) as Nunmkd,
+MIN(r.score) AS minScore, AVG(r.score) AS avg_score,MAX(r.score) AS maxScore,
+convert(varchar(50), MAX(CASE r.seq WHEN  0 THEN     r.string ELSE '' END)+
+ MAX(CASE r.seq WHEN  1 THEN ','+r.string ELSE '' END)+
+ MAX(CASE r.seq WHEN  2 THEN ','+r.string ELSE '' END)+
+ MAX(CASE r.seq WHEN  3 THEN ','+r.string ELSE '' END)+
+ MAX(CASE r.seq WHEN  4 THEN ','+r.string ELSE '' END)+
+ MAX(CASE r.seq WHEN  5 THEN ','+r.string ELSE '' END)+
+ MAX(CASE r.seq WHEN  6 THEN ','+r.string ELSE '' END)+
+ MAX(CASE r.seq WHEN  7 THEN ','+r.string ELSE '' END)+
+ MAX(CASE r.seq WHEN  8 THEN ','+r.string ELSE '' END)+
+ MAX(CASE r.seq WHEN  9 THEN ','+r.string ELSE '' END)+
+ MAX(CASE r.seq WHEN 10 THEN ','+r.string ELSE '' END)+
+ MAX(CASE r.seq WHEN 11 THEN ','+r.string ELSE '' END)+
+ MAX(CASE r.seq WHEN 12 THEN ','+r.string ELSE '' END)) AS allReviews, 
+MAX(r.rev_rtrn_date) AS last_rev_date
+INTO #myRevSumm
+FROM #myRevs r
+WHERE confl = 0
+GROUP BY r.lead
+CREATE INDEX myRevSumm_ix ON #myRevSumm(lead)
+
+SELECT lead, panl_id, count(revr_id) as N, convert(varchar(50), STUFF(LTRIM(
+ MAX(CASE r.seq WHEN  0 THEN ','+r.string ELSE '' END)+
+ MAX(CASE r.seq WHEN  1 THEN ','+r.string ELSE '' END)+
+ MAX(CASE r.seq WHEN  2 THEN ','+r.string ELSE '' END)+
+ MAX(CASE r.seq WHEN  3 THEN ','+r.string ELSE '' END)+
+ MAX(CASE r.seq WHEN  4 THEN ','+r.string ELSE '' END)+
+ MAX(CASE r.seq WHEN  5 THEN ','+r.string ELSE '' END)+
+ MAX(CASE r.seq WHEN  6 THEN ','+r.string ELSE '' END)+
+ MAX(CASE r.seq WHEN  7 THEN ','+r.string ELSE '' END)+
+ MAX(CASE r.seq WHEN  8 THEN ','+r.string ELSE '' END)+
+ MAX(CASE r.seq WHEN  9 THEN ','+r.string ELSE '' END)+
+ MAX(CASE r.seq WHEN 10 THEN ','+r.string ELSE '' END)+
+ MAX(CASE r.seq WHEN 11 THEN ','+r.string ELSE '' END)+
+ MAX(CASE r.seq WHEN 12 THEN ','+r.string ELSE '' END)),1,1,'')) AS V, 
+MAX(r.rev_rtrn_date) AS last_rev_date
+INTO #myRevPanl
+FROM #myRevs r
+WHERE confl = 0
+GROUP BY lead, panl_id
+CREATE INDEX myRevPanl_ix ON #myRevPanl(lead, panl_id)
+--]RA_revs
+
 
 -- panel outcomes  DROP TABLE #myPanl
+--[RA_panl
 SELECT pn.panl_id AS I, panl_name AS PN, panl_end_date AS E, 
   (SELECT COUNT(DISTINCT revr_id) FROM csd.panl_revr r WHERE r.panl_id = pn.panl_id) AS P,
   convert(varchar(126),NULL) AS S
@@ -115,137 +295,9 @@ UPDATE #myPanl SET S = (SELECT isnull(convert(varchar,SUM(ps.rtCount)),'No') + '
     MAX( CASE ps.RCOM_SEQ_NUM WHEN 6 THEN ', ' + convert(varchar,ps.rtCount) + ' ' +  ps.RCOM_ABBR ELSE '' END )
     FROM #myPanlOutcomes ps WHERE ps.panl_id = pl.I) 
 FROM #myPanl pl
-
---select * from #myPanl order by I
 DROP TABLE #myPanlOutcomes
 
---Review scores: rev_prop and rev_prop_vw are the eJ & Fastlane databases
--- rp holds status  rpv holds split scores and release flags
--- pds can update rp score (but can't split), so disagreements are hard to adjudicate.
--- Deletion from FL propagates overnight to eJ. (FL subm flag = D not to be confused with eJ stts = D)
---Assumptions: eJ has the right review score except when it is R, when the FL score is split, or when the FL subm is D. (Check rev score flag.)
---  rev_prop stts C should never be shown. Include in text helper sans score. 
-
-
--- first, get all form 7 prop, panl, revr assignments that matter (C or scored.)
--- For reviews, take FL score/string if it exists, else eJ score/string; also takes all conflicted and released reviews/assignments.
---  the hazzard is that FL reviews can be corrected in eJ, but since this requires PO action, the PO can write it in the RA.
---  (The problem with the other way is that eJ can't record split scores, and records assignments that have no scores, 
---   so it is really hard to determine which deserves to count.  Choosing FL first makes an easy to state policy.)
-
--- drop table #myRevs
-declare @adhoc char(7), @olddate datetime
-SELECT @adhoc = '.ad hoc ',  @olddate = '1/1/2000' -- for formatting dates
-
-SELECT isnull((SELECT MIN(pp.panl_id) FROM csd.panl_prop pp -- panelists on >1 panels; review credited to first.
-    JOIN csd.panl_revr pr ON pr.panl_id = pp.panl_id AND pp.panl_id like 'P%'
-    WHERE pp.prop_id = p.lead AND pr.revr_id = rp.revr_id),  @adhoc) as panl_id, 
-p.lead, rp.revr_id, rp.rev_rtrn_date, -- rp.rev_prop_rtng_code, rp.rev_stts_code, 
---rpv.rev_rlse_flag, rpv.rev_prop_unrl_flag, rpv.rev_subm_flag, 
--- 0/1 parameters allow summing later. We want to know:
---  When are we releasing Conflicted, Pending, Selected, etc reviews
---  How many are marked unreleasable, have unmarked FL reviews, are pending or selected
---  When are the eJ ratings different from the FL ratings
- CASE WHEN rs.score IS NOT NULL THEN rs.string ELSE rp.rev_prop_rtng_code END as string,
- CASE WHEN rs.score IS NOT NULL THEN rs.score ELSE CASE rp.rev_prop_rtng_code WHEN 'E' THEN 9 WHEN 'V' THEN 7 
-    WHEN 'G' THEN 5 WHEN 'F' THEN 3 WHEN 'P' THEN 1 ELSE NULL END END AS score,
- CASE WHEN rp.rev_stts_code = 'C' THEN 1 ELSE 0 END as confl,
- CASE WHEN rp.rev_stts_code IN ('P','S') THEN 1 ELSE 0 END as pendSlct,
--- CASE WHEN rpv.rev_prop_rtng_ind IS NOT NULL THEN 1 ELSE 0 END as rcvdFL,
- CASE WHEN rpv.rev_prop_unrl_flag = 'Y' THEN 1 ELSE 0 END as unrlsbl,
- CASE WHEN rpv.rev_prop_rtng_ind IS NULL OR rpv.rev_rlse_flag = 'Y' OR rpv.rev_prop_unrl_flag = 'Y' THEN 0 ELSE 1 END as unmkd,
- CASE WHEN rpv.rev_rlse_flag = 'Y' AND rp.rev_stts_code IN ('C','D','N','P','S') THEN 1 ELSE 0 END as rlsdCDNPS,
- CASE WHEN rp.rev_stts_code IN ('C','D','N','R') OR rp.rev_prop_rtng_code = nullif(rs.string,' ') THEN 0 ELSE 1 END as diffFLeJ,
- id=identity(18), 0 as seq
-INTO #myRevs
-FROM #myLead p
-JOIN csd.rev_prop rp ON rp.prop_id = p.lead
-LEFT JOIN csd.rev_prop_vw rpv ON rpv.revr_id = rp.revr_id AND rpv.prop_id = rp.prop_id  
-LEFT JOIN tempdb.guest.revScores rs ON rs.yn = rpv.rev_prop_rtng_ind -- this table uses the same 1-9 scale above, but handles split scores
-WHERE (rpv.rev_rlse_flag = 'Y' OR rp.rev_stts_code = 'C'OR rp.rev_prop_rtng_code IN ('E','V','G','F','P') -- has eJ review
-       OR rpv.rev_prop_rtng_ind > 'NNNNN') -- has FL review.  checked: no stts N or D come in.  R,S,P do, all good.
-  AND isnull(rpv.rev_subm_flag,'U') <> 'D' -- ignore reviews deleted on FL, even if that takes overnight to propagate to eJ.
-ORDER BY lead, confl, score DESC, revr_id -- move C last
-CREATE INDEX myRevs_ix0 ON #myRevs(lead)
-CREATE INDEX myRevs_ix1 ON #myRevs(lead, confl)
-CREATE INDEX myRevs_ix2 ON #myRevs(panl_id, lead, confl)
-
-SELECT lead, MIN(id) as 'start' INTO #myStarts FROM #myRevs GROUP BY lead
-UPDATE #myRevs SET seq = id-M.start FROM #myRevs r, #myStarts M WHERE r.lead = M.lead 
-DROP TABLE #myStarts
-
-
---select rp.*, rpv.* from csd.rev_prop rp
---LEFT JOIN csd.rev_prop_vw rpv ON rpv.revr_id = rp.revr_id AND rpv.prop_id = rp.prop_id  
---where rp.prop_id = '1651952'
---select * from #myPid where prop_id = '1749977'
---select * from #myRevs where lead = '1651952'
---select * from csd.prop where prop_id = '1749977'
-
---select * from #myRevs where diffFLeJ = 1
---select * from #myRevs where pendSlct = 1
---select * from #myRevs where rlsdCDNPS = 1
---select * from #myRevs where unmkd = 1
-
---drop table #myRevMarks
-SELECT lead,  
-nullif(sum(unrlsbl),0) as Nunrlsbl,nullif(sum(rlsdCDNPS),0) as NrlsdCDNPS, 
-nullif(sum(pendSlct),0) as NpendSlct, nullif(sum(diffFLeJ),0) as NdiffFLeJ 
-INTO #myRevMarks
-FROM #myRevs
-GROUP BY lead
-CREATE INDEX myRevMarks_ix ON #myRevMarks(lead)
-
---drop table #myRevSumm
-SELECT lead, count(DISTINCT revr_id) as Nrev, nullif(sum(unmkd),0) as Nunmkd,
-MIN(r.score) AS minScore, AVG(r.score) AS avg_score,MAX(r.score) AS maxScore,
-convert(varchar(50), MAX(CASE r.seq WHEN  0 THEN     r.string ELSE '' END)+
- MAX(CASE r.seq WHEN  1 THEN ','+r.string ELSE '' END)+
- MAX(CASE r.seq WHEN  2 THEN ','+r.string ELSE '' END)+
- MAX(CASE r.seq WHEN  3 THEN ','+r.string ELSE '' END)+
- MAX(CASE r.seq WHEN  4 THEN ','+r.string ELSE '' END)+
- MAX(CASE r.seq WHEN  5 THEN ','+r.string ELSE '' END)+
- MAX(CASE r.seq WHEN  6 THEN ','+r.string ELSE '' END)+
- MAX(CASE r.seq WHEN  7 THEN ','+r.string ELSE '' END)+
- MAX(CASE r.seq WHEN  8 THEN ','+r.string ELSE '' END)+
- MAX(CASE r.seq WHEN  9 THEN ','+r.string ELSE '' END)+
- MAX(CASE r.seq WHEN 10 THEN ','+r.string ELSE '' END)+
- MAX(CASE r.seq WHEN 11 THEN ','+r.string ELSE '' END)+
- MAX(CASE r.seq WHEN 12 THEN ','+r.string ELSE '' END)) AS allReviews, 
-MAX(r.rev_rtrn_date) AS last_rev_date
-INTO #myRevSumm
-FROM #myRevs r
-WHERE confl = 0
-GROUP BY r.lead
-CREATE INDEX myRevSumm_ix ON #myRevSumm(lead)
--- select * from #myRevSumm
-
--- drop table #myRevPanl
-SELECT lead, panl_id, count(revr_id) as N, convert(varchar(50), STUFF(LTRIM(
- MAX(CASE r.seq WHEN  0 THEN ','+r.string ELSE '' END)+
- MAX(CASE r.seq WHEN  1 THEN ','+r.string ELSE '' END)+
- MAX(CASE r.seq WHEN  2 THEN ','+r.string ELSE '' END)+
- MAX(CASE r.seq WHEN  3 THEN ','+r.string ELSE '' END)+
- MAX(CASE r.seq WHEN  4 THEN ','+r.string ELSE '' END)+
- MAX(CASE r.seq WHEN  5 THEN ','+r.string ELSE '' END)+
- MAX(CASE r.seq WHEN  6 THEN ','+r.string ELSE '' END)+
- MAX(CASE r.seq WHEN  7 THEN ','+r.string ELSE '' END)+
- MAX(CASE r.seq WHEN  8 THEN ','+r.string ELSE '' END)+
- MAX(CASE r.seq WHEN  9 THEN ','+r.string ELSE '' END)+
- MAX(CASE r.seq WHEN 10 THEN ','+r.string ELSE '' END)+
- MAX(CASE r.seq WHEN 11 THEN ','+r.string ELSE '' END)+
- MAX(CASE r.seq WHEN 12 THEN ','+r.string ELSE '' END)),1,1,'')) AS V, 
-MAX(r.rev_rtrn_date) AS last_rev_date
-INTO #myRevPanl
-FROM #myRevs r
-WHERE confl = 0
-GROUP BY lead, panl_id
-CREATE INDEX myRevPanl_ix ON #myRevPanl(lead, panl_id)
-
-
-
 --per project panel summary DROP TABLE #myProjPanl
-
 SELECT rp.lead, ps.*, rp.N, rp.V, s.RCOM_SEQ_NUM AS RS, d.RCOM_ABBR as RA, d.RCOM_TXT as RT, s.PROP_ORDR as RK,
 (SELECT count(*) FROM #myRevs c WHERE confl=1 AND c.panl_id = rp.panl_id AND c.lead = rp.lead ) as C,
 CASE WHEN panl_summ_unrl_flag = 'Y' THEN 1 ELSE 0 END as summ_unrls, 
@@ -261,33 +313,13 @@ CREATE INDEX myProjPanl_ix ON #myProjPanl(lead)
 SELECT lead, MIN(id) as start INTO #myPStarts FROM #myProjPanl GROUP BY lead
 UPDATE #myProjPanl SET seq = id-M.start FROM #myProjPanl r, #myPStarts M  WHERE r.lead = M.lead
 DROP TABLE #myPStarts
---select * from #myProjPanl where lead = '1651952'
 
 SELECT lead, count(I) AS nPanl, min(RS)+isnull(min(RK),0)/100.0 AS RecRkMin, nullif(sum(summ_unrls),0) as nPSunrls, 
     nullif(sum(summ_unmrkd),0) as nPSunmrkd 
 INTO #myPropPanlSum
 FROM #myProjPanl GROUP BY lead
+--]RA_panl
 
-
--- per-proposal data DROP TABLE #myProp
-SELECT pid.lead, pid.ILN, pid.prop_id,
-pi_last_name as L, pi_frst_name as F, inst_shrt_name as I, pi_emai_addr AS M, rqst_dol as D, 
-prc.R, b.T, b.RN, inst.st_code,
-id=identity(18), 0 as seq 
-INTO #myProp
-FROM #myPid pid
-JOIN csd.prop p ON p.prop_id = pid.prop_id
-LEFT JOIN csd.pi_vw pi ON pi.pi_id = p.pi_id
-LEFT JOIN csd.inst inst ON inst.inst_id = p.inst_id
-LEFT JOIN #myPRCs prc ON prc.prop_id = pid.prop_id
-LEFT JOIN #myPropBudg b ON b.prop_id = p.prop_id
-WHERE pi.prim_addr_flag='Y'
-ORDER BY lead, ILN, pid.prop_id
-CREATE INDEX myProp_idx ON #myProp(prop_id)
-SELECT lead, MIN(id) as start INTO #myPropStart FROM #myProp GROUP BY lead
-UPDATE #myProp SET seq = id-M.start FROM #myProp r, #myPropStart M WHERE r.lead = M.lead
-DROP TABLE #myPropStart
-CREATE INDEX myProp_ix ON #myProp(lead)
 
 -- main query steps
 --SELECT p.lead,
@@ -383,7 +415,7 @@ CREATE INDEX myProp_ix ON #myProp(lead)
 --
 
 --declare @adhoc char(7), @olddate datetime  SELECT @adhoc = '.ad hoc ',  @olddate = '1/1/2000' -- for formatting dates
-
+--[RA_allRAdata
 SELECT getdate() AS pulldate, nsf_rcvd_date, 
 nullif(dd_rcom_date,'1900-01-01') AS dd_rcom_date, ra.RAupdate, 
 cntx_stmt_id, prop.pgm_annc_id, prop.org_code, prop.pgm_ele_code,
@@ -446,18 +478,6 @@ LEFT JOIN (SELECT * FROM #myProp mp WHERE mp.seq = 5) p5 ON p5.lead = p.lead
 LEFT JOIN (SELECT * FROM #myProp mp WHERE mp.seq = 6) p6 ON p6.lead = p.lead
 LEFT JOIN (SELECT lead, SUM(D) AS rqst_tot, SUM(T) AS budg_tot, MAX(RN) AS budRevnMax
            FROM #myProp GROUP BY lead) projTot ON projTot.lead = p.lead
--- To get types for formatting, uncomment this line above --INTO #myTmp 
---    & run query (ignore warning about row size)
--- Then in tempdb run this query:
---    SELECT sc.colid, sc.name, t.name as type, sc.length FROM sysobjects so 
---    JOIN syscolumns sc ON sc.id = so.id 
---    JOIN systypes t on t.usertype = sc.usertype
---    WHERE so.name like '#myTmp%' -- table name
---    ORDER BY colid
--- Check the types and lengths are expected, then put the results in a table in Excel and format.
--- e.g,quote char & enforce max length: 
---    =IF(RIGHT([[type]],4)="char",",'"&LEFT([[content]],[[length]])&"'",","&[[content]])
--- Comment out --INTO again.
 
 UNION ALL SELECT @olddate,@olddate,@olddate,@olddate -- example to set mail merge format.  
 ,'cntxt stmt','NSF 00-000','12345678','1234','12345678','1234','12345','1234','1234'
@@ -480,18 +500,35 @@ UNION ALL SELECT @olddate,@olddate,@olddate,@olddate -- example to set mail merg
 ,'Program Element name retrieved','PO signature name string','Proposal status details','Nature of request full name','Object Class full name','DIR'
 ,'Directorate name retrieved by modified org_code from org. This example is for formatting; please do not remove this line............'
 ,'Email of lead PI on the project','list of all emails for Pis on Lead and non-lead proposals on the project.  Does not include the co-Pis. '
+--]RA_allRAdata
+
+-- To get types for formatting, uncomment this line above --INTO #myTmp 
+--    & run query (ignore warning about row size)
+-- Then in tempdb run this query:
+--    SELECT sc.colid, sc.name, t.name as type, sc.length FROM sysobjects so 
+--    JOIN syscolumns sc ON sc.id = so.id 
+--    JOIN systypes t on t.usertype = sc.usertype
+--    WHERE so.name like '#myTmp%' -- table name
+--    ORDER BY colid
+-- Check the types and lengths are expected, then put the results in a table in Excel and format.
+-- e.g,quote char & enforce max length: 
+--    =IF(RIGHT([[type]],4)="char",",'"&LEFT([[content]],[[length]])&"'",","&[[content]])
+-- Comment out --INTO again.
 
 -------------
 
 -- PRC Glossary. PG
+--[RA_PRCglossary
 SELECT p.prop_atr_code AS PRC, prc.pgm_ref_txt AS PRC_Description
 FROM (SELECT DISTINCT prop_atr_code FROM #myPRCdata) p
 JOIN csd.pgm_ref prc ON prc.pgm_ref_code = p.prop_atr_code
 ORDER BY PRC
+--]RA_PRCglossary
 -----------------
 --splits
 
 -- budg split prcs DROP TABLE #myBudgPRC
+--]RA_splits
 SELECT bpr.prop_id,bpr.budg_yr,bpr.splt_id,bpr.pgm_ref_code AS R, id=identity(18), 0 as 'seq'
 INTO #myBudgPRC 
 FROM #myPid p
@@ -543,10 +580,12 @@ LEFT JOIN csd.awd_istr ai on prop.rcom_awd_istr = ai.awd_istr_code
 LEFT JOIN #myRA ra ON ra.lead = p.lead
 LEFT JOIN #myPropBudg b ON b.prop_id = p.prop_id
 ORDER BY p.lead, p.ILN, p.prop_id
+--]RA_splits
 
 -- recommended for award
 
 -- budg all prcs DROP TABLE #myBudgPRCs
+--[RA_budgInfo
 SELECT prop_id,R,id=identity(18), 0 as 'seq'
 INTO #myBudgPRCs 
 FROM (SELECT DISTINCT p.prop_id,bpr.pgm_ref_code AS R
@@ -577,8 +616,23 @@ SELECT p.prop_id,
     FROM #myBudgPRCs bp WHERE bp.prop_id = p.prop_id) AS bPRCs
 FROM #myPid p
 order by p.prop_id
+--]RA_budgInfo
 
--- Ctry: AA?
+-- Country, cover & awd check info
+--FOR_PROF_FLAG,
+--SMAL_BUS_FLAG,
+--MINR_BUS_FLAG,
+--WMEM_OWN_FLAG,
+--PREV_AWD_ID,
+--PREV_FL_AWD_ID,
+--SUPP_FLAG,
+--RNEW_FLAG,
+--ACBR_FLAG,
+--vrtb_wlfr_asur_num,
+--humn_subj_asur_num,
+--HUM_EXPT,
+
+--[RA_awdCheck
 SELECT p.prop_id, ctry.ctry_name, id=identity(18), 0 as 'seq' INTO #myCtry
 FROM #myPid p
 JOIN csd.prop_subm_ctl_vw psc ON psc.prop_id = p.prop_id
@@ -593,18 +647,6 @@ DROP TABLE #myStCtry
 
 SELECT p.prop_id,
 OTH_AGCY_SUBM_FLAG,
---FOR_PROF_FLAG,
---SMAL_BUS_FLAG,
---MINR_BUS_FLAG,
---WMEM_OWN_FLAG,
---PREV_AWD_ID,
---PREV_FL_AWD_ID,
---SUPP_FLAG,
---RNEW_FLAG,
---ACBR_FLAG,
---vrtb_wlfr_asur_num,
---humn_subj_asur_num,
---HUM_EXPT,
 CASE WHEN PC.HUM_DATE is not NULL THEN convert(varchar(10),PC.HUM_DATE,1) WHEN PC.humn_date_pend_flag='Y' THEN 'Pend' END AS humn_date,
 CASE WHEN PC.VERT_DATE is not NULL THEN convert(varchar(10),PC.VERT_DATE,1) WHEN PC.vrtb_date_pend_flag='Y' THEN 'Pend' END AS vrtb_date
 INTO #myCovrInfo
@@ -660,8 +702,10 @@ LEFT JOIN csd.abst a ON a.awd_id = p.prop_id
 LEFT JOIN #myPropBudg b ON b.prop_id = p.prop_id
 LEFT JOIN #myCovrInfo c ON c.prop_id = p.prop_id
 ORDER BY p.lead, p.ILN, p.prop_id
+--]RA_awdCheck
 
 --dmog
+--[RA_propCheck
 SELECT prop_id, 
 SUM(CASE WHEN pi_gend_code = 'F'THEN 1 ELSE 0 END) AS NfmlPIs,
 SUM(CASE WHEN pi_ethn_code = 'H'THEN 1 ELSE 0 END) AS NhispPIs,
@@ -675,10 +719,6 @@ LEFT JOIN csd.PI_dmog d ON d.pi_id = PIs.pi_id
 GROUP BY prop_id
 ORDER BY prop_id
 CREATE INDEX myDmog_idx ON #myDmog(prop_id)
-
-
-
-
 
 -- props: get codes to check if they match leads
 SELECT nsf_rcvd_date, prop_stts_txt, nullif(dd_rcom_date,'1900-01-01') AS dd_rcom_date, ra.RAupdate, 
@@ -711,4 +751,4 @@ LEFT JOIN #myPropPanlSum pl ON pl.lead = p.prop_id
 ORDER BY p.lead, p.ILN, p.prop_id
 
 DROP TABLE #myDmog DROP TABLE #myPid DROP TABLE #myPRCs DROP TABLE #myCtry DROP TABLE #myRevs DROP TABLE #myPanl
-
+--]RA_propCheck
