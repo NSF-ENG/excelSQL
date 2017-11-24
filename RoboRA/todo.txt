@@ -1,0 +1,4 @@
+ODBC;dsn=RPTSERVER;database=FLflpdb;server=RPTSQL.nsf.gov;port=5000;UID=ccfuser;PWD=CCfdata11/17;
+
+postdocs in checkCoding
+scribe in summary docs
