@@ -36,7 +36,7 @@ Sub saveSQLcode()
         If Err.Number = 0 Then
          r = rng.Row ' where this varname lives now
         ElseIf Err.Number = 1004 Then
-         r = HiddenSettings.Range("C" & HiddenSettings.Rows.count).End(xlUp).Row + 1 ' one past last row
+         r = HiddenSettings.Range("C" & HiddenSettings.Rows.Count).End(xlUp).Row + 1 ' one past last row
          HiddenSettings.Names.Add Name:=varname, RefersTo:="=" & HiddenSettings.Name & "!$C$" & r
         Else
          MsgBox ("Unexpected error " & Err.Number & ":" & Err.Description)
