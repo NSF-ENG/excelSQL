@@ -25,12 +25,10 @@ End Sub
 
 'Save userid & password in form for connections, and on HiddenSettings tab if checkbox = true
 Private Sub cmdPwdOK_Click()
-Debug.Print Me.CheckBox1.Value
     If Me.CheckBox1.Value = True Then ' save in HiddenSettings or not
          HiddenSettings.Range("user_id").Value = Me.txtUserId.Value
          HiddenSettings.Range("rpt_pwd").Value = Me.txtPassword.Value
     End If
-    Debug.Print "pwdform:" & PwdForm.txtPassword.Value
     Me.Hide ' we want txtUserId&txtPassword available
     'Unload Me
 End Sub

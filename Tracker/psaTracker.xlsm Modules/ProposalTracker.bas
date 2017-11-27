@@ -1,36 +1,41 @@
 Attribute VB_Name = "ProposalTracker"
 Sub ClearPropInputs()
 ' Clear inputs
-    ActiveSheet.Range("B5:C16").Cells.Value = Settings.Range("A20:B31").Cells.Value
-    Call ClearTable(ActiveSheet.ListObjects("add_prop_ids"))
-    Call ClearTable(ActiveSheet.ListObjects("omit_prop_ids"))
+   ClearPropFrm.Show
+ '   ActiveSheet.Range("PropParams").Cells.Value = HiddenSettings.Range("PropParams").Cells.Value
+ '   Call ClearMatchingTable("props_*")
 End Sub
-
+Sub ClearSplitInputs()
+' Clear inputs
+    ActiveSheet.Range("SplitPropParams").Cells.Value = HiddenSettings.Range("SplitPropParams").Cells.Value
+    ActiveSheet.Range("SplitBudgetParams").Cells.Value = HiddenSettings.Range("SplitBudgetParams").Cells.Value
+    Call ClearMatchingTable("splits_*")
+End Sub
 Sub RefreshActiveSheetProp()
 Dim field As String
 Dim dateWhere As String
-Dim dateDDWhere As String 'dd_rcm_date range
 Dim addProps As String
 Dim start As String ' True or false to start where
 
-Call ShowPwdForm
+addProps = IDsFromColumnRange("OR prop.prop_id IN", FindTable("props_add*"))
 
-addProps = IDsFromColumnRange("OR prop.prop_id IN", "add_prop_ids")
+dateWhere = ""
+If hasValue("from_date") Then dateWhere = " AND prop.nsf_rcvd_date >= {ts '" & Format(ActiveSheet.Range("from_date"), "yyyy-mm-dd hh:mm:ss") & "'}" & vbNewLine
+If hasValue("to_date") Then dateWhere = dateWhere & " AND prop.nsf_rcvd_date <= {ts '" & Format(ActiveSheet.Range("to_date"), "yyyy-mm-dd hh:mm:ss") & "'} " & vbNewLine
+If hasValue("dd_from_date") Then dateWhere = dateWhere & " AND prop.dd_rcom_date >= {ts '" & Format(ActiveSheet.Range("dd_from_date"), "yyyy-mm-dd hh:mm:ss") & "'}" & vbNewLine
+If hasValue("dd_to_date") Then dateWhere = dateWhere & " AND prop.dd_rcom_date <= {ts '" & Format(ActiveSheet.Range("dd_to_date"), "yyyy-mm-dd hh:mm:ss") & "'} " & vbNewLine
 
-If hasValue("from_date") Then dateWhere = "AND prop.nsf_rcvd_date >= {ts '" & Format(ActiveSheet.Range("from_date"), "yyyy-mm-dd hh:mm:ss") & "'}"
-If hasValue("to_date") Then dateWhere = dateWhere & " AND prop.nsf_rcvd_date <= {ts '" & Format(ActiveSheet.Range("to_date"), "yyyy-mm-dd hh:mm:ss") & "'} "
-If hasValue("dd_from_date") Then dateDDWhere = "AND prop.dd_rcom_date >= {ts '" & Format(ActiveSheet.Range("dd_from_date"), "yyyy-mm-dd hh:mm:ss") & "'}"
-If hasValue("dd_to_date") Then dateDDWhere = dateDDWhere & " AND prop.dd_rcom_date <= {ts '" & Format(ActiveSheet.Range("dd_to_date"), "yyyy-mm-dd hh:mm:ss") & "'} "
-
-If (hasValue("from_date") Or hasValue("dd_from_date")) Then
-     start = "(1=1)" 'True
+If Len(dateWhere) > 1 Then
+     start = "(1=1)" 'Have dates, use where conditions
 Else
-    start = "(0=1)" 'False
-    If Len("add_prop_ids") < 1 Then ' no specific prop_id
-        MsgBox "Include both dates, or include proposal numbers in the Add table."
+    start = "(0=1)" 'Don't have dates
+    If Len(addProps) < 2 Then ' no specific prop_id
+        MsgBox "Include dates, or include proposal numbers in the Add table."
         End
     End If
 End If
+
+Call handlePwd
 
 '-----------  tracking with temp tables
 Dim setNC As String
@@ -45,6 +50,7 @@ myProp = "SELECT isnull(prop.lead_prop_id,prop.prop_id) AS 'lead_id'," & vbNewLi
 & "        MAX( CASE pa.prop_atr_seq WHEN 5 THEN pa.prop_atr_code ELSE '' END ) + ' ' +" & vbNewLine _
 & "        MAX( CASE pa.prop_atr_seq WHEN 6 THEN pa.prop_atr_code ELSE '' END )" & vbNewLine _
 & "        FROM csd.prop_atr pa  WHERE pa.prop_id = prop.prop_id  AND pa.prop_atr_type_code = 'PRC' ) AS 'PRCs'," & vbNewLine
+
 myProp = myProp _
 & "(SELECT Count(*) FROM csd.rev_prop rp WHERE prop.prop_id=rp.prop_id AND rp.rev_type_code='R')  AS 'adhoc_reqd'," & vbNewLine _
 & "(SELECT Count(*) FROM csd.rev_prop rp WHERE prop.prop_id=rp.prop_id AND rp.rev_type_code='R' AND rp.rev_stts_code='P')  AS 'adhoc_pend'," & vbNewLine _
@@ -56,35 +62,24 @@ myProp = myProp _
 & "JOIN csd.prop_stts ps on ps.prop_stts_code=prop.prop_stts_code" & vbNewLine _
 & "JOIN csd.natr_rqst nr on nr.natr_rqst_code = prop.natr_rqst_code" & vbNewLine _
 & "JOIN csd.org  as og on og.org_code=prop.org_code" & vbNewLine _
-& "WHERE ((" & start & dateWhere & dateDDWhere & vbNewLine _
-& andWhere("prop", "pgm_annc_id") & andWhere("prop", "org_code") & vbNewLine _
-& andWhere("prop", "pgm_ele_code") & andWhere("prop", "pm_ibm_logn_id") & vbNewLine _
-& andWhere("ps", "prop_stts_abbr") & andWhere("prop", "obj_clas_code") & vbNewLine _
-& andWhere("nr", "natr_rqst_abbr") & vbNewLine _
-& andWhere("og", "dir_div_abbr") & vbNewLine _
-& andWhere("prop", "prop_titl_txt") & vbNewLine _
+& "WHERE ((" & start & dateWhere & andWhere("prop.", "pgm_annc_id") & andWhere("prop.", "org_code") _
+& andWhere("prop.", "pgm_ele_code") & andWhere("prop.", "pm_ibm_logn_id") & andWhere("ps.", "prop_stts_abbr") & andWhere("prop.", "obj_clas_code") _
+& andWhere("nr.", "natr_rqst_abbr") & andWhere("og.", "dir_div_abbr") & andWhere("prop.", "prop_titl_txt") _
+& andWhere("", "pa.prop_atr_code", "NOT EXISTS (SELECT * FROM csd.prop_atr pa WHERE pa.prop_id=prop.prop_id AND ", "AND pa.prop_atr_type_code='PRC'") & vbNewLine
 
 '-----------CASE FOR PROP PRCS INCLUDE/EXCLUDE--------------------------------------
-field = Trim(ActiveSheet.Range("pa.prop_atr_code").Value)
-If Left(field, 1) = "~" Then  ' have negation,Prop PRCS.
-myProp = myProp _
-    & excludePRCS("csd.prop_atr pa ", "", "pa.prop_atr_code", " and pa.prop_id=prop.prop_id AND pa.prop_atr_type_code='PRC' ") & vbNewLine
-Else ' Include Budg PRCS
 
 myProp = myProp _
-    & includePRCS("csd.prop_atr pa ", "", "pa.prop_atr_code", " and pa.prop_id=prop.prop_id AND pa.prop_atr_type_code='PRC' ") & vbNewLine
-End If
-
-myProp = myProp _
-& ") " & addProps & ") " & IDsFromColumnRange("AND prop.prop_id NOT IN", "omit_prop_ids") & vbNewLine _
-& "ORDER BY lead_id,ILN" & vbNewLine
+& ") " & addProps & ") " & IDsFromColumnRange("AND prop.prop_id NOT IN", FindTable("props_omit*")) & vbNewLine _
+& "ORDER BY lead_id,ILN" & vbNewLine & "CREATE INDEX myProp_ix ON #myProp(prop_id)" & vbNewLine
 
 Dim myPanl As String
 myPanl = "SELECT panl_prop.prop_id, panl_prop.panl_id, panl.panl_bgn_date, a.rcom_seq_num, b.rcom_abbr, a.prop_ordr" & vbNewLine _
 & "INTO #myPanl" & vbNewLine _
 & "FROM #myProp prop, csd.panl_prop panl_prop, csd.panl panl, flflpdb.flp.panl_prop_summ a, flflpdb.flp.panl_rcom_def b" & vbNewLine _
 & "WHERE  prop.prop_id=panl_prop.prop_id AND panl_prop.panl_id = panl.panl_id" & vbNewLine _
-& "AND  panl_prop.panl_id *= a.panl_id AND prop.prop_id *= a.prop_id AND a.panl_id *= b.panl_id  AND  a.rcom_seq_num *= b.rcom_seq_num" & vbNewLine '---- allow missing recom
+& "AND  panl_prop.panl_id *= a.panl_id AND prop.prop_id *= a.prop_id AND a.panl_id *= b.panl_id  AND  a.rcom_seq_num *= b.rcom_seq_num" & vbNewLine _
+& "CREATE INDEX myPanl_ix ON #myPanl(prop_id)" & vbNewLine '---- allow missing recom
 
 Dim Query As String
 Query = "SELECT getdate() as run_date,mp.*, prop.pgm_annc_id, prop.org_code, prop.pgm_ele_code, prop.pm_ibm_logn_id, prop_stts.prop_stts_abbr, prop.prop_stts_code, prop_stts.prop_stts_txt, pi.pi_last_name, pi.pi_frst_name, pi.pi_gend_code, inst.inst_shrt_name AS inst_name, inst.st_code, prop.prop_titl_txt, natr_rqst.natr_rqst_txt, natr_rqst.natr_rqst_abbr, prop.bas_rsch_pct, prop.cntx_stmt_id," & vbNewLine _
@@ -109,15 +104,7 @@ Query = Query & "(SELECT budg_splt.prop_id, Sum(budg_splt.budg_splt_tot_dol) AS 
 Dim dropTables As String
 dropTables = "drop table #myProp drop table #myPanl" & vbNewLine
 
-    Dim QT As QueryTable
-    Dim LO As ListObject
-    For Each LO In ActiveSheet.ListObjects
-      If (Left(LO.Name, 14) = "PropQueryTable") Then Set QT = LO.QueryTable 'excel adds a number; we ignore.
-    Next
-    With QT
-     .CommandText = setNC & myProp & myPanl & Query & dropTables
-     .Refresh (True)
-    End With
+Call doQuery(FindTable("PropQueryTable*").QueryTable, setNC & myProp & myPanl & Query & dropTables) ', True)
 End Sub
 
 

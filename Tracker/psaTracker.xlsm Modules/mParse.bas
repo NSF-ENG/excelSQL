@@ -13,7 +13,7 @@ End Function
 
 Function andWhere(tablename As String, fieldname As String, Optional notPreamble As String = " NOT (", Optional andMore As String = "")
 ' Flexible WHERE clause construction for SQL queries with text fields.
-' Warning: trims spaces in value
+' Warning: trims spaces in value;
 ' Field values have 5 cases:
 '       blank or eg: parameter: nothing,
 '       comma-separated list:   AND field IN ('val1','val2',...,'valN'),
@@ -45,6 +45,9 @@ hasSqlWildcard = (InStr(field, "%") > 0) Or (InStr(field, "_") > 0) Or ((InStr(f
 If (hasSqlWildcard And (hasRange Or hasComma)) Then
  MsgBox "Can't use SQL wildcards in a range or comma separated list: " & fieldname & " = " & field
  End
+End If
+If Len(tablename) > 1 Then ' make sure we end in "."
+    If Right(tablename, 1) <> "." Then tablename = tablename & "."
 End If
 
 If Len(field) < 1 Then ' do nothing
@@ -87,23 +90,25 @@ If Len(andclause) > 2 Then
 End If
 End Sub
 
-Function IDsFromColumnRange(prefix As String, colRange As String) As String
+Function IDsFromColumnRange(prefix As String, tbl As ListObject) As String
 Dim ids As String
 ' make comma separated list of column ids, with sql prefix
-With ActiveSheet.Range(colRange)
-If .Rows.count < 2 Then
-    ids = .Value
-Else ' we have at least two, and can use transpose
-    ids = Join(Application.Transpose(.Value), "','") ' quote column entries and make a comma-separated row
+IDsFromColumnRange = ""
+If tbl Is Nothing Then
+   MsgBox ("Error: can't find table on " & ActiveSheet.Name & " for " & prefix & vbNewLine & "This is a bug in the VBA code, or the table was deleted. Ignoring & continuing.")
+   Exit Function
 End If
-ids = "'" & Replace(Replace(ids, " ", ""), Chr(160), "") & "'" ' strip spaces (visible and invisible) and ,'' from string.
-ids = Replace(ids, ",''", "")  ' strip blank column entries
-'MsgBox "please check your ids : " + ids
-If Len(ids) < 3 Then
-    IDsFromColumnRange = ""
-Else
-    IDsFromColumnRange = prefix & " (" & ids & ")" & vbLf
-End If
+If tbl.DataBodyRange Is Nothing Then Exit Function
+With tbl.DataBodyRange
+    If .Rows.Count < 2 Then
+        ids = .Value
+    Else ' we have at least two, and can use transpose
+        ids = Join(Application.Transpose(.Value), "','") ' quote column entries and make a comma-separated row
+    End If
+    ids = "'" & Replace(Replace(ids, " ", ""), Chr(160), "") & "'" ' strip spaces (visible and invisible) and ,'' from string.
+    ids = Replace(ids, ",''", "")  ' strip blank column entries
+    'MsgBox "please check your ids : " + ids
+    If Len(ids) > 2 Then IDsFromColumnRange = prefix & " (" & ids & ")" & vbLf
 End With
 End Function
 
@@ -130,19 +135,19 @@ prefix = "CREATE TABLE " & tempTable & tableDefn & vbNewLine _
  & "INSERT INTO " & tempTable & " SELECT "
 
 For i = LBound(a) To UBound(a)
-  If a(i, 1) <> "" Then ' skip any row with blank first column
+  If a(i, 1).Value <> "" Then ' skip any row with blank first column
    If Left(types, 1) <> i Then
-     s = s & prefix & "'" & a(i, 1) & "'" ' string
+     s = s & prefix & "'" & a(i, 1).Value & "'" ' string
    Else
-     s = s & prefix & a(i, 1) 'integer
+     s = s & prefix & a(i, 1).Value 'integer
    End If
    For j = 2 To UBound(a, 2) ' handle remaining columns
-    If a(i, j) = "" Then
+    If a(i, j).Value = "" Then
       s = s & ",NULL" 'null
     ElseIf Mid(types, j, 1) <> "i" Then
-      s = s & ",'" & a(i, j) & "'" 'string
+      s = s & ",'" & a(i, j).Value & "'" 'string
     Else
-      s = s & "," & a(i, j) ' integer
+      s = s & "," & a(i, j).Value ' integer
     End If
    Next j
    prefix = vbNewLine & "UNION ALL SELECT "
@@ -153,28 +158,28 @@ End Function
 
 
 
-Sub TestParse()
-  ActiveSheet.Range("b.pgm_ele_code").Value = "1234"
-  Debug.Print andWhere("", "b.pgm_ele_code")
-  ActiveSheet.Range("b.pgm_ele_code").Value = "'1234',""2222"",3333"
-  Debug.Print andWhere("", "b.pgm_ele_code")
-  ActiveSheet.Range("b.pgm_ele_code").Value = "'12%'"
-  Debug.Print andWhere("", "b.pgm_ele_code")
-  ActiveSheet.Range("b.pgm_ele_code").Value = "1234::2222"
-  Debug.Print andWhere("", "b.pgm_ele_code")
-  ActiveSheet.Range("b.pgm_ele_code").Value = "~'1234'"
-  Debug.Print andWhere("", "b.pgm_ele_code")
-  ActiveSheet.Range("b.pgm_ele_code").Value = "~'1234',""2222"",3333"
-  Debug.Print andWhere("", "b.pgm_ele_code")
-  ActiveSheet.Range("b.pgm_ele_code").Value = "~'12%'"
-  Debug.Print andWhere("", "b.pgm_ele_code")
-  ActiveSheet.Range("b.pgm_ele_code").Value = "~1234::2222"
-  Debug.Print andWhere("", "b.pgm_ele_code")
+Private Sub TestParse()
+  ActiveSheet.Range("pa.prop_atr_code").Value = "1234"
+  Debug.Print andWhere("", "pa.prop_atr_code")
+  ActiveSheet.Range("pa.prop_atr_code").Value = "'1234',""2222"",3333"
+  Debug.Print andWhere("", "pa.prop_atr_code")
+  ActiveSheet.Range("pa.prop_atr_code").Value = "'12%'"
+  Debug.Print andWhere("", "pa.prop_atr_code")
   ActiveSheet.Range("pa.prop_atr_code").Value = "1234::2222"
-  Debug.Print andWhere("", "pa.prop_atr_code", "NOT EXISTS (SELECT * FROM csd.prop_atr pa WHERE pa.prop_id=prop.prop_id", "AND pa.prop_atr_type_code='PRC'")
+  Debug.Print andWhere("", "pa.prop_atr_code")
+  ActiveSheet.Range("pa.prop_atr_code").Value = "~'1234'"
+  Debug.Print andWhere("", "pa.prop_atr_code")
+  ActiveSheet.Range("pa.prop_atr_code").Value = "~'1234',""2222"",3333"
+  Debug.Print andWhere("", "pa.prop_atr_code")
+  ActiveSheet.Range("pa.prop_atr_code").Value = "~'12%'"
+  Debug.Print andWhere("", "pa.prop_atr_code")
   ActiveSheet.Range("pa.prop_atr_code").Value = "~1234::2222"
-  Debug.Print andWhere("", "pa.prop_atr_code", "NOT EXISTS (SELECT * FROM csd.prop_atr pa WHERE pa.prop_id=prop.prop_id", "AND pa.prop_atr_type_code='PRC'")
+  Debug.Print andWhere("", "pa.prop_atr_code")
+  ActiveSheet.Range("pa.prop_atr_code").Value = "1234::2222"
+  Debug.Print andWhere("", "pa.prop_atr_code", "NOT EXISTS (SELECT * FROM csd.prop_atr pa WHERE pa.prop_id=prop.prop_id AND ", "AND pa.prop_atr_type_code='PRC'")
+  ActiveSheet.Range("pa.prop_atr_code").Value = "~1234::2222"
+  Debug.Print andWhere("", "pa.prop_atr_code", "NOT EXISTS (SELECT * FROM csd.prop_atr pa WHERE pa.prop_id=prop.prop_id AND ", "AND pa.prop_atr_type_code='PRC'")
 
-  ActiveSheet.Range("b.pgm_ele_code").Value = "'12%',2222,3333"
-  'Debug.Print andWhere("", "b.pgm_ele_code") ' error
+  ActiveSheet.Range("pa.prop_atr_code").Value = "'12%',2222,3333"
+  'Debug.Print andWhere("", "pa.prop_atr_code") ' error
 End Sub

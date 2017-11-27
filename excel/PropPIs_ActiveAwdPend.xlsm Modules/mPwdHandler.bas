@@ -19,19 +19,19 @@ Dim cstring As String
   #End If
   If Right(cstring, 1) <> ";" Then cstring = cstring & ";"
   makeConnectionString = cstring & "database=" & db _
-    & ";UID=" & gPwdForm.txtUserId.Value _
+    & ";UID=" & gPwdForm.txtUserID.Value _
     & ";PWD=" & gPwdForm.txtPassword.Value & ";"
- Debug.Print "mc:" & makeConnectionString
+ 'Debug.Print "mc:" & makeConnectionString
 End Function
 
 'Method handles password if we have one, else show password form to request one.
 'checks if password works.
 Sub handlePwd()
-    Debug.Print "handle: " & (gPwdForm Is Nothing)
+    'Debug.Print "handle: " & (gPwdForm Is Nothing)
     If gPwdForm Is Nothing Then Set gPwdForm = New PwdForm
     With gPwdForm
-    .txtUserId.Value = HiddenSettings.Range("user_id").Value
-    Debug.Print "pwdval:" & .txtUserId.Value
+    .txtUserID.Value = HiddenSettings.Range("user_id").Value
+    'Debug.Print "pwdval:" & .txtUserID.Value
     If HiddenSettings.Range("user_id").Value = "" Or HiddenSettings.Range("rpt_pwd").Value = "" Then
         .txtPassword.Value = ""
         .CheckBox1.Value = False
@@ -39,7 +39,7 @@ Sub handlePwd()
     Else ' try the saved password
         .txtPassword.Value = HiddenSettings.Range("rpt_pwd").Value
     End If
-    Debug.Print "pwdout:" & .txtPassword.Value
+    'Debug.Print "pwdout:" & .txtPassword.Value
     End With
     #If Mac Then
     #Else
@@ -49,12 +49,12 @@ Sub handlePwd()
     Set cn = CreateObject("ADODB.Connection")
     With cn
       .ConnectionString = makeConnectionString
-      Debug.Print "adodb:" & makeConnectionString
+      'Debug.Print "adodb:" & makeConnectionString
       .ConnectionTimeout = 10 ' in seconds
       On Error Resume Next
       .Open
       good = Err.Number = 0 ' if any error, we couldn't open connection.
-      Debug.Print "hp:" & good
+      'Debug.Print "hp:" & good
       .Close
     End With
     On Error GoTo 0
@@ -71,7 +71,7 @@ End Sub
 
 Public Sub doQuery(qt As QueryTable, SQL As String, Optional refreshFlag As Boolean = False, Optional db As String = "rptdb")
 'stuff connection and command into query, call refresh, and handle errors
-    Debug.Print "doQuery: " & (gPwdForm Is Nothing)
+    'Debug.Print "doQuery: " & (gPwdForm Is Nothing)
    
    If gPwdForm Is Nothing Then Call handlePwd
    

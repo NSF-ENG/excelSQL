@@ -1,7 +1,7 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} PwdForm 
    Caption         =   "CredentialsForm"
-   ClientHeight    =   3060
+   ClientHeight    =   3064
    ClientLeft      =   104
    ClientTop       =   432
    ClientWidth     =   4592
@@ -15,23 +15,28 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 
 Option Explicit
-' Jack Snoeyink      Oct 2, 2017
-'assumes clsPwd has been instantiated in pwdHandler
+' Jack Snoeyink      Nov 24, 2017
 Private Sub cmdPwdCancel_Click()
-  Unload Me
+  HiddenSettings.Range("rpt_pwd").Value = ""
+  Me.Hide
+  'Unload Me
   End ' abort calling program
 End Sub
 
-'Save userid & password in connections, and on settings page if checkbox = true
+'Save userid & password in form for connections, and on HiddenSettings tab if checkbox = true
 Private Sub cmdPwdOK_Click()
-    If Me.CheckBox1.Value = True Then ' save in settings or not
-         Settings.txtUserID.Value = Me.txtUserID.Value
-         Settings.txtPwd.Value = Me.txtPassword.Value
-    Else
-         Settings.txtPwd.Value = ""
+    If Me.CheckBox1.Value = True Then ' save in HiddenSettings or not
+         HiddenSettings.Range("user_id").Value = Me.txtUserId.Value
+         HiddenSettings.Range("rpt_pwd").Value = Me.txtPassword.Value
     End If
-    Call FixConnections(Me.txtUserID.Value, Me.txtPassword.Value)
-    'PwdForm.Hide
-    Unload Me
+    Me.Hide ' we want txtUserId&txtPassword available
+    'Unload Me
 End Sub
 
+Private Sub UserForm_QueryClose(Cancel As Integer, CloseMode As Integer)
+  'Intercept/repurpose Unload if user clicks form "X" close button.
+  If CloseMode = 0 Then
+    Cancel = True
+    Me.Hide
+  End If
+End Sub

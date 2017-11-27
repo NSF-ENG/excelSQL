@@ -28,7 +28,7 @@ If (hasValue("from_date") Or hasValue("dd_from_date") Or hasValue("budg_yr") Or 
      start = "(1=1)" 'True
 Else
     start = "(0=1)" 'False
-    If Len(ActiveSheet.Range("add_Budg_Splts").Rows.count) < 1 Then ' no specific prop_id
+    If Len(ActiveSheet.Range("add_Budg_Splts").Rows.Count) < 1 Then ' no specific prop_id
         MsgBox "Include at least one from date, or include proposal numbers in the Add table."
         End
     End If
@@ -315,17 +315,17 @@ myResults = myResults _
 & "JOIN #myProp mp on mp.prop_id=mbs.prop_id" & CRNL
 
 
-    Dim QT As QueryTable
-    Dim LO As ListObject
-    For Each LO In ActiveSheet.ListObjects
-      If (Left(LO.Name, 15) = "SplitQueryTable") Then Set QT = LO.QueryTable 'excel adds a number; we ignore.
+    Dim qt As QueryTable
+    Dim lo As ListObject
+    For Each lo In ActiveSheet.ListObjects
+      If (Left(lo.Name, 15) = "SplitQueryTable") Then Set qt = lo.QueryTable 'excel adds a number; we ignore.
     Next
     
-    With QT
+    With qt
        .CommandText = budg_spltsInclude & budg_spltsExclude & myBSplit & myBudgPRCs & myPropPRCs & myProp & myResults
        .Refresh (False)
     End With
-    Call RefreshPivotTables(ActiveSheet, QT)
+    Call RefreshPivotTables(ActiveSheet, qt)
 End Sub
 
 
