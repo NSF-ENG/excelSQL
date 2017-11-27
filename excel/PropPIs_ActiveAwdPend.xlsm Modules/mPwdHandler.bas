@@ -19,7 +19,7 @@ Dim cstring As String
   #End If
   If Right(cstring, 1) <> ";" Then cstring = cstring & ";"
   makeConnectionString = cstring & "database=" & db _
-    & ";UID=" & gPwdForm.txtUserID.Value _
+    & ";UID=" & gPwdForm.txtUserId.Value _
     & ";PWD=" & gPwdForm.txtPassword.Value & ";"
  'Debug.Print "mc:" & makeConnectionString
 End Function
@@ -30,7 +30,7 @@ Sub handlePwd()
     'Debug.Print "handle: " & (gPwdForm Is Nothing)
     If gPwdForm Is Nothing Then Set gPwdForm = New PwdForm
     With gPwdForm
-    .txtUserID.Value = HiddenSettings.Range("user_id").Value
+    .txtUserId.Value = HiddenSettings.Range("user_id").Value
     'Debug.Print "pwdval:" & .txtUserID.Value
     If HiddenSettings.Range("user_id").Value = "" Or HiddenSettings.Range("rpt_pwd").Value = "" Then
         .txtPassword.Value = ""
@@ -45,7 +45,7 @@ Sub handlePwd()
     #Else
 ' use ADODB connection to try password; get a fresh one if it has expired.
     Dim cn As Object
-    Dim good As Boolean
+    Dim bad As Boolean
     Set cn = CreateObject("ADODB.Connection")
     With cn
       .ConnectionString = makeConnectionString
@@ -53,28 +53,29 @@ Sub handlePwd()
       .ConnectionTimeout = 10 ' in seconds
       On Error Resume Next
       .Open
-      good = Err.Number = 0 ' if any error, we couldn't open connection.
-      'Debug.Print "hp:" & good
+      bad = Err.Number > 0 ' if any error, we couldn't open connection.
+      'Debug.Print "hp:" & bad
       .Close
     End With
     On Error GoTo 0
     Set cn = Nothing
-    If Not good Then
+    If bad Then
         HiddenSettings.Range("rpt_pwd").Value = ""
-        If MsgBox("The reportserver userid and password are not working; please check if they have been updated and try again.", _
-             vbOKCancel) <> vbOK Then End
+        If MsgBox("The reportserver userid and password are not working; please check if they have been updated and try again." _
+        & vbNewLine & "If remote, ensure you have an active VPN connection into the NSF network.", vbOKCancel) <> vbOK Then End
         Call handlePwd
         End
     End If
     #End If
 End Sub
 
-Public Sub doQuery(qt As QueryTable, SQL As String, Optional refreshFlag As Boolean = False, Optional db As String = "rptdb")
+Public Sub doQuery(qt As QueryTable, SQL As String, Optional backgroundFlag As Boolean = False, Optional db As String = "rptdb")
 'stuff connection and command into query, call refresh, and handle errors
+' Note: try out queries with backgroundFlag False to catch errors.
+    
     'Debug.Print "doQuery: " & (gPwdForm Is Nothing)
-   
    If gPwdForm Is Nothing Then Call handlePwd
-   
+   On Error GoTo ErrHandler
    With qt
         .Connection = "ODBC;" & makeConnectionString(db)
         #If Mac Then
@@ -82,9 +83,11 @@ Public Sub doQuery(qt As QueryTable, SQL As String, Optional refreshFlag As Bool
         #Else
         .CommandText = SQL
         #End If
-        .Refresh (refreshFlag)
+        .Refresh (backgroundFlag)
     End With
 ExitHandler: Exit Sub
 ErrHandler:
+    MsgBox ("doQuery Error " & Err.Number & ":" & Err.Description)
+    GoTo ExitHandler
 End Sub
 

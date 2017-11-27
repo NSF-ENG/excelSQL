@@ -1,6 +1,30 @@
 -- what can you learn about proposal 1234567?
 SELECT * FROM csd.prop WHERE prop_id = '1234567'
 
+SELECT sc.colid, sc.name, t.name, sc.length 
+FROM sysobjects so 
+JOIN syscolumns sc ON sc.id = so.id 
+JOIN systypes t on t.usertype = sc.usertype
+WHERE so.name like 'pi_vw' -- table name
+ORDER BY colid
+
+select pi_id,pi_last_name,pi_frst_name,pi_mid_init,
+prim_addr_flag,pi_emai_addr,
+inst_id,pi_dept_name,pi_degr_yr,pi_acad_degr_txt,
+pi_str_addr,pi_str_addr_addl,cty_name,st_code,ctry_code,zip_code,pi_phon_num,pi_fax_num,
+pi_gend_code,pi_ctzn_code,pi_rno_code,pi_ethn_code,pi_hdcp_flag,pi_hdcp_othr_txt,
+pi_actv_stts_code,oth_fed_proj_flag,
+last_updt_tmsp,last_updt_pgm,last_updt_user
+--pi_ssn,
+--orc_id
+from csd.pi_vw pi
+where pi_last_name = 'Alphaman' and pi_frst_name = 'Alan'
+
+select p.* from csd.pi_vw pi
+join csd.prop p ON p.pi_id = pi.pi_id
+where pi_last_name = 'Alphaman' and pi_frst_name = 'Alan'
+
+
 -- who was the PI and what was the institution?
 SELECT pi.pi_last_name, pi.pi_frst_name, inst.inst_shrt_name, p.*
 FROM csd.prop p
@@ -47,26 +71,39 @@ DROP TABLE #myPanlCounts
 
 select top 10 * from csd.rev_prop where prop_id like '17%'
 
--- How many reviews for CISE in FY17?
-SELECT count(revr_id) FROM csd.prop p 
-      JOIN csd.rev_prop rp ON p.prop_id = rp.prop_id
-      WHERE p.org_code LIKE '05%' AND p.prop_id LIKE '17%'
-
 -- How many reviewers reviewed for CISE in FY17?
 SELECT count(DISTINCT revr_id) FROM csd.prop p 
-      JOIN csd.rev_prop rp ON p.prop_id = rp.prop_id
-      WHERE p.org_code LIKE '05%' AND p.prop_id LIKE '17%'
+JOIN csd.rev_prop rp ON p.prop_id = rp.prop_id
+WHERE p.org_code LIKE '05%' AND p.prop_id LIKE '17%'
+
+-- How many reviews for CISE in FY17?
+SELECT count(revr_id) FROM csd.prop p 
+JOIN csd.rev_prop rp ON p.prop_id = rp.prop_id
+WHERE p.org_code LIKE '05%' AND p.prop_id LIKE '17%'
+
+
 
 -- Of the reviewers for CISE, who are top 20 in number of FY17 reviews for NSF?
 SELECT TOP 20 r.revr_last_name, r.revr_frst_name,inst.inst_shrt_name, count(rp2.prop_id) as nProp
-FROM (SELECT DISTINCT revr_id FROM csd.rev_prop rp
-      JOIN csd.prop p ON p.prop_id = rp.prop_id
-      WHERE p.org_code LIKE '05%' AND rp.prop_id LIKE '17%') ciserevr
-JOIN csd.rev_prop rp2 ON rp2.revr_id = ciserevr.revr_id
+FROM (SELECT DISTINCT revr_id FROM csd.prop p 
+JOIN csd.rev_prop rp ON p.prop_id = rp.prop_id
+WHERE p.org_code LIKE '05%' AND p.prop_id LIKE '17%') ciserevr
+JOIN csd.rev_prop rp2 ON rp2.revr_id = ciserevr.revr_id AND rp2.prop_id LIKE '17%'
 JOIN csd.revr r ON r.revr_id = ciserevr.revr_id
 LEFT JOIN csd.inst inst ON inst.inst_id = r.inst_id
 GROUP BY r.revr_last_name, r.revr_frst_name,inst.inst_shrt_name
 ORDER BY nProp DESC, r.revr_last_name, r.revr_frst_name
+
+SELECT count(rp2.prop_id)
+FROM (SELECT DISTINCT revr_id FROM csd.prop p 
+JOIN csd.rev_prop rp ON p.prop_id = rp.prop_id
+WHERE p.org_code LIKE '05%' AND p.prop_id LIKE '17%') ciserevr
+JOIN csd.rev_prop rp2 ON rp2.revr_id = ciserevr.revr_id AND rp2.prop_id LIKE '17%'
+--JOIN csd.revr r ON r.revr_id = ciserevr.revr_id
+--LEFT JOIN csd.inst inst ON inst.inst_id = r.inst_id
+--GROUP BY r.revr_last_name, r.revr_frst_name,inst.inst_shrt_name
+--ORDER BY nProp DESC, r.revr_last_name, r.revr_frst_name
+
 
 -- Who were the top 20 reviewers in number of proposals reviewed for NSF in FY17?
 SELECT TOP 20 rp.revr_id, count(rp.prop_id) as nProp
