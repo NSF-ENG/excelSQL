@@ -21,10 +21,10 @@ With ws
 End With
 End Sub
 
-Sub RefreshPivotTables(ws As Worksheet, qt As QueryTable)
+Sub RefreshPivotTables(ws As Worksheet, lo As ListObject)
  Dim PT As PivotTable
  For Each PT In ws.PivotTables
-   PT.PivotTableWizard SourceType:=xlDatabase, SourceData:=qt.ListObject.Name
+   PT.PivotTableWizard SourceType:=xlDatabase, SourceData:=lo.Name
    If Not (PT Is Nothing) Then PT.RefreshTable
   Next
 End Sub

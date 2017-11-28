@@ -44,9 +44,10 @@ Sub handlePwd()
     #If Mac Then
     #Else
 ' use ADODB connection to try password; get a fresh one if it has expired.
-    Dim cn As Object
+    Dim cn As ADODB.Connection
+    Dim rs As ADODB.Recordset
     Dim bad As Boolean
-    Set cn = CreateObject("ADODB.Connection")
+    Set cn = New ADODB.Connection 'CreateObject("ADODB.Connection")
     With cn
       .ConnectionString = makeConnectionString
       'Debug.Print "adodb:" & makeConnectionString
@@ -54,7 +55,8 @@ Sub handlePwd()
       On Error Resume Next
       .Open
       bad = Err.Number > 0 ' if any error, we couldn't open connection.
-      'Debug.Print "hp:" & bad
+      Debug.Print "hp:" & bad & (cnn.State = adStateOpen)
+      Set rs = cn.Execute("sp_tables")
       .Close
     End With
     On Error GoTo 0

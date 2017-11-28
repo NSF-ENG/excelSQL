@@ -1,16 +1,13 @@
 Attribute VB_Name = "ProposalTracker"
 Sub ClearPropInputs()
 ' Clear inputs
-   ClearPropFrm.Show
- '   ActiveSheet.Range("PropParams").Cells.Value = HiddenSettings.Range("PropParams").Cells.Value
- '   Call ClearMatchingTable("props_*")
+   frmClearProp.Show
 End Sub
 Sub ClearSplitInputs()
 ' Clear inputs
-    ActiveSheet.Range("SplitPropParams").Cells.Value = HiddenSettings.Range("SplitPropParams").Cells.Value
-    ActiveSheet.Range("SplitBudgetParams").Cells.Value = HiddenSettings.Range("SplitBudgetParams").Cells.Value
-    Call ClearMatchingTable("splits_*")
+frmClearSplit.Show
 End Sub
+
 Sub RefreshActiveSheetProp()
 Dim field As String
 Dim dateWhere As String
@@ -67,8 +64,6 @@ myProp = myProp _
 & andWhere("nr.", "natr_rqst_abbr") & andWhere("og.", "dir_div_abbr") & andWhere("prop.", "prop_titl_txt") _
 & andWhere("", "pa.prop_atr_code", "NOT EXISTS (SELECT * FROM csd.prop_atr pa WHERE pa.prop_id=prop.prop_id AND ", "AND pa.prop_atr_type_code='PRC'") & vbNewLine
 
-'-----------CASE FOR PROP PRCS INCLUDE/EXCLUDE--------------------------------------
-
 myProp = myProp _
 & ") " & addProps & ") " & IDsFromColumnRange("AND prop.prop_id NOT IN", FindTable("props_omit*")) & vbNewLine _
 & "ORDER BY lead_id,ILN" & vbNewLine & "CREATE INDEX myProp_ix ON #myProp(prop_id)" & vbNewLine
@@ -104,7 +99,22 @@ Query = Query & "(SELECT budg_splt.prop_id, Sum(budg_splt.budg_splt_tot_dol) AS 
 Dim dropTables As String
 dropTables = "drop table #myProp drop table #myPanl" & vbNewLine
 
-Call doQuery(FindTable("PropQueryTable*").QueryTable, setNC & myProp & myPanl & Query & dropTables) ', True)
+Dim lo As ListObject
+Set lo = FindTable("PropQueryTable*")
+If lo Is Nothing Then
+    MsgBox ("Fatal Error: no PropQueryTable on " & ActiveSheet.Name)
+    End
+End If
+
+Call doQuery(lo.QueryTable, setNC & myProp & myPanl & Query & dropTables) ', True)
+ActiveSheet.Range("last_refresh") = Now()
+If lo.DataBodyRange Is Nothing Then
+    ActiveSheet.Range("rows_rcvd") = 0
+Else
+    ActiveSheet.Range("rows_rcvd") = lo.DataBodyRange.Rows.Count
+End If
+
+Call RefreshPivotTables(ActiveSheet, lo)
 End Sub
 
 

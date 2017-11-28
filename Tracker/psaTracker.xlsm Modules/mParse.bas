@@ -30,8 +30,19 @@ Function andWhere(tablename As String, fieldname As String, Optional notPreamble
 Dim field, optNeg As String
 Dim hasComma, hasRange, hasSqlWildcard As Boolean
 optNeg = "("
-
+andWhere = ""
+On Error Resume Next
 field = Trim(ActiveSheet.Range(fieldname).Value) ' Warning: trims spaces on values
+
+On Error GoTo 0
+If Err.Number > 0 Then
+    If Err.Number = 1004 Then
+      If MsgBox("Named range " & fieldname & " may have been lost from " & ActiveSheet.Name & vbNewLine & _
+         "Continuing without, but if a cell was moved by Copy/Paste consider Undo and Paste Values Only (mac:Paste Special>Text)", vbOKCancel) <> vbOK Then End
+    Else
+      If MsgBox("Unexpected error: " & Err.Number & ":" & Err.Description & ". Continuing", vbOKCancel) <> vbOK Then End
+    End If
+End If
 If Left(field, 3) = "eg:" Then field = "" ' ignore example fields
 
 If Left(field, 1) = "~" Then ' have negation
@@ -50,8 +61,7 @@ If Len(tablename) > 1 Then ' make sure we end in "."
     If Right(tablename, 1) <> "." Then tablename = tablename & "."
 End If
 
-If Len(field) < 1 Then ' do nothing
-  andWhere = ""
+If Len(field) < 1 Then ' do nothing; andwhere is blank
 ElseIf hasComma Then ' IN/NOT IN list
   andWhere = " AND " & optNeg & tablename & fieldname & " IN ('" & Replace(Replace(Join(Split(Replace(Replace(field, """", ""), "'", ""), ","), "','") & "') ", " '", "'"), "' ", "'") & andMore & ")"
 ElseIf hasRange Then ' BETWEEN / NOT BETWEEN

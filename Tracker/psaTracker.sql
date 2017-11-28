@@ -36,9 +36,10 @@ CREATE INDEX myProp_ix ON #myProp(prop_id)
 SELECT panl_prop.prop_id, panl_prop.panl_id, panl.panl_bgn_date, a.rcom_seq_num, b.rcom_abbr, a.prop_ordr
 INTO #myPanl
 FROM #myProp prop, csd.panl_prop panl_prop, csd.panl panl, flflpdb.flp.panl_prop_summ a, flflpdb.flp.panl_rcom_def b
-WHERE  prop.prop_id=panl_prop.prop_id AND panl_prop.panl_id = panl.panl_id
+WHERE prop.prop_id=panl_prop.prop_id AND panl_prop.panl_id = panl.panl_id
 AND  panl_prop.panl_id *= a.panl_id AND prop.prop_id *= a.prop_id AND a.panl_id *= b.panl_id  AND  a.rcom_seq_num *= b.rcom_seq_num
 CREATE INDEX myPanl_ix ON #myPanl(prop_id)
+
 SELECT getdate() as run_date,mp.*, prop.pgm_annc_id, prop.org_code, prop.pgm_ele_code, prop.pm_ibm_logn_id, prop_stts.prop_stts_abbr, prop.prop_stts_code, prop_stts.prop_stts_txt, pi.pi_last_name, pi.pi_frst_name, pi.pi_gend_code, inst.inst_shrt_name AS inst_name, inst.st_code, prop.prop_titl_txt, natr_rqst.natr_rqst_txt, natr_rqst.natr_rqst_abbr, prop.bas_rsch_pct, prop.cntx_stmt_id,
 first.panl_id as 'first_panl', first.panl_bgn_date as 'fp_begin', first.rcom_seq_num as 'fp_recno', first.rcom_abbr as 'fp_rec', first.prop_ordr as 'fp_rank', last.panl_id as 'last_panl', last.panl_bgn_date as 'lp_begin', last.rcom_seq_num as 'lp_recno', last.rcom_abbr as 'lp_rec', last.prop_ordr as 'lp_rank',
 bs.split_tot_dol, bs.split_frwd_date, bs.split_aprv_date,

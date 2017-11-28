@@ -315,17 +315,21 @@ myResults = myResults _
 & "JOIN #myProp mp on mp.prop_id=mbs.prop_id" & CRNL
 
 
-    Dim qt As QueryTable
-    Dim lo As ListObject
-    For Each lo In ActiveSheet.ListObjects
-      If (Left(lo.Name, 15) = "SplitQueryTable") Then Set qt = lo.QueryTable 'excel adds a number; we ignore.
-    Next
-    
-    With qt
-       .CommandText = budg_spltsInclude & budg_spltsExclude & myBSplit & myBudgPRCs & myPropPRCs & myProp & myResults
-       .Refresh (False)
-    End With
-    Call RefreshPivotTables(ActiveSheet, qt)
+Dim lo As ListObject
+Set lo = FindTable("SplitQueryTable*")
+If lo Is Nothing Then
+    MsgBox ("Fatal Error: no SplitQueryTable on " & ActiveSheet.Name)
+    End
+End If
+
+Call doQuery(lo.QueryTable, setNC & budg_spltsInclude & budg_spltsExclude & myBSplit & myBudgPRCs & myPropPRCs & myProp & myResults) ', True)
+ActiveSheet.Range("last_refresh") = Now()
+If lo.DataBodyRange Is Nothing Then
+    ActiveSheet.Range("rows_rcvd") = 0
+Else
+    ActiveSheet.Range("rows_rcvd") = lo.DataBodyRange.Rows.Count
+End If
+Call RefreshPivotTables(ActiveSheet, lo)
 End Sub
 
 
