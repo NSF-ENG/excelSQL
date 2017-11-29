@@ -9,12 +9,11 @@
 SET NOCOUNT ON 
 -- DROP TABLE #myPid, #myLead, #myPRCs
 SELECT DISTINCT CASE WHEN p.lead_prop_id IS NULL THEN 'I' WHEN p.lead_prop_id <> p.prop_id THEN 'N' ELSE 'L' END AS ILN,
-isnull(p.lead_prop_id,p.prop_id) AS lead, p.prop_id, p.pi_id, p.inst_id
+isnull(p.lead_prop_id,p.prop_id) AS lead, p.prop_id, pi_last_name as L, pi_frst_name as F, inst_shrt_name as I, pi_emai_addr AS M
 INTO #myPid FROM csd.prop p
 JOIN csd.panl_prop pp ON p.prop_id = pp.prop_id
-JOIN csd.panl pn ON pn.panl_id = pp.panl_id  
 WHERE --p.prop_stts_code IN ('00','01','02','08','09') AND 
-pp.panl_id in ('p172027','p170288','p180207')
+pp.panl_id in ('p172027','p170288','p180207','p180208')
 --pm_logn_id = 'jsnoeyi'
 CREATE INDEX myPid_idx ON #myPid(prop_id)
 --select count(*) from #myPid
@@ -44,15 +43,18 @@ select ''YYYYN'', ''E/V/G/F'', 5.99 union all select ''YYYYY'', ''E/V/G/F/P'', 4
 --[RA_leads
 INSERT INTO #myPid 
 SELECT DISTINCT CASE WHEN p.lead_prop_id IS NULL THEN 'I' WHEN p.lead_prop_id <> p.prop_id THEN 'N' ELSE 'L' END AS ILN,
-isnull(p.lead_prop_id,p.prop_id) AS lead, p.prop_id, p.pi_id, p.inst_id
+isnull(p.lead_prop_id,p.prop_id) AS lead, p.prop_id, p.pi_id, p.inst_id,inst.st_code
 FROM #myPid pid
 JOIN csd.prop p ON p.lead_prop_id = pid.lead
+LEFT JOIN csd.pi_vw pi ON pi.pi_id = p.pi_id AND pi.prim_addr_flag='Y'
+LEFT JOIN csd.inst inst ON inst.inst_id = p.inst_id
 WHERE pid.ILN < 'M' AND NOT EXISTS (SELECT * FROM #myPid px WHERE px.prop_id = p.prop_id)
 
 -- project leads
-SELECT p.ILN, p.lead
+SELECT p.ILN, p.lead, pi.pi_last_name
 INTO #myLead
 FROM #myPid p
+JOIN csd.pi_vw pi ON pi.pi_id = p.pi_id
 WHERE p.ILN < 'M' 
 CREATE INDEX myLead_idx ON #myLead(lead)
 
@@ -119,18 +121,14 @@ ORDER BY p.prop_id -- eb.revn_num, eb.budg_seq_yr
 CREATE INDEX myPropBudg_ix ON #myPropBudg(prop_id)
 
 -- per-proposal data 
-SELECT pid.lead, pid.ILN, pid.prop_id,
-pi_last_name as L, pi_frst_name as F, inst_shrt_name as I, pi_emai_addr AS M, rqst_dol as D, 
-prc.R, b.T, b.RN, inst.st_code,
+SELECT pid.* rqst_dol as D, prc.R, b.T, b.RN, 
 id=identity(18), 0 as seq 
 INTO #myProp
 FROM #myPid pid
 JOIN csd.prop p ON p.prop_id = pid.prop_id
-LEFT JOIN csd.pi_vw pi ON pi.pi_id = p.pi_id
-LEFT JOIN csd.inst inst ON inst.inst_id = p.inst_id
 LEFT JOIN #myPRCs prc ON prc.prop_id = pid.prop_id
 LEFT JOIN #myPropBudg b ON b.prop_id = p.prop_id
-WHERE pi.prim_addr_flag='Y'
+
 ORDER BY lead, ILN, pid.prop_id
 CREATE INDEX myProp_idx ON #myProp(prop_id)
 SELECT lead, MIN(id) as start INTO #myPropStart FROM #myProp GROUP BY lead
@@ -752,3 +750,49 @@ ORDER BY p.lead, p.ILN, p.prop_id
 
 DROP TABLE #myDmog DROP TABLE #myPid DROP TABLE #myPRCs DROP TABLE #myCtry DROP TABLE #myRevs DROP TABLE #myPanl
 --]RA_propCheck
+
+--Convert to use #myLead
+--[projText
+SELECT lead, convert(text, convert(varchar(16384),js.PROJ_SUMM_TXT) + convert(varchar(16384),js.INTUL_MERT) + convert(varchar(16384),js.BRODR_IMPT)) as summ
+INTO #mySumm
+FROM #myLead p 
+JOIN csd.prop_subm_ctl_vw psc ON psc.prop_id = p.lead
+JOIN FLflpdb.flp.proj_summ js ON js.SPCL_CHAR_PDF <> 'Y' AND js.TEMP_PROP_ID = psc.TEMP_PROP_ID
+
+
+SELECT p.lead, p.L, rs.string, rs.score, rev_prop_vw.revr_id, rev_prop_vw.rev_rtrn_date, id=identity(18), 0 as 'seq'
+INTO #myRevs
+FROM #myLead p, csd.rev_prop_vw rev_prop_vw, tempdb.guest.revScores rs
+WHERE p.lead = rev_prop_vw.prop_id AND rev_prop_vw.rev_prop_rtng_ind = rs.yn 
+ORDER BY lead, score DESC
+
+SELECT lead, MIN(id) as 'start' INTO #myStarts FROM #myRevs GROUP BY lead
+UPDATE #myRevs set seq = id-M.start FROM #myRevs r, #myStarts M WHERE r.lead = M.lead
+DROP TABLE #myStarts
+
+SELECT rv.lead, rv.L as pi_last_name, 'Review' as docType, rev_prop.pm_logn_id, rv.revr_id as panl_revr_id,  revr.revr_last_name as 'name', revr_opt_addr_line.revr_addr_txt as 'info',
+convert(varchar,rev_prop.rev_type_code) AS type, convert(varchar,rev_prop.rev_stts_code) as stts, rev_prop.rev_due_date as due, rv.rev_rtrn_date as returned,
+ rv.string as score, rev_txt.REV_PROP_TXT_FLDS as 'text'
+FROM #myRevs rv, csd.revr revr, csd.rev_prop rev_prop, csd.revr_opt_addr_line revr_opt_addr_line, csd.rev_prop_txt_flds_vw rev_txt
+WHERE rv.lead = rev_prop.prop_id AND rv.lead = rev_txt.PROP_ID AND rv.revr_id = rev_prop.revr_id AND rv.revr_id = revr.revr_id AND rv.revr_id = revr_opt_addr_line.revr_id
+  AND rv.revr_id = rev_txt.REVR_ID AND ((revr_opt_addr_line.addr_lne_type_code='E'))
+UNION ALL SELECT p.lead, p.L, ' PanlSumm', panl.pm_logn_id, panl_prop_summ.PANL_ID,  ' '+panl.panl_name, panl_rcom_def.RCOM_TXT,
+convert(varchar,panl_prop_summ.RCOM_SEQ_NUM), convert(varchar,panl_prop_summ.PROP_ORDR), panl.panl_bgn_date, panl_prop_summ.panl_summ_rlse_date,
+panl_rcom_def.RCOM_ABBR , panl_prop_summ.PANL_SUMM_TXT
+FROM #myLead p, FLflpdb.flp.panl_prop_summ panl_prop_summ, FLflpdb.flp.panl_rcom_def panl_rcom_def, csd.panl panl
+WHERE p.lead = panl_prop_summ.PROP_ID AND panl_prop_summ.PANL_ID = panl.panl_id
+  AND panl_prop_summ.RCOM_SEQ_NUM = panl_rcom_def.RCOM_SEQ_NUM AND panl_prop_summ.PANL_ID = panl_rcom_def.PANL_ID
+UNION ALL SELECT p.lead, p.L, 'POCmnt', p.PO, p.prop_id, cmt.cmnt_cre_id, '', '', convert(varchar,cmt.cmnt_prop_stts_code), cmt.beg_eff_date, cmt.end_eff_date,'', cmt.cmnt
+FROM #myPid p, FLflpdb.flp.cmnt_prop cmt WHERE p.prop_id = cmt.prop_id AND (p.ILN < 'M' OR LEN(cmt.cmnt) <> (SELECT LEN(l.cmnt) FROM FLflpdb.flp.cmnt_prop l WHERE p.lead = l.prop_id))
+UNION ALL SELECT p.lead, p.L, 'RA' as docType, p.PO, '', ra.last_updt_user, '', '', null, null, ra.last_updt_tmsp, '', ra.prop_rev_anly_txt
+FROM #myLead p, csd.prop_rev_anly_vw ra WHERE p.lead = ra.prop_id
+UNION ALL SELECT p.lead, p.L, 'Abstr', p.PO, '', a.last_updt_user, a.cent_mrkr_prop, a.cent_mrkr_awd, null, null, a.last_updt_tmsp,'', a.abst_narr_txt
+FROM #myPid p, csd.abst a WHERE p.prop_id = a.awd_id AND (p.ILN < 'M' OR LEN(a.abst_narr_txt) <>  (SELECT LEN(l.abst_narr_txt) FROM csd.abst l WHERE p.lead = l.awd_id))
+UNION ALL SELECT p.lead, p.L, 'SummProj',p.PO, '', '', '', null, null, null, p.nsf_rcvd_date,'', s.summ
+FROM #myLead p, #mySumm s WHERE s.lead = p.lead
+UNION ALL SELECT p.lead, p.L, 'xDiaryNt',p.PO, p.prop_id, crtd_by_user, ej_diry_note_kywd, null, null, null, crtd_date,'', ej_diry_note_txt
+FROM #myPid p, FLflpdb.flp.ej_diry_note d WHERE d.prop_id = p.prop_id
+ORDER BY lead, docType, revr_last_name, revr_id
+DROP TABLE #myRevs,#myProps, #mySumm
+--]projText
+drop table #myLead
