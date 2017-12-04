@@ -1,40 +1,61 @@
 -- RoboRA sql code   Jack Snoeyink Nov 2017
--- Commments with [name and ]name delimit code that will be copied into the hidden SQL worksheet of RoboRA.xlsm
--- You can simply copy the entire thing into the clipboard click "Paste SQL code" on that sheet.
--- All other code is for testing. 
+--RoboRA queries pull everything from the database that might go into an RA 
+-- to support creation of RA drafts from RAtemplates in Word mail merge.
+-- It separately pulling text fields to support creation of an indexed pdf.  
+-- (We don't pull text into drafts, to avoid duplicating material already in the jacket.)
+--In addition it makes several sheets for checking coding of both declines and awards, 
+-- and makes budget numbers available. 
+
+-- Commments with --[name and --]name delimit code that will be copied into the hidden SQL worksheet of RoboRA.xlsm
+-- You can simply copy the entire thing into the clipboard and run "copySQLcode" on that sheet.
+-- All other code is for testing.  Many comments are for developing long queries in pieces.
+--
 -- When SQL has run-time parameters, either break into static strings to use in VBA as str1 & param & str2 
 --    or use @varnames that will be declared before your string
 --    "declare @varname char(7), @datename datetime" & vbNewline & "SELECT @varname = " & param1 &" @datename = "& Now
---[RA_pidSelect
+
+-- get lists of relevant prop_ids in many ways
+-- This will mostly be generated on the fly. 
+--[RA_pidCreate
 SET NOCOUNT ON 
-SELECT DISTINCT CASE WHEN p.lead_prop_id IS NULL THEN 'I' WHEN p.lead_prop_id <> p.prop_id THEN 'N' ELSE 'L' END AS ILN, pm_ibm_logn_id AS PO,
-isnull(p.lead_prop_id,p.prop_id) AS lead, p.prop_id, p.pi_id, pi_last_name as L, pi_frst_name as F, inst_shrt_name as I, inst.st_code, pi_emai_addr AS M
-INTO #myPid FROM csd.prop p
-LEFT JOIN csd.pi_vw pi ON pi.pi_id = p.pi_id AND pi.prim_addr_flag='Y'
-LEFT JOIN csd.inst inst ON inst.inst_id = p.inst_id
+CREATE TABLE #myPid (prop_id char(7) primary key, lead_prop_id char(7) null, pi_id char(9), inst_id char(10), PO char(7), RAtemplate varchar(63))
+INSERT INTO #myPid 
+--]RA_pidCreate
+--[RA_pidSelect
+SELECT DISTINCT p.prop_id, p.lead_prop_id, p.pi_id, p.inst_id, p.pm_ibm_logn_id as PO, 
 --]RA_pidSelect
+'' as RAtemplate 
+FROM csd.prop p
 JOIN csd.panl_prop pp ON p.prop_id = pp.prop_id
-WHERE --p.prop_stts_code IN ('00','01','02','08','09') AND 
+WHERE --p.prop_stts_code IN ('00','01','02','08','09') 
+      --AND dd_rcom_date = '1900-01-01' -- Not dd_concurred yet
 pp.panl_id in ('p172027','p170288','p180207','p180208')
 --pm_logn_id = 'jsnoeyi'
 
---select count(*) from #myPid
-
--- add collabs not already there
+-- Every query will begin with this: 
+--  Add collabs not already there, then make props, leads, and get RA update time
 --[RA_leads
--- DROP TABLE #myPid, #myLead, #myRA
+-- Needs: #myPid (& drops it)
+-- DROP TABLE #myProp, #myLead, #myRA
 CREATE INDEX myPid_idx ON #myPid(prop_id)
-INSERT INTO #myPid 
-SELECT DISTINCT CASE WHEN p.lead_prop_id IS NULL THEN 'I' WHEN p.lead_prop_id <> p.prop_id THEN 'N' ELSE 'L' END AS ILN,pm_ibm_logn_id AS PO,
-isnull(p.lead_prop_id,p.prop_id) AS lead, p.prop_id, p.pi_id, pi_last_name as L, pi_frst_name as F, inst_shrt_name as I, inst.st_code, pi_emai_addr AS M
+INSERT INTO #myPid SELECT DISTINCT p.prop_id, p.lead_prop_id, p.pi_id, p.inst_id, p.pm_ibm_logn_id as PO, pid.RAtemplate 
 FROM #myPid pid
-JOIN csd.prop p ON p.lead_prop_id = pid.lead
+JOIN csd.prop p ON p.lead_prop_id = pid.lead_prop_id
+WHERE pid.lead_prop_id is not NULL  
+    AND NOT EXISTS (SELECT * FROM #myPid px WHERE px.prop_id = p.prop_id)
+--get props
+SELECT CASE WHEN p.lead_prop_id IS NULL THEN 'I' WHEN p.lead_prop_id <> p.prop_id THEN 'N' ELSE 'L' END AS ILN, 
+  isnull(p.lead_prop_id,p.prop_id) AS lead, p.prop_id, p.pi_id, pi_last_name as L, pi_frst_name as F, 
+  inst_shrt_name as I, inst.st_code, pi_emai_addr AS M, p.PO, p.RAtemplate
+INTO #myProp FROM #myPid p
 LEFT JOIN csd.pi_vw pi ON pi.pi_id = p.pi_id AND pi.prim_addr_flag='Y'
 LEFT JOIN csd.inst inst ON inst.inst_id = p.inst_id
-WHERE pid.ILN < 'M' AND NOT EXISTS (SELECT * FROM #myPid px WHERE px.prop_id = p.prop_id)
--- project leads
-SELECT p.ILN, p.PO, p.lead, p.L
-INTO #myLead FROM #myPid p WHERE p.ILN < 'M' 
+ORDER BY lead, ILN, p.prop_id
+DROP TABLE #myPid
+CREATE INDEX myProp_idx ON #myProp(prop_id)
+--get leads
+SELECT p.ILN, p.PO, p.lead, p.L, p.RAtemplate
+INTO #myLead FROM #myProp p WHERE p.ILN < 'M' 
 CREATE INDEX myLead_idx ON #myLead(lead)
 -- determine if we have an RA (doc_type_code '034')
 SELECT lead, MAX(last_updt_tmsp) as RAupdate -- check text and eJupload for last RA
@@ -47,16 +68,16 @@ FROM (SELECT p.lead, ra.last_updt_tmsp
     JOIN csd.ej_upld_doc_vw ej ON ej.prop_id = p.lead AND ej_doc_type_code = '034') d
 GROUP BY lead
 --]RA_leads
--- select * from #myPid select * from #myLead select * from #myRA
+-- select * from #myProp select * from #myLead select * from #myRA
 
 -- PRCs for props: all
 --[RA_propPRCs
--- Needs: RA_lead(#myPid)
+-- Needs: RA_lead(#myProp)
 -- DROP TABLE #myPRCs, #myPRCdata
 SELECT prc.*, id=identity(18), 0 as seq
 INTO #myPRCdata
 FROM (SELECT DISTINCT p.prop_id, pa.prop_atr_code
-    FROM #myPid p
+    FROM #myProp p
     JOIN csd.prop_atr pa ON pa.prop_id = p.prop_id AND pa.prop_atr_type_code = 'PRC') prc
 ORDER BY prop_id, prop_atr_code
 SELECT prop_id, MIN(id) as start INTO #myPRCStart FROM #myPRCdata GROUP BY prop_id
@@ -82,21 +103,21 @@ CREATE INDEX myPRCs_ix ON #myPRCs(prop_id)
 --sub_ctr_dol, frgn_trav_dol, pdoc_grnt_dol,part_dol, grad_pers_tot_cnt,
 --sr_pers_cnt, sr_summ_mnth_cnt, sr_acad_mnth_cnt, sr_cal_mnth_cnt
 --INTO #myBudg
---FROM #myPid p
+--FROM #myProp p
 --JOIN csd.eps_blip eb ON p.prop_id = eb.prop_id 
 ----AND NOT EXISTS (SELECT eb1.revn_num FROM csd.eps_blip eb1 WHERE eb.prop_id = eb1.prop_id AND eb.revn_num < eb1.revn_num)
 --ORDER BY p.prop_id, eb.revn_num, eb.budg_seq_yr 
 --CREATE INDEX myBudg_ix ON #myBudg(prop_id)
 
--- totals for project in last budget revision DROP TABLE #myPropBudg, #myProp
+-- totals for project in last budget revision DROP TABLE #myPropBudg, #myPropInfo
 --select * from #myPropBudg
 --[RA_prop
--- Needs: RA_lead(#myPid), RA_propPRCs(#myPRCs)
---DROP TABLE #myPropBudg, #myProp
+-- Needs: RA_lead(#myProp), RA_propPRCs(#myPRCs)
+--DROP TABLE #myPropBudg, #myPropInfo
 SELECT p.prop_id, eb.revn_num as RN, SUM(eb.budg_tot_dol) as T,
  nullif(SUM(sub_ctr_dol),0) AS sub_ctr_tot, nullif(SUM(frgn_trav_dol),0) AS frgn_trav_tot, nullif(SUM(pdoc_grnt_dol),0) AS pdoc_tot,nullif(SUM( part_dol),0) AS part_tot_dol, nullif(SUM(grad_pers_tot_cnt),0) AS grad_tot_cnt,
  nullif(SUM(sr_pers_cnt),0) AS sr_tot_cnt, nullif(SUM(sr_summ_mnth_cnt),0) AS sr_sumr_mnths, nullif(SUM(sr_acad_mnth_cnt),0) AS sr_acad_mnths, nullif(SUM(sr_cal_mnth_cnt),0) AS sr_cal_mnths
-INTO #myPropBudg FROM #myPid p
+INTO #myPropBudg FROM #myProp p
 JOIN csd.eps_blip eb ON p.prop_id = eb.prop_id 
 AND NOT EXISTS (SELECT eb1.revn_num FROM csd.eps_blip eb1 WHERE eb.prop_id = eb1.prop_id AND eb.revn_num < eb1.revn_num)
 GROUP BY p.prop_id, eb.revn_num
@@ -104,18 +125,18 @@ ORDER BY p.prop_id -- eb.revn_num, eb.budg_seq_yr
 CREATE INDEX myPropBudg_ix ON #myPropBudg(prop_id)
 -- per-proposal data 
 SELECT pid.*, rqst_dol as D, prc.R, b.T, b.RN, id=identity(18), 0 as seq 
-INTO #myProp FROM #myPid pid
+INTO #myPropInfo FROM #myProp pid
 JOIN csd.prop p ON p.prop_id = pid.prop_id
 LEFT JOIN #myPRCs prc ON prc.prop_id = pid.prop_id
 LEFT JOIN #myPropBudg b ON b.prop_id = p.prop_id
 ORDER BY lead, ILN, pid.prop_id
-CREATE INDEX myProp_idx ON #myProp(prop_id)
-SELECT lead, MIN(id) as start INTO #myPropStart FROM #myProp GROUP BY lead
-UPDATE #myProp SET seq = id-M.start FROM #myProp r, #myPropStart M WHERE r.lead = M.lead
+CREATE INDEX myProp_idx ON #myPropInfo(prop_id)
+SELECT lead, MIN(id) as start INTO #myPropStart FROM #myPropInfo GROUP BY lead
+UPDATE #myPropInfo SET seq = id-M.start FROM #myPropInfo r, #myPropStart M WHERE r.lead = M.lead
 DROP TABLE #myPropStart
-CREATE INDEX myProp_ix ON #myProp(lead)
+CREATE INDEX myProp_ix ON #myPropInfo(lead)
 --]RA_prop
---select * from #myPropBudg select * from #myProp
+--select * from #myPropBudg select * from #myPropInfo
 
 --Review scores: rev_prop and rev_prop_vw are the eJ & Fastlane database tables
 -- rp holds status  rpv holds split scores and release flags
@@ -144,7 +165,7 @@ CREATE INDEX myProp_ix ON #myProp(lead)
 --select rp.*, rpv.* from csd.rev_prop rp
 --LEFT JOIN csd.rev_prop_vw rpv ON rpv.revr_id = rp.revr_id AND rpv.prop_id = rp.prop_id  
 --where rp.prop_id = '1651952'
---select * from #myPid where prop_id = '1749977'
+--select * from #myProp where prop_id = '1749977'
 --select * from #myRevs where lead = '1651952'
 --select * from csd.prop where prop_id = '1749977'
 
@@ -152,7 +173,7 @@ CREATE INDEX myProp_ix ON #myProp(lead)
 --select * from #myRevs where pendSlct = 1
 --select * from #myRevs where rlsdCDNPS = 1
 --select * from #myRevs where unmkd = 1
- 
+
 --[RA_revs
 -- Needs: RA_lead(#myLead),
 --DROP TABLE #myRevs, #myRevMarks, #myRevSumm, #myRevPanl
@@ -175,7 +196,7 @@ INTO #myRevs FROM #myLead p
 JOIN csd.rev_prop rp ON rp.prop_id = p.lead
 LEFT JOIN csd.rev_prop_vw rpv ON rpv.revr_id = rp.revr_id AND rpv.prop_id = rp.prop_id  
 LEFT JOIN tempdb.guest.revScores rs ON rs.yn = rpv.rev_prop_rtng_ind -- this table uses the same 1-9 scale above, but handles split scores
-WHERE (rpv.rev_rlse_flag = 'Y' OR rp.rev_stts_code = 'C'OR rp.rev_prop_rtng_code IN ('E','V','G','F','P') -- has eJ review
+WHERE (rpv.rev_rlse_flag = 'Y' OR rp.rev_stts_code = 'C' OR rp.rev_prop_rtng_code IN ('E','V','G','F','P') -- has eJ review
        OR rpv.rev_prop_rtng_ind > 'NNNNN') -- has FL review.  checked: no stts N or D come in.  R,S,P do, all good.
   AND isnull(rpv.rev_subm_flag,'U') <> 'D' -- ignore reviews deleted on FL, even if that takes overnight to propagate to eJ.
 ORDER BY lead, confl, score DESC, revr_id -- move C last
@@ -186,9 +207,9 @@ SELECT lead, MIN(id) as 'start' INTO #myStarts FROM #myRevs GROUP BY lead
 UPDATE #myRevs SET seq = id-M.start FROM #myRevs r, #myStarts M WHERE r.lead = M.lead 
 DROP TABLE #myStarts
 
-SELECT lead,  
+SELECT lead,  nullif(sum(confl),0) as Nconfl,
 nullif(sum(unrlsbl),0) as Nunrlsbl,nullif(sum(rlsdCDNPS),0) as NrlsdCDNPS, 
-nullif(sum(pendSlct),0) as NpendSlct, nullif(sum(diffFLeJ),0) as NdiffFLeJ 
+nullif(sum(pendSlct),0) as NpendSlct, nullif(sum(diffFLeJ),0) as NdiffFLeJ
 INTO #myRevMarks FROM #myRevs
 GROUP BY lead
 CREATE INDEX myRevMarks_ix ON #myRevMarks(lead)
@@ -306,15 +327,15 @@ INTO #myProjPanlSumm FROM #myProjPanl GROUP BY lead
 -- MAX(CASE r.seq WHEN  4 THEN ';'+r.M ELSE '' END)+
 -- MAX(CASE r.seq WHEN  5 THEN ';'+r.M ELSE '' END)+
 -- MAX(CASE r.seq WHEN  6 THEN ';'+r.M ELSE '' END) 
---FROM #myProp r WHERE r.lead = p.lead) AS allPIemail
+--FROM #myPropInfo r WHERE r.lead = p.lead) AS allPIemail
 --FROM #myLead p
---LEFT JOIN (SELECT * FROM #myProp mp WHERE mp.seq = 0) p0 ON p0.lead = p.lead
---LEFT JOIN (SELECT * FROM #myProp mp WHERE mp.seq = 1) p1 ON p1.lead = p.lead
---LEFT JOIN (SELECT * FROM #myProp mp WHERE mp.seq = 2) p2 ON p2.lead = p.lead
---LEFT JOIN (SELECT * FROM #myProp mp WHERE mp.seq = 3) p3 ON p3.lead = p.lead
---LEFT JOIN (SELECT * FROM #myProp mp WHERE mp.seq = 4) p4 ON p4.lead = p.lead
---LEFT JOIN (SELECT * FROM #myProp mp WHERE mp.seq = 5) p5 ON p5.lead = p.lead
---LEFT JOIN (SELECT * FROM #myProp mp WHERE mp.seq = 6) p6 ON p6.lead = p.lead
+--LEFT JOIN (SELECT * FROM #myPropInfo mp WHERE mp.seq = 0) p0 ON p0.lead = p.lead
+--LEFT JOIN (SELECT * FROM #myPropInfo mp WHERE mp.seq = 1) p1 ON p1.lead = p.lead
+--LEFT JOIN (SELECT * FROM #myPropInfo mp WHERE mp.seq = 2) p2 ON p2.lead = p.lead
+--LEFT JOIN (SELECT * FROM #myPropInfo mp WHERE mp.seq = 3) p3 ON p3.lead = p.lead
+--LEFT JOIN (SELECT * FROM #myPropInfo mp WHERE mp.seq = 4) p4 ON p4.lead = p.lead
+--LEFT JOIN (SELECT * FROM #myPropInfo mp WHERE mp.seq = 5) p5 ON p5.lead = p.lead
+--LEFT JOIN (SELECT * FROM #myPropInfo mp WHERE mp.seq = 6) p6 ON p6.lead = p.lead
 --
 --
 --SELECT p.lead, nPanl, isnull(RecRkMin,99) AS RecRkMin, pn0.RA as rec0, pn1.RA as rec1, pn2.RA as rec2, 
@@ -332,7 +353,7 @@ INTO #myProjPanlSumm FROM #myProjPanl GROUP BY lead
 --projTot.rqst_tot,budg_tot,budRevnMax
 --FROM #myLead p
 --LEFT JOIN (SELECT lead, SUM(D) AS rqst_tot, SUM(T) AS budg_tot, MAX(RN) AS budRevnMax
---           FROM #myProp GROUP BY lead) projTot ON projTot.lead = p.lead
+--           FROM #myPropInfo GROUP BY lead) projTot ON projTot.lead = p.lead
 --
 --select p.lead,
 --rm.*
@@ -380,13 +401,13 @@ INTO #myProjPanlSumm FROM #myProjPanl GROUP BY lead
 
 --declare @adhoc char(7), @olddate datetime  SELECT @adhoc = '.ad hoc ',  @olddate = '1/1/2000' -- for formatting dates
 --[RA_allRAdata
--- Needs: RA_lead(#myLead,#myRA),RA_propPRCs(#myPRCs),RA_prop(#myProp,#myPropBudg),RA_revs(#myRevs, #myRevMarks, #myRevPanl), RA_panl(#myPanl, #myProjPanl, #myProjPanlSumm)
+-- Needs: RA_lead(#myLead,#myRA),RA_propPRCs(#myPRCs),RA_prop(#myPropInfo,#myPropBudg),RA_revs(#myRevs, #myRevMarks, #myRevPanl), RA_panl(#myPanl, #myProjPanl, #myProjPanlSumm)
 SELECT getdate() AS pulldate, nsf_rcvd_date, 
 nullif(dd_rcom_date,'1900-01-01') AS dd_rcom_date, ra.RAupdate, 
 cntx_stmt_id, prop.pgm_annc_id, prop.org_code, prop.pgm_ele_code,p.PO,
 prop_stts_abbr,natr_rqst.natr_rqst_abbr,prop.obj_clas_code,org.dir_div_abbr as Div, 
 nPanl, isnull(RecRkMin,99) AS RecRkMin, pn0.RA as rec0, pn1.RA as rec1, pn2.RA as rec2, 
-rs.*, -- lead, Nrev, Nunmkd, min, avg, max scores, allReviews, last_rev_date 
+p.RAtemplate,rs.*, -- lead, Nrev, Nunmkd, min, avg, max scores, allReviews, last_rev_date 
 rm.Nunrlsbl, projTot.rqst_tot,budg_tot,budRevnMax, 
 prop.rqst_eff_date, prop.rqst_mnth_cnt, 
 rtrim(prop_titl_txt) AS prop_titl_txt, 
@@ -411,7 +432,7 @@ p0.M AS email, convert(varchar(255),(SELECT MAX(CASE r.seq WHEN  0 THEN r.M ELSE
  MAX(CASE r.seq WHEN  4 THEN ';'+r.M ELSE '' END)+
  MAX(CASE r.seq WHEN  5 THEN ';'+r.M ELSE '' END)+
  MAX(CASE r.seq WHEN  6 THEN ';'+r.M ELSE '' END) 
-FROM #myProp r WHERE r.lead = p.lead)) AS allPIemail
+FROM #myPropInfo r WHERE r.lead = p.lead)) AS allPIemail
 --INTO #myTmp -- save to get types for formatting dummy line
 FROM #myLead p
 JOIN csd.prop prop ON prop.prop_id = p.lead
@@ -432,19 +453,20 @@ LEFT JOIN (SELECT * FROM #myProjPanl WHERE 1=seq) pn1 ON pn1.lead = p.lead
 LEFT JOIN (SELECT * FROM #myProjPanl WHERE 2=seq) pn2 ON pn2.lead = p.lead 
 LEFT JOIN (SELECT lead, count(I) AS nPanl, min(RS)+isnull(min(RK),0)/100.0 AS RecRkMin 
            FROM #myProjPanl GROUP BY lead) pn ON pn.lead = p.lead
-LEFT JOIN (SELECT * FROM #myProp mp WHERE mp.seq = 0) p0 ON p0.lead = p.lead
-LEFT JOIN (SELECT * FROM #myProp mp WHERE mp.seq = 1) p1 ON p1.lead = p.lead
-LEFT JOIN (SELECT * FROM #myProp mp WHERE mp.seq = 2) p2 ON p2.lead = p.lead
-LEFT JOIN (SELECT * FROM #myProp mp WHERE mp.seq = 3) p3 ON p3.lead = p.lead
-LEFT JOIN (SELECT * FROM #myProp mp WHERE mp.seq = 4) p4 ON p4.lead = p.lead
-LEFT JOIN (SELECT * FROM #myProp mp WHERE mp.seq = 5) p5 ON p5.lead = p.lead
-LEFT JOIN (SELECT * FROM #myProp mp WHERE mp.seq = 6) p6 ON p6.lead = p.lead
+LEFT JOIN (SELECT * FROM #myPropInfo mp WHERE mp.seq = 0) p0 ON p0.lead = p.lead
+LEFT JOIN (SELECT * FROM #myPropInfo mp WHERE mp.seq = 1) p1 ON p1.lead = p.lead
+LEFT JOIN (SELECT * FROM #myPropInfo mp WHERE mp.seq = 2) p2 ON p2.lead = p.lead
+LEFT JOIN (SELECT * FROM #myPropInfo mp WHERE mp.seq = 3) p3 ON p3.lead = p.lead
+LEFT JOIN (SELECT * FROM #myPropInfo mp WHERE mp.seq = 4) p4 ON p4.lead = p.lead
+LEFT JOIN (SELECT * FROM #myPropInfo mp WHERE mp.seq = 5) p5 ON p5.lead = p.lead
+LEFT JOIN (SELECT * FROM #myPropInfo mp WHERE mp.seq = 6) p6 ON p6.lead = p.lead
 LEFT JOIN (SELECT lead, SUM(D) AS rqst_tot, SUM(T) AS budg_tot, MAX(RN) AS budRevnMax
-           FROM #myProp GROUP BY lead) projTot ON projTot.lead = p.lead
+           FROM #myPropInfo GROUP BY lead) projTot ON projTot.lead = p.lead
 
 UNION ALL SELECT @olddate,@olddate,@olddate,@olddate -- example to set mail merge format.  
 ,'cntxt stmt','NSF 00-000','12345678','1234','12345678','1234','12345','1234','1234'
-,0,-0.99999999,'NRFP','NRFP','NRFP','1234567',0,0,1,4.5,9,'E,E/V,V,V/G,G,G/F,F,F/P,P',@olddate, 0
+,0,-0.99999999,'NRFP','NRFP','NRFP','templateFilename_RAt.docx'
+,'1234567',0,0,1,4.5,9,'E,E/V,V,V/G,G,G/F,F,F/P,P',@olddate, 0
 ,99999999.0,99999999.0,0,@olddate,36
 ,'This first row is needed so that mail merge formatting will be correct. Please do not remove it.  Mail merge takes its formatting from the first rows of the table............'
 ,0,'E,V,G,F,P',@olddate
@@ -460,7 +482,7 @@ UNION ALL SELECT @olddate,@olddate,@olddate,@olddate -- example to set mail merg
 ,'1234567','PI last name for format.','PI first name..','Inst name for formatting',99999999.0,99999999.0,'Proposal PRCs assgnd; see glossary '
 ,'Solicitation name retrieved from pgm_annc. This example is for formatting; please do not remove this line............'
 ,'Division or directorate name retrieved by org_code from org. This example is for formatting; please do not remove this line............'
-,'Program Element name retrieved','PO signature name string','Proposal status details','Nature of request full name','Object Class full name','DIR'
+,'Program Element name retrieved','Name for PO signature','Proposal status details','Nature of request full name','Object Class full name','DIR'
 ,'Directorate name retrieved by modified org_code from org. This example is for formatting; please do not remove this line............'
 ,'Email of lead PI on the project','list of all emails for Pis on Lead and non-lead proposals on the project.  Does not include the co-Pis. '
 --]RA_allRAdata
@@ -476,7 +498,7 @@ UNION ALL SELECT @olddate,@olddate,@olddate,@olddate -- example to set mail merg
 -- Check the types and lengths are expected, then put the results in a table in Excel and format.
 -- e.g,quote char & enforce max length: 
 --    =IF(RIGHT([[type]],4)="char",",'"&LEFT([[content]],[[length]])&"'",","&[[content]])
--- Comment out --INTO again.
+-- Comment out --INTO again. DROP TABLE #myTmp
 
 -------------
 -- PRC Glossary
@@ -514,16 +536,35 @@ ORDER BY PRC
 -----------------
 --Checkers
 
+-- check coding
+-- Things to do in excel
+--check epscor:
+-- =XOR(IFERROR(MATCH([@[st_code]],EpscorTable,0)>0,FALSE),IFERROR(FIND("9150",[@propPRCs])>0,FALSE))
+--check WMD
+-- =IF(SUM(--dmog columns--)>0,"WMD","")
+-- =XOR([@WMD]<>"",IFERROR(FIND("9102",[@propPRCs])>0,FALSE))
+-- number by proj:
+-- =S1+([ILN]<"M")
+-- eJ hyperlink:
+-- =HYPERLINK("https://www.ejacket.nsf.gov/ej/showProposal.do?ID="&[@[prop_id]],"eJ")
+-- mailto link:
+-- = HYPERLINK("mailto:"&[@email]&"&subject=Your NSF Proposal:  "&[@[prop_id]],[@email])
+-- coloring rsch,other % don't add to 1
+-- nonleads differ from line above
+-- titles differ -- except whitespace
+-- summaries, reviews released
+-- conflicted reviews
+
 --[RA_propCheck
--- Needs: RA_lead(#myPid,#myRA),RA_prop(#myProp,#myPropBudg),RA_revs(#myRevMarks, #myRevPanlSumm), RA_panl(#myProjPanlSumm)
+-- Needs: RA_lead(#myProp,#myRA),RA_prop(#myPropInfo,#myPropBudg),RA_revs(#myRevMarks, #myRevPanlSumm), RA_panl(#myProjPanlSumm)
 -- DROP TABLE #myDmog
 SELECT prop_id, 
 SUM(CASE WHEN pi_gend_code = 'F'THEN 1 ELSE 0 END) AS NfmlPIs,
 SUM(CASE WHEN pi_ethn_code = 'H'THEN 1 ELSE 0 END) AS NhispPIs,
 SUM(CASE WHEN dmog_tbl_code = 'H'AND dmog_code <> 'N' THEN 1 ELSE 0 END) AS NhndcpPIs,
 SUM(CASE WHEN dmog_tbl_code = 'R'AND dmog_code NOT IN ('U','W','B3') THEN 1 ELSE 0 END) AS NnonWhtAsnPIs
-INTO #myDmog FROM (SELECT p.prop_id, pi_id FROM #myPid p 
-      UNION ALL SELECT p.prop_id, a.pi_id FROM #myPid p JOIN csd.addl_pi_invl a ON a.prop_id = p.prop_id) PIs
+INTO #myDmog FROM (SELECT p.prop_id, pi_id FROM #myProp p 
+      UNION ALL SELECT p.prop_id, a.pi_id FROM #myProp p JOIN csd.addl_pi_invl a ON a.prop_id = p.prop_id) PIs
 LEFT JOIN csd.pi_vw pi ON pi.pi_id = PIs.pi_id
 LEFT JOIN csd.PI_dmog d ON d.pi_id = PIs.pi_id
 GROUP BY prop_id
@@ -531,23 +572,25 @@ ORDER BY prop_id
 CREATE INDEX myDmog_idx ON #myDmog(prop_id)
 
 -- props: get codes to check if they match leads
-SELECT nsf_rcvd_date, prop_stts_txt, nullif(dd_rcom_date,'1900-01-01') AS dd_rcom_date, ra.RAupdate, 
-cntx_stmt_id, prop.pgm_annc_id, prop.org_code, prop.pgm_ele_code,
-prop.pm_ibm_logn_id as PO, prop_stts_abbr,natr_rqst.natr_rqst_abbr,prop.obj_clas_code,
-org.dir_div_abbr as Div, p.lead, p.ILN, p.prop_id,
-p.L AS pi_last_name, p.F AS pi_frst_name, p.I AS inst, p.st_code, p.M as email, 
-p.R as propPRCs, 
+SELECT nullif(dd_rcom_date,'1900-01-01') AS dd_rcom_date, nsf_rcvd_date,
+prop.pgm_annc_id, prop.org_code, prop.pgm_ele_code,
+prop_stts_abbr,natr_rqst.natr_rqst_abbr,prop.obj_clas_code,
 bas_rsch_pct, apld_rsch_pct+educ_trng_pct+land_buld_fix_equp_pct+mjr_equp_pct+non_invt_pct AS other_pct,  
+prop.pm_ibm_logn_id as PO, cntx_stmt_id, p.R as propPRCs, p.st_code, ra.RAupdate,
+p.lead, p.ILN, --eJ link
+org.dir_div_abbr as Div, p.prop_id,
+p.L AS pi_last_name, p.F AS pi_frst_name, p.I AS inst, --mailto:
+prop.rqst_eff_date,prop.rqst_mnth_cnt,
 nPanl, nPSunmrkd, nPSunrls, RecRkMin, 
 rs.nRev, rs.allReviews, rs.avg_score, rs.last_rev_date,
-Nunmkd, Nunrlsbl, NrlsdCDNPS, NpendSlct, NdiffFLeJ,
-prop.rqst_eff_date,prop.rqst_mnth_cnt,
-p.D AS rqst_tot, b.RN as brevn, b.T as budg_tot,  
-b.sub_ctr_tot, b.frgn_trav_tot, b.pdoc_tot,b.part_tot_dol, b.grad_tot_cnt, 
-b.sr_tot_cnt, b.sr_sumr_mnths, b.sr_acad_mnths, b.sr_cal_mnths,
+Nunmkd, Nconfl, Nunrlsbl, NrlsdCDNPS, NpendSlct, NdiffFLeJ,
+ prop_stts_txt, prop.prop_titl_txt,
+b.RN as brevn, p.D AS rqst_tot, b.T as budg_tot,  
+b.sub_ctr_tot, b.frgn_trav_tot, b.pdoc_tot, b.part_tot_dol, 
+b.grad_tot_cnt, b.sr_tot_cnt, b.sr_sumr_mnths, b.sr_acad_mnths, b.sr_cal_mnths,
 NfmlPIs,NhispPIs,NhndcpPIs,NnonWhtAsnPIs,
-prop.prop_titl_txt
-FROM #myProp p
+p.M as email
+FROM #myPropInfo p
 JOIN csd.prop prop ON prop.prop_id = p.prop_id
 JOIN csd.org org ON org.org_code = prop.org_code
 JOIN csd.prop_stts prop_stts ON prop_stts.prop_stts_code = prop.prop_stts_code
@@ -563,7 +606,7 @@ ORDER BY p.lead, p.ILN, p.prop_id
 
 
 --[RA_projText
---Needs: RA_lead(#myPid,#myLead), RA_revs(#myRevInfo)
+--Needs: RA_lead(#myProp,#myLead), RA_revs(#myRevInfo)
 --DROP TABLE #myRevInfo, #mySumm
 SELECT lead, upld_date, convert(text, convert(varchar(16384),js.PROJ_SUMM_TXT) + convert(varchar(16384),js.INTUL_MERT) + convert(varchar(16384),js.BRODR_IMPT)) as summ
 INTO #mySumm FROM #myLead p 
@@ -590,26 +633,26 @@ FROM #myLead p, FLflpdb.flp.panl_prop_summ panl_prop_summ, FLflpdb.flp.panl_rcom
 WHERE p.lead = panl_prop_summ.PROP_ID AND panl_prop_summ.PANL_ID = panl.panl_id
   AND panl_prop_summ.RCOM_SEQ_NUM = panl_rcom_def.RCOM_SEQ_NUM AND panl_prop_summ.PANL_ID = panl_rcom_def.PANL_ID
 UNION ALL SELECT p.lead, p.L, 'POCmnt', p.PO, p.prop_id, cmt.cmnt_cre_id, '', '', convert(varchar,cmt.cmnt_prop_stts_code), cmt.beg_eff_date, cmt.end_eff_date,'', cmt.cmnt
-FROM #myPid p, FLflpdb.flp.cmnt_prop cmt WHERE p.prop_id = cmt.prop_id AND (p.ILN < 'M' OR LEN(cmt.cmnt) <> (SELECT LEN(l.cmnt) FROM FLflpdb.flp.cmnt_prop l WHERE p.lead = l.prop_id))
+FROM #myProp p, FLflpdb.flp.cmnt_prop cmt WHERE p.prop_id = cmt.prop_id AND (p.ILN < 'M' OR LEN(cmt.cmnt) <> (SELECT LEN(l.cmnt) FROM FLflpdb.flp.cmnt_prop l WHERE p.lead = l.prop_id))
 UNION ALL SELECT p.lead, p.L, 'RA' as docType, p.PO, '', ra.last_updt_user, '', '', null, null, ra.last_updt_tmsp, '', ra.prop_rev_anly_txt
 FROM #myLead p, csd.prop_rev_anly_vw ra WHERE p.lead = ra.prop_id
 UNION ALL SELECT p.lead, p.L, 'Abstr', p.PO, '', a.last_updt_user, a.cent_mrkr_prop, a.cent_mrkr_awd, null, null, a.last_updt_tmsp,'', a.abst_narr_txt
-FROM #myPid p, csd.abst a WHERE p.prop_id = a.awd_id AND (p.ILN < 'M' OR LEN(a.abst_narr_txt) <>  (SELECT LEN(l.abst_narr_txt) FROM csd.abst l WHERE p.lead = l.awd_id))
+FROM #myProp p, csd.abst a WHERE p.prop_id = a.awd_id AND (p.ILN < 'M' OR LEN(a.abst_narr_txt) <>  (SELECT LEN(l.abst_narr_txt) FROM csd.abst l WHERE p.lead = l.awd_id))
 UNION ALL SELECT p.lead, p.L, 'SummProj',p.PO, '', '', '', null, null, null, s.upld_date,'', s.summ
 FROM #myLead p, #mySumm s WHERE s.lead = p.lead
 UNION ALL SELECT p.lead, p.L, 'xDiaryNt',p.PO, p.prop_id, crtd_by_user, ej_diry_note_kywd, null, null, null, crtd_date,'', ej_diry_note_txt
-FROM #myPid p, FLflpdb.flp.ej_diry_note d WHERE d.prop_id = p.prop_id
+FROM #myProp p, FLflpdb.flp.ej_diry_note d WHERE d.prop_id = p.prop_id
 ORDER BY lead, docType, revr_last_name, revr_id
 --]RA_projText
 
 
 --splits computes budget PRCs by split
 --[RA_splits
---Needs: RA_lead(#myPid,#myRA), RA_propPRCs, RA_prop(#myPropBudg,#myProp), RA_budgPRCs(#myBudgPRC)
+--Needs: RA_lead(#myProp,#myRA), RA_propPRCs, RA_prop(#myPropBudg,#myPropInfo), RA_budgPRCs(#myBudgPRC)
 --DROP TABLE #myBSprc
 SELECT prop_id,splt_id,budg_yr,R,id=identity(18), 0 as 'seq'
 INTO #myBSprc FROM (SELECT DISTINCT p.prop_id,splt_id,budg_yr,bpr.pgm_ref_code AS R
-      FROM #myPid p
+      FROM #myProp p
       JOIN csd.budg_pgm_ref bpr ON bpr.prop_id = p.prop_id) bpr
 ORDER BY prop_id,splt_id,budg_yr,R
 SELECT prop_id,splt_id,budg_yr,MIN(id) as 'start'INTO #myBSst FROM #myBSprc 
@@ -641,7 +684,7 @@ bs.prop_id, bs.budg_yr, bs.splt_id, bs.budg_splt_tot_dol,b.*,p.R as propPRCs,
     WHERE bp.prop_id = bs.prop_id AND bp.budg_yr = bs.budg_yr 
           AND bp.splt_id = bs.splt_id ) AS bPRCs,
 prop.prop_titl_txt
-FROM #myProp p
+FROM #myPropInfo p
 JOIN csd.prop prop ON prop.prop_id = p.prop_id
 JOIN csd.org org ON org.org_code = prop.org_code
 JOIN csd.prop_stts prop_stts ON prop_stts.prop_stts_code = prop.prop_stts_code
@@ -670,11 +713,11 @@ ORDER BY p.lead, p.ILN, p.prop_id, bs.budg_yr, bs.splt_id
 
 -- does budget PRCs by award, combining all splits
 --[RA_awdCheck
--- Needs: RA_lead(#myPid),RA_propPRCs(#myPRCs),RA_prop(#myProp,#myPropBudg),RA_revs(#myRevs, #myRevMarks, #myRevPanl), RA_panl(#myPanl, #myProjPanl, #myProjPanlSumm)
+-- Needs: RA_lead(#myProp),RA_propPRCs(#myPRCs),RA_prop(#myPropInfo,#myPropBudg),RA_revs(#myRevs, #myRevMarks, #myRevPanl), RA_panl(#myPanl, #myProjPanl, #myProjPanlSumm)
 --DROP TABLE #myCtry, #myCovrInfo, #myBudgPRC
 SELECT prop_id,R,id=identity(18), 0 as 'seq'
 INTO #myBudgPRC FROM (SELECT DISTINCT p.prop_id,bpr.pgm_ref_code AS R
-      FROM #myPid p
+      FROM #myProp p
       JOIN csd.budg_pgm_ref bpr ON bpr.prop_id = p.prop_id) bpr
 ORDER BY prop_id,R
 SELECT prop_id,MIN(id) as 'start'INTO #mySt2 FROM #myBudgPRC 
@@ -684,9 +727,8 @@ WHERE rb.prop_id = M.prop_id
 CREATE INDEX myBudgPRC ON #myBudgPRC(prop_id, seq)
 drop table #mySt2
 
-
 SELECT p.prop_id, ctry.ctry_name, id=identity(18), 0 as 'seq' 
-INTO #myCtry FROM #myPid p
+INTO #myCtry FROM #myProp p
 JOIN csd.prop_subm_ctl_vw psc ON psc.prop_id = p.prop_id
 JOIN csd.prop_spcl_item_vw sp1 ON sp1.TEMP_PROP_ID = psc.TEMP_PROP_ID
 JOIN csd.ctry ctry ON sp1.SPCL_ITEM_CODE = ctry.ctry_code
@@ -700,7 +742,7 @@ DROP TABLE #myStCtry
 SELECT p.prop_id,OTH_AGCY_SUBM_FLAG,
 CASE WHEN PC.HUM_DATE is not NULL THEN convert(varchar(10),PC.HUM_DATE,1) WHEN PC.humn_date_pend_flag='Y' THEN 'Pend' END AS humn_date,
 CASE WHEN PC.VERT_DATE is not NULL THEN convert(varchar(10),PC.VERT_DATE,1) WHEN PC.vrtb_date_pend_flag='Y' THEN 'Pend' END AS vrtb_date
-INTO #myCovrInfo FROM #myPid p
+INTO #myCovrInfo FROM #myProp p
 JOIN csd.prop_subm_ctl_vw psc ON psc.prop_id = p.prop_id
 JOIN FLflpdb.flp.PROP_COVR PC ON PC.TEMP_PROP_ID = psc.TEMP_PROP_ID
 CREATE INDEX myCovrInfo_ix ON #myCovrInfo(prop_id)
@@ -740,7 +782,7 @@ nullif((SELECT sum(budg_splt_tot_dol) FROM csd.budg_splt s
 b.sub_ctr_tot, b.frgn_trav_tot, b.pdoc_tot,b.part_tot_dol, b.grad_tot_cnt, 
 b.sr_tot_cnt, b.sr_sumr_mnths, b.sr_acad_mnths, b.sr_cal_mnths,
 prop.prop_titl_txt,a.abst_narr_txt
-FROM #myProp p
+FROM #myPropInfo p
 JOIN csd.prop prop ON prop.prop_id = p.prop_id
 JOIN csd.org org ON org.org_code = prop.org_code
 JOIN csd.prop_stts prop_stts ON prop_stts.prop_stts_code = prop.prop_stts_code
@@ -755,11 +797,11 @@ ORDER BY p.lead, p.ILN, p.prop_id
 
 --Get budget details
 --[RA_budgBlocks
---Needs: RA_lead(#myPid), RA_propPRCs(#myPRCs)
+--Needs: RA_lead(#myProp), RA_propPRCs(#myPRCs)
 --DROP TABLE #myBudg
 SELECT p.lead, p.prop_id, eb.revn_num, eb.budg_seq_yr, eb.budg_tot_dol, 
 eb.sr_pers_cnt, eb.sr_summ_mnth_cnt, eb.pdoc_grnt_dol, eb.frgn_trav_dol, eb.part_dol
-INTO #myBudg FROM #myPid p
+INTO #myBudg FROM #myProp p
 JOIN csd.eps_blip eb ON eb.prop_id = p.prop_id 
     AND NOT EXISTS (SELECT eb1.revn_num FROM csd.eps_blip eb1 WHERE eb.prop_id = eb1.prop_id AND eb.revn_num < eb1.revn_num)
 ORDER BY prop_id,budg_seq_yr
@@ -768,7 +810,7 @@ SELECT p.nsf_rcvd_date, p.pgm_annc_id, p.org_code, p.pgm_ele_code,
 pid.PO, pid.lead, pid.ILN, pid.prop_id, '' as pi_last_name, '' as inst_name, '' as pi_email, 
 eb.sr_pers_cnt, eb.sr_summ_mnth_cnt, eb.pdoc_grnt_dol, eb.frgn_trav_dol, eb.part_dol, eb.budg_tot_dol, 
 eb.revn_num, eb.budg_seq_yr, eb.budg_tot_dol AS dol, p.org_code, p.pgm_ele_code as PEC, prc.R as PRCs
-FROM #myPid pid
+FROM #myProp pid
 JOIN csd.prop p ON p.prop_id = pid.prop_id
 LEFT OUTER JOIN #myPRCs prc ON prc.prop_id = pid.prop_id
 LEFT OUTER JOIN #myBudg eb ON eb.prop_id = pid.prop_id 
@@ -776,16 +818,16 @@ UNION ALL SELECT p.nsf_rcvd_date, p.pgm_annc_id, p.org_code, p.pgm_ele_code,
 pid.PO, pid.lead, pid.ILN, pid.prop_id, pid.L as pi_last_name, pid.I as inst_name, pid.M as pi_email, 
 null, null, null, null, null, null, (SELECT MAX(revn_num) from #myBudg b WHERE b.prop_id = pid.prop_id),
 null, (SELECT SUM(budg_tot_dol) from #myBudg b WHERE b.prop_id = pid.prop_id), p.org_code, p.pgm_ele_code, prc.R 
-FROM #myPid pid
+FROM #myProp pid
 JOIN csd.prop p ON p.prop_id = pid.prop_id
 LEFT OUTER JOIN #myPRCs prc ON prc.prop_id = pid.prop_id
 ORDER BY pid.lead, pid.ILN, pid.prop_id, eb.budg_seq_yr 
 --]RA_budgBlocks
 --select * from #myPRCs
 
-DROP TABLE #myPid, #myLead, #myRA 
+DROP TABLE #myProp, #myLead, #myRA 
 DROP TABLE #myPRCs,#myPRCdata
-DROP TABLE #myPropBudg, #myProp
+DROP TABLE #myPropBudg, #myPropInfo
 DROP TABLE #myRevs, #myRevPanl, #myRevMarks, #myRevSumm
 DROP TABLE #myPanl, #myProjPanl, #myProjPanlSumm
 DROP TABLE #myRevInfo, #mySumm
