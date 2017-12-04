@@ -6,7 +6,7 @@
 --In addition it makes several sheets for checking coding of both declines and awards, 
 -- and makes budget numbers available. 
 
--- Commments with --[name and --]name delimit code that will be copied into the hidden SQL worksheet of RoboRA.xlsm
+-- Commments with [name and ]name delimit code that will be copied into the hidden SQL worksheet of RoboRA.xlsm
 -- You can simply copy the entire thing into the clipboard and run "copySQLcode" on that sheet.
 -- All other code is for testing.  Many comments are for developing long queries in pieces.
 --
@@ -402,13 +402,12 @@ INTO #myProjPanlSumm FROM #myProjPanl GROUP BY lead
 --declare @adhoc char(7), @olddate datetime  SELECT @adhoc = '.ad hoc ',  @olddate = '1/1/2000' -- for formatting dates
 --[RA_allRAdata
 -- Needs: RA_lead(#myLead,#myRA),RA_propPRCs(#myPRCs),RA_prop(#myPropInfo,#myPropBudg),RA_revs(#myRevs, #myRevMarks, #myRevPanl), RA_panl(#myPanl, #myProjPanl, #myProjPanlSumm)
-SELECT getdate() AS pulldate, nsf_rcvd_date, 
-nullif(dd_rcom_date,'1900-01-01') AS dd_rcom_date, ra.RAupdate, 
-cntx_stmt_id, prop.pgm_annc_id, prop.org_code, prop.pgm_ele_code,p.PO,
-prop_stts_abbr,natr_rqst.natr_rqst_abbr,prop.obj_clas_code,org.dir_div_abbr as Div, 
+SELECT nullif(dd_rcom_date,'1900-01-01') AS dd_rcom_date, nsf_rcvd_date, 
+prop.pgm_annc_id, prop.org_code, prop.pgm_ele_code, natr_rqst.natr_rqst_abbr, prop_stts_abbr, prop.obj_clas_code,
+cntx_stmt_id,p.PO,ra.RAupdate, 
 nPanl, isnull(RecRkMin,99) AS RecRkMin, pn0.RA as rec0, pn1.RA as rec1, pn2.RA as rec2, 
-p.RAtemplate,rs.*, -- lead, Nrev, Nunmkd, min, avg, max scores, allReviews, last_rev_date 
-rm.Nunrlsbl, projTot.rqst_tot,budg_tot,budRevnMax, 
+p.RAtemplate, org.dir_div_abbr as Div, rs.*, -- lead, Nrev, Nunmkd, min, avg, max scores, allReviews, last_rev_date 
+rm.Nunrlsbl, projTot.rqst_tot, budg_tot, budRevnMax, 
 prop.rqst_eff_date, prop.rqst_mnth_cnt, 
 rtrim(prop_titl_txt) AS prop_titl_txt, 
 ah.N as AhNrev, ah.V as AhRevs, ah.last_rev_date as AhLast,
@@ -424,7 +423,7 @@ p5.prop_id as prop_id5, p5.L as last5, p5.F as frst5, p5.I as inst5, p5.D as rqs
 p6.prop_id as prop_id6, p6.L as last6, p6.F as frst6, p6.I as inst6, p6.D as rqst6, p6.T as b6tot, p6.R as PRC6,
 rtrim(pa.dflt_prop_titl_txt) AS solicitation, org.org_long_name as Div_name, 
 pgm_ele_name, sign_blck_name, prop_stts_txt, natr_rqst_txt, obj_clas_name,
-o2.dir_div_abbr as Dir, o2.org_long_name as Dir_name, 
+o2.dir_div_abbr as Dir, o2.org_long_name as Dir_name, getdate() AS pulldate, 
 p0.M AS email, convert(varchar(255),(SELECT MAX(CASE r.seq WHEN  0 THEN r.M ELSE '' END)+
  MAX(CASE r.seq WHEN  1 THEN ';'+r.M ELSE '' END)+
  MAX(CASE r.seq WHEN  2 THEN ';'+r.M ELSE '' END)+
@@ -462,11 +461,10 @@ LEFT JOIN (SELECT * FROM #myPropInfo mp WHERE mp.seq = 5) p5 ON p5.lead = p.lead
 LEFT JOIN (SELECT * FROM #myPropInfo mp WHERE mp.seq = 6) p6 ON p6.lead = p.lead
 LEFT JOIN (SELECT lead, SUM(D) AS rqst_tot, SUM(T) AS budg_tot, MAX(RN) AS budRevnMax
            FROM #myPropInfo GROUP BY lead) projTot ON projTot.lead = p.lead
-
-UNION ALL SELECT @olddate,@olddate,@olddate,@olddate -- example to set mail merge format.  
-,'cntxt stmt','NSF 00-000','12345678','1234','12345678','1234','12345','1234','1234'
+UNION ALL SELECT @olddate,@olddate -- example to set mail merge format.  
+,'.first line.','.please.','keep','.so.','mail','merge','formatting','works..',@olddate
 ,0,-0.99999999,'NRFP','NRFP','NRFP','templateFilename_RAt.docx'
-,'1234567',0,0,1,4.5,9,'E,E/V,V,V/G,G,G/F,F,F/P,P',@olddate, 0
+,'Divn','1234567',0,0,1,4.5,9,'E,E/V,V,V/G,G,G/F,F,F/P,P',@olddate, 0
 ,99999999.0,99999999.0,0,@olddate,36
 ,'This first row is needed so that mail merge formatting will be correct. Please do not remove it.  Mail merge takes its formatting from the first rows of the table............'
 ,0,'E,V,G,F,P',@olddate
@@ -484,7 +482,7 @@ UNION ALL SELECT @olddate,@olddate,@olddate,@olddate -- example to set mail merg
 ,'Division or directorate name retrieved by org_code from org. This example is for formatting; please do not remove this line............'
 ,'Program Element name retrieved','Name for PO signature','Proposal status details','Nature of request full name','Object Class full name','DIR'
 ,'Directorate name retrieved by modified org_code from org. This example is for formatting; please do not remove this line............'
-,'Email of lead PI on the project','list of all emails for Pis on Lead and non-lead proposals on the project.  Does not include the co-Pis. '
+,@olddate,'Email of lead PI on the project','list of all emails for Pis on Lead and non-lead proposals on the project.  Does not include the co-Pis. '
 --]RA_allRAdata
 
 -- To get types for formatting, uncomment this line above --INTO #myTmp 
@@ -576,7 +574,7 @@ SELECT nullif(dd_rcom_date,'1900-01-01') AS dd_rcom_date, nsf_rcvd_date,
 prop.pgm_annc_id, prop.org_code, prop.pgm_ele_code,
 prop_stts_abbr,natr_rqst.natr_rqst_abbr,prop.obj_clas_code,
 bas_rsch_pct, apld_rsch_pct+educ_trng_pct+land_buld_fix_equp_pct+mjr_equp_pct+non_invt_pct AS other_pct,  
-prop.pm_ibm_logn_id as PO, cntx_stmt_id, p.R as propPRCs, p.st_code, ra.RAupdate,
+cntx_stmt_id, p.PO, p.R as propPRCs, p.st_code, ra.RAupdate,
 p.lead, p.ILN, --eJ link
 org.dir_div_abbr as Div, p.prop_id,
 p.L AS pi_last_name, p.F AS pi_frst_name, p.I AS inst, --mailto:
@@ -646,29 +644,29 @@ ORDER BY lead, docType, revr_last_name, revr_id
 --]RA_projText
 
 
---splits computes budget PRCs by split
+--splits details
 --[RA_splits
---Needs: RA_lead(#myProp,#myRA), RA_propPRCs, RA_prop(#myPropBudg,#myPropInfo), RA_budgPRCs(#myBudgPRC)
---DROP TABLE #myBSprc
+--Needs: RA_lead(#myProp), RA_propPRCs, RA_prop(#myPropInfo)
+--DROP TABLE: #myBSprc
 SELECT prop_id,splt_id,budg_yr,R,id=identity(18), 0 as 'seq'
 INTO #myBSprc FROM (SELECT DISTINCT p.prop_id,splt_id,budg_yr,bpr.pgm_ref_code AS R
       FROM #myProp p
       JOIN csd.budg_pgm_ref bpr ON bpr.prop_id = p.prop_id) bpr
 ORDER BY prop_id,splt_id,budg_yr,R
-SELECT prop_id,splt_id,budg_yr,MIN(id) as 'start'INTO #myBSst FROM #myBSprc 
-GROUP BY prop_id
+SELECT prop_id,splt_id,budg_yr, MIN(id) as 'start' INTO #myBSst FROM #myBSprc 
+GROUP BY prop_id,splt_id,budg_yr
 UPDATE #myBSprc set seq = id-M.start FROM #myBSprc rb, #myBSst M
 WHERE rb.prop_id = M.prop_id AND rb.splt_id=M.splt_id AND rb.budg_yr=M.budg_yr
 CREATE INDEX myBSprc ON #myBSprc(prop_id,splt_id,budg_yr, seq)
 DROP TABLE #myBSst
 
-SELECT nsf_rcvd_date, prop_stts_txt, nullif(dd_rcom_date,'1900-01-01') AS dd_rcom_date, ra.RAupdate, 
+SELECT nullif(dd_rcom_date,'1900-01-01') AS dd_rcom_date, nsf_rcvd_date,  
 cntx_stmt_id, prop.pgm_annc_id, prop.org_code as pOrg, bs.org_code as bOrg, 
 prop.pgm_ele_code as pPEC,bs.pgm_ele_code as bPEC,p.PO as pPO, bs.pm_ibm_logn_id as bPO,
-prop_stts_abbr,natr_rqst.natr_rqst_abbr,prop.obj_clas_code,bs.obj_clas_code,
-ai.awd_istr_abbr as rcom_istr_abbr, org.dir_div_abbr as Div, p.lead,p.ILN,bs.awd_id,
+prop_stts_abbr,natr_rqst.natr_rqst_abbr,prop.obj_clas_code as pObj, bs.obj_clas_code as bObj,
+ai.awd_istr_abbr as rcom_istr_abbr, p.lead,p.ILN, org.dir_div_abbr as Div, p.prop_id,
 p.L AS pi_last_name, p.F AS pi_frst_name, p.I AS inst, p.M as email,
-bs.prop_id, bs.budg_yr, bs.splt_id, bs.budg_splt_tot_dol,b.*,p.R as propPRCs, 
+p.R as propPRCs, 
 (SELECT MAX( CASE bp.seq WHEN 0 THEN rtrim(bp.R) END)+
     MAX( CASE bp.seq WHEN 1 THEN ' ' + rtrim(bp.R) END)+
     MAX( CASE bp.seq WHEN 2 THEN ' ' + rtrim(bp.R) END)+
@@ -680,19 +678,18 @@ bs.prop_id, bs.budg_yr, bs.splt_id, bs.budg_splt_tot_dol,b.*,p.R as propPRCs,
     MAX( CASE bp.seq WHEN 8 THEN ' ' + rtrim(bp.R) END)+
     MAX( CASE bp.seq WHEN 9 THEN ' ' + rtrim(bp.R) END)+
     MAX( CASE bp.seq WHEN 10 THEN ' ' + rtrim(bp.R) END) 
-    FROM #myBSprc bp 
+    FROM #myBSprc bp
     WHERE bp.prop_id = bs.prop_id AND bp.budg_yr = bs.budg_yr 
           AND bp.splt_id = bs.splt_id ) AS bPRCs,
-prop.prop_titl_txt
+bs.awd_id, bs.budg_yr, bs.splt_id, bs.budg_splt_tot_dol,
+prop_stts_txt, prop.prop_titl_txt
 FROM #myPropInfo p
 JOIN csd.prop prop ON prop.prop_id = p.prop_id
 JOIN csd.org org ON org.org_code = prop.org_code
 JOIN csd.prop_stts prop_stts ON prop_stts.prop_stts_code = prop.prop_stts_code
 JOIN csd.natr_rqst natr_rqst ON natr_rqst.natr_rqst_code = prop.natr_rqst_code
-LEFT JOIN csd.budg_splt bs on bs.prop_id=p.prop_id 
-LEFT JOIN csd.awd_istr ai on prop.rcom_awd_istr = ai.awd_istr_code
-LEFT JOIN #myRA ra ON ra.lead = p.lead
-LEFT JOIN #myPropBudg b ON b.prop_id = p.prop_id
+JOIN csd.budg_splt bs on bs.prop_id=p.prop_id 
+JOIN csd.awd_istr ai on prop.rcom_awd_istr = ai.awd_istr_code
 ORDER BY p.lead, p.ILN, p.prop_id, bs.budg_yr, bs.splt_id
 --]RA_splits
 
@@ -707,26 +704,10 @@ ORDER BY p.lead, p.ILN, p.prop_id, bs.budg_yr, bs.splt_id
 --SUPP_FLAG,
 --RNEW_FLAG,
 --ACBR_FLAG,
---vrtb_wlfr_asur_num,
---humn_subj_asur_num,
---HUM_EXPT,
-
 -- does budget PRCs by award, combining all splits
 --[RA_awdCheck
--- Needs: RA_lead(#myProp),RA_propPRCs(#myPRCs),RA_prop(#myPropInfo,#myPropBudg),RA_revs(#myRevs, #myRevMarks, #myRevPanl), RA_panl(#myPanl, #myProjPanl, #myProjPanlSumm)
---DROP TABLE #myCtry, #myCovrInfo, #myBudgPRC
-SELECT prop_id,R,id=identity(18), 0 as 'seq'
-INTO #myBudgPRC FROM (SELECT DISTINCT p.prop_id,bpr.pgm_ref_code AS R
-      FROM #myProp p
-      JOIN csd.budg_pgm_ref bpr ON bpr.prop_id = p.prop_id) bpr
-ORDER BY prop_id,R
-SELECT prop_id,MIN(id) as 'start'INTO #mySt2 FROM #myBudgPRC 
-GROUP BY prop_id
-UPDATE #myBudgPRC set seq = id-M.start FROM #myBudgPRC rb, #mySt2 M
-WHERE rb.prop_id = M.prop_id 
-CREATE INDEX myBudgPRC ON #myBudgPRC(prop_id, seq)
-drop table #mySt2
-
+-- Needs: RA_lead(#myProp),RA_prop(#myPropInfo,#myPropBudg),RA_revs(#myRevs, #myRevMarks, #myRevPanl), RA_panl(#myPanl, #myProjPanl, #myProjPanlSumm)
+--DROP TABLE #myCtry, #myCovrInfo 
 SELECT p.prop_id, ctry.ctry_name, id=identity(18), 0 as 'seq' 
 INTO #myCtry FROM #myProp p
 JOIN csd.prop_subm_ctl_vw psc ON psc.prop_id = p.prop_id
@@ -741,31 +722,22 @@ DROP TABLE #myStCtry
 
 SELECT p.prop_id,OTH_AGCY_SUBM_FLAG,
 CASE WHEN PC.HUM_DATE is not NULL THEN convert(varchar(10),PC.HUM_DATE,1) WHEN PC.humn_date_pend_flag='Y' THEN 'Pend' END AS humn_date,
-CASE WHEN PC.VERT_DATE is not NULL THEN convert(varchar(10),PC.VERT_DATE,1) WHEN PC.vrtb_date_pend_flag='Y' THEN 'Pend' END AS vrtb_date
+humn_subj_asur_num AS hum_asur, HUM_EXPT,
+CASE WHEN PC.VERT_DATE is not NULL THEN convert(varchar(10),PC.VERT_DATE,1) WHEN PC.vrtb_date_pend_flag='Y' THEN 'Pend' END AS vrtb_date,
+vrtb_wlfr_asur_num AS vrtb_asur
 INTO #myCovrInfo FROM #myProp p
 JOIN csd.prop_subm_ctl_vw psc ON psc.prop_id = p.prop_id
 JOIN FLflpdb.flp.PROP_COVR PC ON PC.TEMP_PROP_ID = psc.TEMP_PROP_ID
 CREATE INDEX myCovrInfo_ix ON #myCovrInfo(prop_id)
 
 -- checking those recommended for award
-SELECT nsf_rcvd_date, prop_stts_txt, nullif(dd_rcom_date,'1900-01-01') AS dd_rcom_date, ra.RAupdate, 
-cntx_stmt_id, prop.pgm_annc_id, prop.org_code, prop.pgm_ele_code,
-p.PO, prop_stts_abbr,natr_rqst.natr_rqst_abbr,prop.obj_clas_code,ai.awd_istr_abbr as rcom_istr_abbr,
-org.dir_div_abbr as Div, p.lead, p.ILN, p.prop_id,
-p.L AS pi_last_name, p.F AS pi_frst_name, p.I AS inst, p.st_code, p.M as email, p.R as propPRCs, 
-(SELECT MAX( CASE bp.seq WHEN 0 THEN rtrim(bp.R) END)+
-    MAX( CASE bp.seq WHEN 1 THEN ' ' + rtrim(bp.R) END)+
-    MAX( CASE bp.seq WHEN 2 THEN ' ' + rtrim(bp.R) END)+
-    MAX( CASE bp.seq WHEN 3 THEN ' ' + rtrim(bp.R) END)+
-    MAX( CASE bp.seq WHEN 4 THEN ' ' + rtrim(bp.R) END)+
-    MAX( CASE bp.seq WHEN 5 THEN ' ' + rtrim(bp.R) END)+
-    MAX( CASE bp.seq WHEN 6 THEN ' ' + rtrim(bp.R) END)+
-    MAX( CASE bp.seq WHEN 7 THEN ' ' + rtrim(bp.R) END)+
-    MAX( CASE bp.seq WHEN 8 THEN ' ' + rtrim(bp.R) END)+
-    MAX( CASE bp.seq WHEN 9 THEN ' ' + rtrim(bp.R) END)+
-    MAX( CASE bp.seq WHEN 10 THEN ' ' + rtrim(bp.R) END) 
-    FROM #myBudgPRC bp WHERE bp.prop_id = p.prop_id) AS bPRCs,
-c.humn_date, c.vrtb_date, c.OTH_AGCY_SUBM_FLAG, 
+SELECT nullif(dd_rcom_date,'1900-01-01') AS dd_rcom_date, nsf_rcvd_date, 
+prop.pgm_annc_id, prop.org_code, prop.pgm_ele_code, 
+prop_stts_abbr,natr_rqst.natr_rqst_abbr,prop.obj_clas_code,ai.awd_istr_abbr as rcom_istr_abbr,
+cntx_stmt_id, p.PO, ra.RAupdate, p.lead, p.ILN, --eJ link
+org.dir_div_abbr as Div, p.prop_id, 
+p.L AS pi_last_name, p.F AS pi_frst_name, p.I AS inst, p.st_code, 
+c.humn_date, c.hum_asur, c.HUM_EXPT, c.vrtb_date, c.vrtb_asur, c.OTH_AGCY_SUBM_FLAG, 
 (SELECT MAX(CASE y.seq WHEN 1 THEN y.ctry_name ELSE '' END)+
     MAX(CASE y.seq WHEN 2 THEN '; '+y.ctry_name ELSE '' END)+
     MAX(CASE y.seq WHEN 3 THEN '; '+y.ctry_name ELSE '' END)+
@@ -775,13 +747,12 @@ c.humn_date, c.vrtb_date, c.OTH_AGCY_SUBM_FLAG,
     MAX(CASE y.seq WHEN 7 THEN '; '+y.ctry_name ELSE '' END)+
     MAX(CASE y.seq WHEN 8 THEN '; '+y.ctry_name ELSE '' END) 
     FROM #myCtry y WHERE y.prop_id = p.prop_id) AS Country,
+a.abst_narr_txt, prop_stts_txt, prop.prop_titl_txt,
 prop.rqst_eff_date,prop.rqst_mnth_cnt,
-p.D AS rqst_tot, b.RN as brevn, b.T as budg_tot, 
-nullif((SELECT sum(budg_splt_tot_dol) FROM csd.budg_splt s 
-        WHERE s.prop_id = p.prop_id),0) as splt_tot, 
+b.RN as brevn,p.D AS rqst_tot, b.T as budg_tot, 
 b.sub_ctr_tot, b.frgn_trav_tot, b.pdoc_tot,b.part_tot_dol, b.grad_tot_cnt, 
-b.sr_tot_cnt, b.sr_sumr_mnths, b.sr_acad_mnths, b.sr_cal_mnths,
-prop.prop_titl_txt,a.abst_narr_txt
+b.sr_tot_cnt, b.sr_sumr_mnths, b.sr_acad_mnths, b.sr_cal_mnths, 
+p.M as email
 FROM #myPropInfo p
 JOIN csd.prop prop ON prop.prop_id = p.prop_id
 JOIN csd.org org ON org.org_code = prop.org_code
@@ -833,6 +804,5 @@ DROP TABLE #myPanl, #myProjPanl, #myProjPanlSumm
 DROP TABLE #myRevInfo, #mySumm
 DROP TABLE #myDmog
 DROP TABLE #myCtry, #myCovrInfo
-DROP TABLE #myBudgPRC
 DROP TABLE #myBSprc
 DROP TABLE #myBudg
