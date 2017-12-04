@@ -1,21 +1,37 @@
 Attribute VB_Name = "mButtons"
 Option Explicit
+Sub PullDataFromTables()
+Dim awdSQL As String
+Dim allSQL As String
 
-Sub pidsFromTables()
-Dim SQL As String
-SQL = "CREATE TABLE #myPid (prop_id char(7) primary key, RAtemplate varchar(63))" & vbNewLine _
-& IDsFromColumnRange("INSERT INTO  #myPid SELECT prop_id, '" & _
-        RoboRA.Range("AwdTemplate") & "' as RAtemplate FROM csd.prop WHERE prop_id IN ", _
-        "AwdPropTable[[prop_id]]") _
-& IDsFromColumnRange("INSERT INTO  #myPid SELECT prop_id, '" & _
+awdSQL = IDsFromColumnRange("AND prop_id IN ", "AwdPropTable[[prop_id]]")
+
+awdSQL = "CREATE TABLE #myPid1 (prop_id char(7), RAtemplate varchar(63), RAsigner varchar(63), RAsign2(80))" & vbNewLine _
+
+With HiddenSettings
+    awdSQL = .Range("RA_pidSelect") & convert(varchar(63),'" & _
+        RoboRA.Range("AwdTemplate") & "') as RAtemplate, " & vbNewLine _
+        & .Range("RA_pidJOIN") & vbNewLine _
+    &  & vbNewLine
+    
+End With
+
+
+awdSQL = "CREATE TABLE #myPid (prop_id char(7) primary key, RAtemplate varchar(63))" & vbNewLine _
+    & IDsFromColumnRange("INSERT INTO #myPid SELECT prop_id, convert(varchar(63),'" & _
+        RoboRA.Range("AwdTemplate") & "') as RAtemplate FROM csd.prop WHERE prop_id IN ", _
+        "AwdPropTable[[prop_id]]")
+
+allSQL = awdSQL & IDsFromColumnRange("INSERT INTO #myPid SELECT prop_id, '" & _
         RoboRA.Range("DeclTemplate") & "' as RAtemplate FROM csd.prop WHERE prop_id IN ", _
         "DeclPropTable[[prop_id]]") _
-& IDsFromColumnRange("INSERT INTO  #myPid SELECT prop_id, '" & _
+    & IDsFromColumnRange("INSERT INTO #myPid SELECT prop_id, '" & _
         RoboRA.Range("StdDeclTemplate") & "' as RAtemplate FROM csd.prop WHERE prop_id IN ", _
         "StdDeclPropTable[[prop_id]]")
-        Debug.Print SQL
-End Sub
 
+Call BasicQueries(allSQL)
+Call AwdCodingQueries(awdSQL)
+End Sub
 
 Sub OptionButton_AreYouSure()
   If MsgBox("Are you sure that you want to overwrite RAs that may exist in eJacket?", _
@@ -24,11 +40,12 @@ End Sub
 
 Sub RefreshFromPanel()
 'temporary, until we convert to parse
-Dim panl_id, pidWhere As String
+Dim panl_id As String
+Dim pidWhere As String
 panl_id = Replace(Replace(Advanced.Range("panl_id"), " ", ""), ",", "','")
 pidWhere = "JOIN csd.panl_prop pp ON p.prop_id = pp.prop_id" & vbNewLine _
 & "WHERE p.prop_stts_code IN ('00','01','02','08','09') AND pp.panl_id in ('" & panl_id & "')" & vbNewLine
-Call makeQueries(pidWhere)
+Call BasicQueries(pidWhere)
 End Sub
 
 Sub RefreshFromBlock()
@@ -81,7 +98,7 @@ Sub Picker_dirRAoutput()
   Range("dirRAoutput").Value = FolderPicker("Choose output folder for populated RAs (.docm)", Range("dirRAoutput").Value)
 End Sub
 
-Sub Install_Raddin()
+Sub installMacros()
 Dim pathName As String
 
 On Error GoTo ErrHandler:

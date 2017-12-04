@@ -8,12 +8,17 @@ Sub MakeIndicatedRAs()
 'Awd = Award: refresh budget page?
 'Std = Standard decline --  automatically stuff to eJacket
 
- Dim i, t, nRA, nRAtypes As Integer
- Dim wdApp, wdDoc As Object
+ Dim i As Integer
+ Dim t As Integer
+ Dim nRA As Integer
+ Dim nRAtypes As Integer
+ Dim wdApp As Object
+ Dim wdDoc As Object
  Dim strWordDoc As Variant
- Dim strThisWorkbook, strOutputPath, strFilename, strRAtemplate, strRAoutput, dirRAtemplate, dirRAoutput As String
+ Dim strThisWorkbook As String, strOutputPath As String, strFilename As String, strRAtemplate As String, strRAoutput As String
+ Dim dirRAtemplate As String, dirRAoutput As String
  Dim prop_id As String
- Dim autoDeclineQ, hasAuto As Boolean
+ Dim autoDeclineQ As Boolean, hasAuto As Boolean
  Dim IE As InternetExplorerMedium
  Dim PT As PivotTable
 
@@ -171,8 +176,8 @@ End Sub
 Sub makeProjText()
 'derived from macro recording with assistance from several stackoverflow posts
 
- Dim wdApp, wdDoc As Object
- Dim strWordDoc, strThisWorkbook, strPDFOutputName As String
+ Dim wdApp As Object, wdDoc As Object
+ Dim strWordDoc As String, strThisWorkbook As String, strPDFOutputName As String
  
  strThisWorkbook = ThisWorkbook.FullName
  strWordDoc = ThisWorkbook.path & "\RAhelpTemplate.docx"

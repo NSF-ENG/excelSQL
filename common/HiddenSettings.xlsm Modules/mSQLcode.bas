@@ -9,8 +9,8 @@ Sub saveSQLcode()
     'Thanks to http://akihitoyamashiro.com/en/VBA/LateBindingDataObject.htm
     Dim cb As Object
     Dim a() As String
-    Dim s, varname As String
-    Dim i, j, k, r As Long
+    Dim s As String, varname As String
+    Dim i As Long, j As Long, k As Long, r As Long
     Dim rng As Range
 
     #If Mac Then

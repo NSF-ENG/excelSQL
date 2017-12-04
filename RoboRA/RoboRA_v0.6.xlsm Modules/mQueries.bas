@@ -1,11 +1,8 @@
 Attribute VB_Name = "mQueries"
 Option Explicit
-Sub makeQueries(myPids As String, Optional myAwds As String = "")
-If Len(myAwds) < 2 Then myAwds = myPids
 
+Sub BasicQueries(myPids As String)
 With HiddenSettings
-    myPids = .Range("RA_pidSelect") & myPids
-    myAwds = .Range("RA_pidSelect") & myAwds
     'need this first to get revtable in order
     Call doQuery(PRCs.ListObjects("PRCGlossaryTable").QueryTable, myPids & .Range("revtable") _
         & .Range("RA_leads") & .Range("RA_propPRCs") & .Range("RA_PRCglossary") _
@@ -25,27 +22,30 @@ With HiddenSettings
         & .Range("RA_leads") & .Range("RA_propPRCs") & .Range("RA_revs") _
         & .Range("RA_prop") & .Range("RA_panl") & .Range("RA_allRAdata") _
         & "DROP TABLE #myPid, #myLead, #myRA, #myProp, #myPropBudg, #myRevs, #myRevPanl, #myRevMarks, #myRevSumm, #myPanl, #myProjPanl, #myProjPanlSumm DROP TABLE #myDmog")
-    
-    'these can be done for awards only
-    Call doQuery(.ListObjects("BudgetsTable").QueryTable, myAwds _
-        & .Range("RA_leads") & .Range("RA_budgBlocks") _
-        & "DROP TABLE #myPid, #myLead, #myRA DROP TABLE ")
-        
-    Call doQuery(ckAwd.ListObjects("ckAwdTable").QueryTable, myAwds _
-        & .Range("RA_leads") & .Range("RA_propPRCs") & .Range("RA_prop") _
-        & .Range("RA_revs") & .Range("RA_awdCheck") _
-        & "DROP TABLE #myPid, #myLead, #myRA DROP TABLE ")
-    
-    Call doQuery(ckSplits.ListObjects("ckSplitTable").QueryTable, myAwds _
-        & .Range("RA_leads") & .Range("RA_propPRCs") & .Range("RA_prop") & .Range("RA_splits") _
-        & "DROP TABLE #myPid, #myLead, #myRA DROP TABLE #myProp, #myPropBudg DROP TABLE #myBudgPRC")
 End With
 
 Call CleanUpSheet(ckCoding)
-Call CleanUpSheet(ckCoding)
-Call CleanUpSheet(ckAwd)
 Call CleanUpSheet(ProjText)
-Call CleanUpSheet(Budgets)
 Call CleanUpSheet(RAData)
+End Sub
+
+Sub AwdCodingQueries(myPids As String)
+With HiddenSettings
+    'these can be done for awards only
+    Call doQuery(Budgets.ListObjects("BudgetsTable").QueryTable, myPids _
+        & .Range("RA_leads") & .Range("RA_propPRCs") & .Range("RA_budgBlocks") _
+        & "DROP TABLE #myPid, #myLead, #myRA, #myPRCs, #myPRCdata DROP TABLE #myBudg")
+        
+    Call doQuery(ckAwd.ListObjects("ckAwdTable").QueryTable, myPids _
+        & .Range("RA_leads") & .Range("RA_propPRCs") & .Range("RA_prop") _
+        & .Range("RA_awdCheck") _
+        & "DROP TABLE #myPid, #myLead, #myRA, #myPRCs, #myPRCdata DROP TABLE #myProp, #myPropBudg DROP TABLE #myCtry, #myCovrInfo, #myBudgPRC ")
+    
+    Call doQuery(ckSplits.ListObjects("ckSplitTable").QueryTable, myPids _
+        & .Range("RA_leads") & .Range("RA_propPRCs") & .Range("RA_prop") & .Range("RA_splits") _
+        & "DROP TABLE #myPid, #myLead, #myRA, #myPRCs, #myPRCdata DROP TABLE #myProp, #myPropBudg DROP TABLE #myBSprc")
+End With
+Call CleanUpSheet(Budgets)
 Call CleanUpSheet(ckSplits)
+Call CleanUpSheet(ckAwd)
 End Sub

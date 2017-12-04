@@ -27,8 +27,8 @@ Function andWhere(tablename As String, fieldname As String, Optional notPreamble
 ' andMore="AND pa.prop_atr_type_code='PRC'" ' to force a "not any", meaning it cannot have any PRC in the list.
 
 
-Dim field, optNeg As String
-Dim hasComma, hasRange, hasSqlWildcard As Boolean
+Dim field As String, optNeg As String
+Dim hasComma As Boolean, hasRange As Boolean, hasSqlWildcard As Boolean
 optNeg = "("
 
 field = Trim(ActiveSheet.Range(fieldname).Value) ' Warning: trims spaces on values
@@ -70,7 +70,7 @@ Sub whereField(fieldname As String, Optional tablename As String = "prop", Optio
 ' With three, we need to add table to FROM, join with prop table, and restrict field
 ' For convenience/readability: If field, join start with _, prepend table name: e.g. prop_stts,_abbr -> prop_stts.prop_stts_abbr
 ' Most fields are strings, so are quoted: IsIntField:=True will strip quotes to allow integer parameters.
-Dim andclause, tablealias As String
+Dim andclause As String, tablealias As String
 
 If Left(fieldname, 1) = "_" Then fieldname = tablename & fieldname ' expand abbreviated names
 If Left(joinname, 1) = "_" Then joinname = tablename & joinname
@@ -121,8 +121,8 @@ Public Function tableFromRange(rng As String, types As String, tableDefn As Stri
 ' UNION ALL SELECT 'bb',22,NULL
 ' UNION ALL SELECT 'cc',NULL,NULL
 Dim a As Variant
-Dim i, j As Integer
-Dim s, prefix As String
+Dim i As Integer, j As Integer
+Dim s As String, prefix As String
 s = ""
 
 a = ActiveSheet.Range(rng)

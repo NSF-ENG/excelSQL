@@ -7,7 +7,7 @@ Sub CleanUpSheet(ws As Worksheet, Optional emptyRow As Long = 7)
 ' pass emptyrow as the index of the first row that could be empty.
 ' Avoid blanks past a table for mail merge.
 ' Also keeps sheets from growing too tall (saving memory and preserving stability).
-Dim i, r, lastRow As Long
+Dim i As Long, r As Long, lastRow As Long
 With ws
     On Error Resume Next
     For i = 1 To ws.ListObjects.count
@@ -98,7 +98,7 @@ Sub createPath(path As String)
 ' needs error handling
     Dim i As Long
     Dim arrPath As Variant
-    Dim separator, s As String
+    Dim separator As String, s As String
     separator = pathSeparator() ' Mac or PC
     arrPath = Split(path, separator)
     s = arrPath(LBound(arrPath)) & separator
@@ -113,8 +113,8 @@ Sub renewFiles(from As String, topath As String, Optional verbosity As Integer =
 ' copy files matching from (include filter *.* or *RAt.docx or *.do*) that have been updated or that don't exist in topath
 ' old files get "backup"datetime added, so nothing is lost.
 Dim FSO As Object
-Dim fromdate, todate As Date
-Dim frompath, fName, separator As String
+Dim fromdate As Date, todate As Date
+Dim frompath As String, fName As String, separator As String
 separator = pathSeparator() ' mac or PC
 Set FSO = CreateObject("scripting.filesystemobject")
 If Not FSO.FolderExists(topath) Then

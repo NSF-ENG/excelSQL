@@ -55,7 +55,7 @@ Sub handlePwd()
       On Error Resume Next
       .Open
       bad = Err.Number > 0 ' if any error, we couldn't open connection.
-      Debug.Print "hp:" & bad & (cnn.State = adStateOpen)
+      Debug.Print "hp:" & bad & (cn.State = adStateOpen)
       Set rs = cn.Execute("sp_tables")
       .Close
     End With

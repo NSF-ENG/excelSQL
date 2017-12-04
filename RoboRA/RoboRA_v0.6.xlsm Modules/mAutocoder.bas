@@ -23,7 +23,7 @@ End Sub
 
 
 Sub autoPasteRA(IE As InternetExplorerMedium, prop_id As String, RA As String) ' stuff RA into text box
-Dim i, j As Integer
+Dim i As Integer, j As Integer
 
 If (Len(prop_id) = 7) Then ' Probably have a prop_id; go to Jacket
     IE.Navigate ("https://www.ejacket.nsf.gov/ej/showProposal.do?Continue=Y&ID=" & prop_id)
@@ -81,7 +81,7 @@ Function FixIPSText(s As String) As String
 ' Replace special characters
 '
 
-Dim fromC, toC As String
+Dim fromC As String, toC As String
 Dim i As Long
 fromC = "–”“’‘•γθιΰαβεηκλμνξοςστυωϊϋ"
 toC = "-""""''*aeeaaaaceeiiiioooouuu"
@@ -101,7 +101,7 @@ End Function
 
 Function StripDoubleBrackets(s As String) As String
 ' does not handle nesting.
-Dim i, j, k, lenS As Long
+Dim i As Long, j As Long, k As Long, lenS As Long
 
 
 j = InStrRev(s, "]]")
@@ -197,7 +197,7 @@ End Function
 'Dim IE As InternetExplorerMedium ' This object (the "medium" variety as opposed to "InternetExplorer") is necessary in our security climate
 'Dim tbl As Range
 'Dim i, j, k, r, n As Integer
-'Dim prop_id, ctxtId As String
+'Dim prop_id As String, ctxtId As String
 '
 'Set tbl = Range("propIds2Context[prop_id]")
 'r = tbl.Rows.count
@@ -256,8 +256,8 @@ End Function
 Sub pageInfo()
 ' go to a page and report forms, links, anchors, etc.
 Dim IE As InternetExplorerMedium ' This object (the "medium" variety as opposed to "InternetExplorer") is necessary in our security climate
-Dim i, n As Long
-Dim x, currentText, searchText, oldURL As String
+Dim i As Long, n As Long
+Dim x As String, currentText As String, searchText As String, oldURL As String
 x = "https://www.ejacket.nsf.gov" ' Sheet1.Range("F1").Value ' change sheet accordingly
 
     Set IE = New InternetExplorerMedium

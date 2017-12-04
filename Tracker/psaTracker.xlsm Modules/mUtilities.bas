@@ -3,7 +3,7 @@ Option Explicit
 Sub CleanUpSheet(ws As Worksheet, Optional emptyRow As Long = 7)
 ' delete blank rows on sheet below lowest listObject range
 ' pass emptyrow as the index of the first row that could be empty.
-Dim i, r, lastRow As Long
+Dim i As Long, r As Long, lastRow As Long
 With ws
     On Error Resume Next
     For i = 1 To ws.ListObjects.Count
