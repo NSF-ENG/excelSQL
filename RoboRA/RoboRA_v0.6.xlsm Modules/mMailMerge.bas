@@ -1,46 +1,6 @@
 Attribute VB_Name = "mMailMerge"
 Option Explicit
 
- Sub flet1()
-'
-' flet1 Makro
-' 1) Merges active record and saves the resulting document named by the datafield     FileName"
-' 2) Closes the resulting document, and (assuming that we return to the template)
-' 3) advances to the next record in the datasource
-'
-'Søren Francis 6/7-2013
-
-    Dim DokName  As String   'ADDED CODE
-
-    With ActiveDocument.MailMerge
-        .Destination = wdSendToNewDocument
-        .SuppressBlankLines = True
-        With .DataSource
-            .FirstRecord = ActiveDocument.MailMerge.DataSource.ActiveRecord
-            .LastRecord = ActiveDocument.MailMerge.DataSource.ActiveRecord
-' Remember the wanted documentname
-           DokName = .DataFields("FileName").Value         ' ADDED CODE
-        End With
-
-' Merge the active record
-        .Execute Pause:=False
-    End With
-
-' Save then resulting document. NOTICE MODIFIED filename
-    ActiveDocument.SaveAs2 Filename:="C:\Temp\" + DokName + ".docx", FileFormat:= _
-        wdFormatXMLDocument, LockComments:=False, Password:="", AddToRecentFiles _
-        :=True, WritePassword:="", ReadOnlyRecommended:=False, EmbedTrueTypeFonts _
-        :=False, SaveNativePictureFormat:=False, SaveFormsData:=False, _
-        SaveAsAOCELetter:=False
-
-' Close the resulting document
-    ActiveWindow.Close
-
-' Now, back in the template document, advance to next record
-    ActiveDocument.MailMerge.DataSource.ActiveRecord = wdNextRecord
-End Sub
-
-
 Sub MakeIndicatedRAs()
 'derived from macro recording with assistance from several stackoverflow posts
 'Uses RAtemplate column to decide action and RA template
@@ -81,7 +41,7 @@ If Right(dirRAoutput, 1) <> Application.pathSeparator Then dirRAoutput = dirRAou
 nRAtypes = PT.RowRange.count - 2 ' omit header and total.  For t = 2 To .count - 1
 nRA = 0
 hasAuto = (LCase$(Left$(Range("autoAllTemplates").Value, 1)) = "y") 'fix
-With Range("AllRACandidatesTable[RAtemplate]")
+With Range("RADataTable[RAtemplate]")
  For i = 1 To .Rows.count  ' quick check
   strRAtemplate = Application.Trim(.Cells(i, 1))
   If Len(strRAtemplate) > 8 Then
@@ -130,9 +90,9 @@ strRAtemplate = Application.Trim(PT.RowRange.Cells(t, 1))
     wdApp.Visible = True
     
 ' Sort by RecRkMin because our dummy line for formatting must come first.
-   With ThisWorkbook.Worksheets("AllRACandidates").ListObjects("AllRACandidatesTable").Sort
+   With RAData.ListObjects("RADataTable").Sort
         .SortFields.Clear
-        .SortFields.Add Key:=Range("AllRACandidatesTable[[#All],[RecRkMin]]"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortTextAsNumbers
+        .SortFields.Add Key:=Range("RADataTable[[#All],[RecRkMin]]"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortTextAsNumbers
         .Header = xlYes
         .MatchCase = False
         .Orientation = xlTopToBottom
@@ -140,13 +100,12 @@ strRAtemplate = Application.Trim(PT.RowRange.Cells(t, 1))
         .Apply
     End With
         
-    With Range("AllRACandidatesTable[RAtemplate]") ' need RAfname as next column!!!
+    With Range("RADataTable[RAtemplate]") ' need RAfname as next column!!!
       For i = 1 To .Rows.count ' do the RAs
        If strRAtemplate = Application.Trim(.Cells(i, 1)) Then ' we have an RA to do
         strRAoutput = dirRAoutput & Application.Trim(.Cells(i, 2)) & ".docm" ' make output file name
     '    Application.ScreenUpdating = False
     '    Application.DisplayAlerts = False
-    'Connection:= "Provider=Microsoft.ACE.OLEDB.12.0;User ID=Admin;Data Source=C:\Users\Jack Snoeyink\Desktop\tmp.xlsm';Mode=Read;Extended Properties=""HDR=YES;IMEX=1;"";Jet OLEDB:System database="""";Jet OLEDB:Registry Path="""";Jet OLEDB:Engine Type=3"
        With wdDoc.MailMerge
            .MainDocumentType = wdFormLetters
           
@@ -170,7 +129,7 @@ strRAtemplate = Application.Trim(PT.RowRange.Cells(t, 1))
             wdApp.ActiveDocument.ActiveWindow.Selection.WholeStory
             RAtext = FixIPSText(StripDoubleBrackets(wdApp.ActiveDocument.ActiveWindow.Selection.Text))
             wdApp.ActiveDocument.ActiveWindow.Selection.Collapse
-            prop_id = Trim(Range("AllRACandidatesTable[[prop_id0]]").Cells(i, 1).Value)
+            prop_id = Trim(Range("RADataTable[[prop_id0]]").Cells(i, 1).Value)
             
            Call autoPasteRA(IE, prop_id, RAtext)
            wdApp.ActiveDocument.ReadOnlyRecommended = True

@@ -3,14 +3,14 @@ Option Explicit
 
 Sub pidsFromTables()
 Dim SQL As String
-SQL = "CREATE TABLE #myPids (prop_id char(7) primary key, RAtemplate varchar(63))" & vbNewLine _
-& IDsFromColumnRange("INSERT INTO  #myPids SELECT prop_id, '" & _
+SQL = "CREATE TABLE #myPid (prop_id char(7) primary key, RAtemplate varchar(63))" & vbNewLine _
+& IDsFromColumnRange("INSERT INTO  #myPid SELECT prop_id, '" & _
         RoboRA.Range("AwdTemplate") & "' as RAtemplate FROM csd.prop WHERE prop_id IN ", _
         "AwdPropTable[[prop_id]]") _
-& IDsFromColumnRange("INSERT INTO  #myPids SELECT prop_id, '" & _
+& IDsFromColumnRange("INSERT INTO  #myPid SELECT prop_id, '" & _
         RoboRA.Range("DeclTemplate") & "' as RAtemplate FROM csd.prop WHERE prop_id IN ", _
         "DeclPropTable[[prop_id]]") _
-& IDsFromColumnRange("INSERT INTO  #myPids SELECT prop_id, '" & _
+& IDsFromColumnRange("INSERT INTO  #myPid SELECT prop_id, '" & _
         RoboRA.Range("StdDeclTemplate") & "' as RAtemplate FROM csd.prop WHERE prop_id IN ", _
         "StdDeclPropTable[[prop_id]]")
         Debug.Print SQL
@@ -23,21 +23,16 @@ Sub OptionButton_AreYouSure()
 End Sub
 
 Sub RefreshFromPanel()
-
-Dim panl_id As String
+'temporary, until we convert to parse
+Dim panl_id, pidWhere As String
 panl_id = Replace(Replace(Advanced.Range("panl_id"), " ", ""), ",", "','")
-
-Dim myProps As String
-myProps = propHeader() _
-& "JOIN csd.panl_prop pp ON p.prop_id = pp.prop_id" & vbNewLine _
-& "WHERE p.prop_stts_code IN ('00','01','02','08','09') AND pp.panl_id in ('" & panl_id & "')" & vbNewLine _
-& propTrailer()
-
-Call doQuery(myProps)
+pidWhere = "JOIN csd.panl_prop pp ON p.prop_id = pp.prop_id" & vbNewLine _
+& "WHERE p.prop_stts_code IN ('00','01','02','08','09') AND pp.panl_id in ('" & panl_id & "')" & vbNewLine
+Call makeQueries(pidWhere)
 End Sub
 
 Sub RefreshFromBlock()
-
+'convert to parse
 Dim org_code As String
 org_code = Advanced.Range("org_code")
 Dim pgm_ele_code As String
@@ -49,15 +44,12 @@ rcvd_before = Format(Advanced.Range("rcvd_before"), "yyyy-mm-dd hh:mm:ss")
 Dim solicitation As String
 solicitation = Advanced.Range("solicitation")
 
-Dim myProps As String
-myProps = propHeader() _
-& "WHERE p.prop_stts_code IN ('00','01','02','08','09')" & vbNewLine _
+Dim pidWhere As String
+pidWhere = "WHERE p.prop_stts_code IN ('00','01','02','08','09')" & vbNewLine _
 & "AND (p.pgm_annc_id like '" & solicitation & "') AND (p.org_code like '" & org_code & "') " & vbNewLine _
 & "AND (p.pgm_ele_code like '" & pgm_ele_code & "') AND (p.pm_ibm_logn_id like '" & pm_ibm_logn_id & "') " & vbNewLine _
-& "AND (p.nsf_rcvd_date < {ts '" & rcvd_before & "'}) " & vbNewLine _
-& propTrailer()
-
-Call doQuery(myProps)
+& "AND (p.nsf_rcvd_date < {ts '" & rcvd_before & "'}) " & vbNewLine
+Call makeQueries(pidWhere)
 End Sub
 
 Sub List_Templates() ' list RA templates available (used by data validation)
@@ -65,7 +57,7 @@ Dim templateName As String
 Dim nTemplates As Integer
 nTemplates = 0
 
-With Sheets("Advanced").ListObjects("AvailableTemplates")
+With Advanced.ListObjects("AvailableTemplates")
   If .ListRows.count > 0 Then .DataBodyRange.Delete
   templateName$ = Dir(Range("dirRAtemplate").Value & "\*RAt.docx")
     Do While templateName$ <> ""

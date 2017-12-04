@@ -13,8 +13,6 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
-
-
 Option Explicit
 ' Jack Snoeyink      Nov 24, 2017
 Private Sub cmdPwdCancel_Click()
@@ -27,7 +25,7 @@ End Sub
 'Save userid & password in form for connections, and on HiddenSettings tab if checkbox = true
 Private Sub cmdPwdOK_Click()
     If Me.CheckBox1.Value = True Then ' save in HiddenSettings or not
-         HiddenSettings.Range("user_id").Value = Me.txtUserID.Value
+         HiddenSettings.Range("user_id").Value = Me.txtUserId.Value
          HiddenSettings.Range("rpt_pwd").Value = Me.txtPassword.Value
     End If
     Me.Hide ' we want txtUserId&txtPassword available
