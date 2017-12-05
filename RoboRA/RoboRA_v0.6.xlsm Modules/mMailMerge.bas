@@ -36,16 +36,16 @@ If Right(dirRAoutput, 1) <> Application.pathSeparator Then dirRAoutput = dirRAou
     On Error Resume Next
     If PT.Name = "templatesUsed" Then Exit For
     Next
-    PT.RefreshTable
-    If Err.Number <> 0 Then
+    If Not PT Is Nothing Then PT.RefreshTable
+    If PT Is Nothing Or Err.Number <> 0 Then
       MsgBox "Can't refresh pivot table " & PT.Name & " on Advanced tab."
       GoTo ErrHandler:
     End If
     On Error GoTo 0
 
-nRAtypes = PT.RowRange.count - 2 ' omit header and total.  For t = 2 To .count - 1
+nRAtypes = PT.RowRange.count - 3 ' omit header, last, and total.  For t = 2 To .count - 2
 nRA = 0
-hasAuto = (LCase$(Left$(Range("autoAllTemplates").Value, 1)) = "y") 'fix
+hasAuto = RoboRA.CheckBoxes("cbAutoloadAll").Value = 1
 With Range("RADataTable[RAtemplate]")
  For i = 1 To .Rows.count  ' quick check
   strRAtemplate = Application.Trim(.Cells(i, 1))
@@ -90,7 +90,7 @@ strRAtemplate = Application.Trim(PT.RowRange.Cells(t, 1))
     Loop
     On Error GoTo 0
     
-   autoDeclineQ = (LCase$(Left$(Range("autoAllTemplates").Value, 1)) = "y") Or (Left$(strRAtemplate, 3) = "Std")
+   autoDeclineQ = (RoboRA.CheckBoxes("cbAutoloadAll").Value = 1) Or (Left$(strRAtemplate, 3) = "Std")
     wdDoc.Activate
     wdApp.Visible = True
     

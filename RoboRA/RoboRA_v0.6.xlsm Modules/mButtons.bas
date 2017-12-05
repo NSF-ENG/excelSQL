@@ -1,5 +1,24 @@
 Attribute VB_Name = "mButtons"
 Option Explicit
+Public Function SummarizeQuestMarks(abstr As String) As String
+Dim i As Long
+Dim s As String
+s = " "
+i = InStrRev(abstr, "?")
+While i > 0
+i = Application.Max(1, i - 3)
+s = Mid(abstr, i, 7) & "|" & s
+i = InStrRev(abstr, "?", i - 1)
+Wend
+SummarizeQuestMarks = s
+End Function
+
+Sub ClearQueryParams()
+ Call List_Templates
+ If MsgBox("Ok to clear query parameters?  (Can't undo)", vbOKCancel) <> vbOK Then End
+ ActiveSheet.Range("query_params").Cells.Value = HiddenSettings.Range("query_params").Cells.Value
+End Sub
+
 Sub PullDataFromTables()
 Dim awdSQL As String
 Dim allSQL As String
@@ -9,10 +28,10 @@ awdSQL = IDsFromColumnRange("AND prop_id IN ", "AwdPropTable[[prop_id]]")
 awdSQL = "CREATE TABLE #myPid1 (prop_id char(7), RAtemplate varchar(63), RAsigner varchar(63), RAsign2(80))" & vbNewLine _
 
 With HiddenSettings
-    awdSQL = .Range("RA_pidSelect") & convert(varchar(63),'" & _
+    awdSQL = .Range("RA_pidSelect") & "convert(varchar(63),'" & _
         RoboRA.Range("AwdTemplate") & "') as RAtemplate, " & vbNewLine _
         & .Range("RA_pidJOIN") & vbNewLine _
-    &  & vbNewLine
+        & vbNewLine
     
 End With
 
@@ -43,9 +62,13 @@ Sub RefreshFromPanel()
 Dim panl_id As String
 Dim pidWhere As String
 panl_id = Replace(Replace(Advanced.Range("panl_id"), " ", ""), ",", "','")
-pidWhere = "JOIN csd.panl_prop pp ON p.prop_id = pp.prop_id" & vbNewLine _
-& "WHERE p.prop_stts_code IN ('00','01','02','08','09') AND pp.panl_id in ('" & panl_id & "')" & vbNewLine
+pidWhere = "SET NOCOUNT ON" & vbNewLine _
+& "SELECT DISTINCT p.prop_id, p.lead_prop_id, p.pi_id, p.inst_id, p.pm_ibm_logn_id as PO, convert(varchar(63),'') AS RAtemplate" & vbNewLine _
+& "INTO #myPid FROM csd.prop p" & vbNewLine _
+& "JOIN csd.panl_prop pp ON p.prop_id = pp.prop_id" & vbNewLine _
+& "WHERE pp.panl_id in ('" & panl_id & "')" & vbNewLine
 Call BasicQueries(pidWhere)
+Call AwdCodingQueries(pidWhere)
 End Sub
 
 Sub RefreshFromBlock()
@@ -66,7 +89,8 @@ pidWhere = "WHERE p.prop_stts_code IN ('00','01','02','08','09')" & vbNewLine _
 & "AND (p.pgm_annc_id like '" & solicitation & "') AND (p.org_code like '" & org_code & "') " & vbNewLine _
 & "AND (p.pgm_ele_code like '" & pgm_ele_code & "') AND (p.pm_ibm_logn_id like '" & pm_ibm_logn_id & "') " & vbNewLine _
 & "AND (p.nsf_rcvd_date < {ts '" & rcvd_before & "'}) " & vbNewLine
-Call makeQueries(pidWhere)
+Call BasicQueries(pidWhere)
+Call AwdCodingQueries(pidWhere)
 End Sub
 
 Sub List_Templates() ' list RA templates available (used by data validation)
@@ -74,6 +98,7 @@ Dim templateName As String
 Dim nTemplates As Integer
 nTemplates = 0
 
+On Error GoTo ErrHandler
 With Advanced.ListObjects("AvailableTemplates")
   If .ListRows.count > 0 Then .DataBodyRange.Delete
   templateName$ = Dir(Range("dirRAtemplate").Value & "\*RAt.docx")
@@ -87,6 +112,11 @@ With Advanced.ListObjects("AvailableTemplates")
     Loop
 End With
 If nTemplates = 0 Then MsgBox ("Did not find any RA templates in " & Range("dirRAtemplate").Value & vbNewLine & "Remember that RA template names must end with RAt.docm")
+ExitHandler:
+Exit Sub
+ErrHandler:
+MsgBox ("Error " & Err.Number & ":" & Err.Description & vbNewLine & "while trying to list templates.  Ensure template directory, " & Range("dirRAtemplate").Value & ", is accessible.")
+Resume ExitHandler
 End Sub
 
 Sub Picker_dirRAtemplate()
