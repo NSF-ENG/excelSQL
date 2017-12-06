@@ -7,30 +7,46 @@ Sub CleanUpSheet(ws As Worksheet, Optional emptyRow As Long = 7)
 ' pass emptyrow as the index of the first row that could be empty.
 ' Avoid blanks past a table for mail merge.
 ' Also keeps sheets from growing too tall (saving memory and preserving stability).
-Dim i As Long, r As Long, lastRow As Long
+Dim tb As ListObject
+Dim pt As PivotTable
+Dim r As Long, lastRow As Long
 With ws
     On Error Resume Next
-    For i = 1 To ws.ListObjects.count
-      r = ws.ListObjects(i).Range.End(xlDown).Row + 1
+    For Each tb In ws.ListObjects
+      If Not tb.TotalsRowRange Is Nothing Then
+        r = tb.TotalsRowRange.Row + 1
+      ElseIf tb.DataBodyRange Is Nothing Then
+        r = tb.InsertRowRange.Row
+      Else
+        r = tb.ListRows(tb.ListRows.count).Range.Row + 1
+      End If
       If emptyRow < r Then emptyRow = r
-    Next i
+    Next
     
-    For i = 1 To ws.PivotTables.count
-      r = ws.PivotTables(i).RowRange.End(xlDown).Row + 1
-      If emptyRow < r Then emptyRow = r
-    Next i
+    For Each pt In ws.PivotTables
+      If Not pt.RowRange Is Nothing Then
+        r = pt.RowRange.Rows(pt.RowRange.count).Row + 1
+        If emptyRow < r Then emptyRow = r
+      End If
+    Next
     On Error GoTo 0
     lastRow = ws.UsedRange.Rows.count
     If emptyRow < lastRow Then ws.Rows(emptyRow & ":" & lastRow).Delete
 End With
 End Sub
-
-Sub RefreshPivotTables(ws As Worksheet, qt As QueryTable)
+Sub RefreshPivotTables(ws As Worksheet)
 ' refreshing pivot tables that are tied to a given query table  (PD-3PO only?)
- Dim PT As PivotTable
- For Each PT In ws.PivotTables
-   PT.PivotTableWizard SourceType:=xlDatabase, SourceData:=qt.ListObject.Name
-   If Not (PT Is Nothing) Then PT.RefreshTable
+ Dim pt As PivotTable
+ For Each pt In ws.PivotTables
+   If Not (pt Is Nothing) Then pt.RefreshTable
+  Next
+End Sub
+Sub RefreshPivotTablesQT(ws As Worksheet, qt As QueryTable)
+' refreshing pivot tables that are tied to a given query table  (PD-3PO only?)
+ Dim pt As PivotTable
+ For Each pt In ws.PivotTables
+   pt.PivotTableWizard SourceType:=xlDatabase, SourceData:=qt.ListObject.Name
+   If Not (pt Is Nothing) Then pt.RefreshTable
   Next
 End Sub
 

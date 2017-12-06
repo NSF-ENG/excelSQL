@@ -18,9 +18,9 @@
 -- This will mostly be generated on the fly. 
 --[RA_pidCreate
 SET NOCOUNT ON 
-CREATE TABLE #myPid (prop_id char(7) primary key, lead_prop_id char(7) null, pi_id char(9), inst_id char(10), PO char(7), RAtemplate varchar(63))
-INSERT INTO #myPid 
+CREATE TABLE #myPid (prop_id char(7), lead_prop_id char(7) null, pi_id char(9), inst_id char(10), PO char(7), RAtemplate varchar(63))
 --]RA_pidCreate
+INSERT INTO #myPid 
 --[RA_pidSelect
 SELECT DISTINCT p.prop_id, p.lead_prop_id, p.pi_id, p.inst_id, p.pm_ibm_logn_id as PO, 
 --]RA_pidSelect
@@ -32,7 +32,17 @@ WHERE --p.prop_stts_code IN ('00','01','02','08','09')
 pp.panl_id in ('p172027','p170288','p180207','p180208')
 --pm_logn_id = 'jsnoeyi'
 
--- Every query will begin with this: 
+--[RA_PECglossary
+--DROP TABLE #myPid 
+SELECT p.pgm_ele_code AS PEC, pec.pgm_ele_name AS PEC_Description
+FROM (SELECT DISTINCT pgm_ele_code FROM #myPid pid 
+JOIN csd.prop p ON p.prop_id = pid.prop_id) p
+JOIN csd.pgm_ele pec ON pec.pgm_ele_code = p.pgm_ele_code
+ORDER BY PEC
+--]RA_PECglossary
+
+
+-- Every other query will begin with this: 
 --  Add collabs not already there, then make props, leads, and get RA update time
 --[RA_leads
 -- Needs: #myPid (& drops it)
@@ -412,8 +422,8 @@ prop.rqst_eff_date, prop.rqst_mnth_cnt,
 rtrim(prop_titl_txt) AS prop_titl_txt, 
 ah.N as AhNrev, ah.V as AhRevs, ah.last_rev_date as AhLast,
  pn0.I AS panl_id0, pn0.RT AS RCOM_TXT0, pn0.RK AS rank0, pn0.PN AS panl_name0,pn0.E AS panl_end0,pn0.V AS revs0,pn0.S AS PanlString0,pn0.P as pnlst0, pn0.C as confl0,
- pn1.I AS panl_id1, pn1.RT AS RCOM_TXT1, pn1.RK AS rank1, pn1.PN AS panl_name1,pn1.E AS panl_end1,pn1.V AS revs1,pn1.S AS PanlString1,pn0.P as pnlst1, pn0.C as confl1,
- pn2.I AS panl_id2, pn2.RT AS RCOM_TXT2, pn2.RK AS rank2, pn2.PN AS panl_name2,pn2.E AS panl_end2,pn2.V AS revs2,pn2.S AS PanlString2,pn0.P as pnlst2, pn0.C as confl2,
+ pn1.I AS panl_id1, pn1.RT AS RCOM_TXT1, pn1.RK AS rank1, pn1.PN AS panl_name1,pn1.E AS panl_end1,pn1.V AS revs1,pn1.S AS PanlString1,pn1.P as pnlst1, pn1.C as confl1,
+ pn2.I AS panl_id2, pn2.RT AS RCOM_TXT2, pn2.RK AS rank2, pn2.PN AS panl_name2,pn2.E AS panl_end2,pn2.V AS revs2,pn2.S AS PanlString2,pn2.P as pnlst2, pn2.C as confl2,
 p0.prop_id as prop_id0, p0.L as last0, p0.F as frst0, p0.I as inst0, p0.D as rqst0, p0.T as b0tot, p0.R as PRC0,
 p1.prop_id as prop_id1, p1.L as last1, p1.F as frst1, p1.I as inst1, p1.D as rqst1, p1.T as b1tot, p1.R as PRC1,
 p2.prop_id as prop_id2, p2.L as last2, p2.F as frst2, p2.I as inst2, p2.D as rqst2, p2.T as b2tot, p2.R as PRC2,
@@ -462,15 +472,15 @@ LEFT JOIN (SELECT * FROM #myPropInfo mp WHERE mp.seq = 6) p6 ON p6.lead = p.lead
 LEFT JOIN (SELECT lead, SUM(D) AS rqst_tot, SUM(T) AS budg_tot, MAX(RN) AS budRevnMax
            FROM #myPropInfo GROUP BY lead) projTot ON projTot.lead = p.lead
 UNION ALL SELECT @olddate,@olddate -- example to set mail merge format.  
-,'.first line.','.please.','keep','.so.','mail','merge','formatting','works..',@olddate
-,0,-0.99999999,'NRFP','NRFP','NRFP','templateFilename_RAt.docx'
+,'.first line.','..please','keep','for ','mail','merge','formatting.','thx.',@olddate
+,0,-0.99999999,'NRFP','NRFP','NRFP','zztemplateFname RAt.docx'
 ,'Divn','1234567',0,0,1,4.5,9,'E,E/V,V,V/G,G,G/F,F,F/P,P',@olddate, 0
 ,99999999.0,99999999.0,0,@olddate,36
 ,'This first row is needed so that mail merge formatting will be correct. Please do not remove it.  Mail merge takes its formatting from the first rows of the table............'
 ,0,'E,V,G,F,P',@olddate
-,'P1234567','Dont remove this line for panel rec formatting....',99,'Panel name spelled out; keep this line for formatting.......',@olddate,'E,E/V,V,V/G,G,G/F,F,F/P,P','Reports rank & all recs (HC, etc.) from Interactive Panel System (IPS).  I suggest Standard competition rank  (wikipedia) .',0,0
-,'P1234567','Dont remove this line for panel rec formatting....',99,'Panel name spelled out; keep this line for formatting.......',@olddate,'E,E/V,V,V/G,G,G/F,F,F/P,P','Reports rank & all recs (HC, etc.) from Interactive Panel System (IPS).  I suggest Standard competition rank  (wikipedia) .',0,0
-,'P1234567','Dont remove this line for panel rec formatting....',99,'Panel name spelled out; keep this line for formatting.......',@olddate,'E,E/V,V,V/G,G,G/F,F,F/P,P','Reports rank & all recs (HC, etc.) from Interactive Panel System (IPS).  I suggest Standard competition rank  (wikipedia) .',0,0
+,'P123456','Dont remove this line for panel rec formatting....',99,'Panel name spelled out; keep this line for formatting.......',@olddate,'E,E/V,V,V/G,G,G/F,F,F/P,P','Reports rank & all recs (HC, etc.) from Interactive Panel System (IPS).  I suggest Standard competition rank  (wikipedia) .',0,0
+,'P123456','Dont remove this line for panel rec formatting....',99,'Panel name spelled out; keep this line for formatting.......',@olddate,'E,E/V,V,V/G,G,G/F,F,F/P,P','Reports rank & all recs (HC, etc.) from Interactive Panel System (IPS).  I suggest Standard competition rank  (wikipedia) .',0,0
+,'P123456','Dont remove this line for panel rec formatting....',99,'Panel name spelled out; keep this line for formatting.......',@olddate,'E,E/V,V,V/G,G,G/F,F,F/P,P','Reports rank & all recs (HC, etc.) from Interactive Panel System (IPS).  I suggest Standard competition rank  (wikipedia) .',0,0
 ,'1234567','PI last name for format.','PI first name..','Inst name for formatting',99999999.0,99999999.0,'Proposal PRCs assgnd; see glossary '
 ,'1234567','PI last name for format.','PI first name..','Inst name for formatting',99999999.0,99999999.0,'Proposal PRCs assgnd; see glossary '
 ,'1234567','PI last name for format.','PI first name..','Inst name for formatting',99999999.0,99999999.0,'Proposal PRCs assgnd; see glossary '
@@ -532,6 +542,8 @@ JOIN csd.pgm_ref prc ON prc.pgm_ref_code = p.prop_atr_code
 ORDER BY PRC
 --]RA_PRCglossary
 -----------------
+
+
 --Checkers
 
 -- check coding
@@ -780,7 +792,7 @@ CREATE INDEX myBudg_idx ON #myBudg(prop_id, budg_seq_yr)
 SELECT p.nsf_rcvd_date, p.pgm_annc_id, p.org_code, p.pgm_ele_code, 
 pid.PO, pid.lead, pid.ILN, pid.prop_id, '' as pi_last_name, '' as inst_name, '' as pi_email, 
 eb.sr_pers_cnt, eb.sr_summ_mnth_cnt, eb.pdoc_grnt_dol, eb.frgn_trav_dol, eb.part_dol, eb.budg_tot_dol, 
-eb.revn_num, eb.budg_seq_yr, eb.budg_tot_dol AS dol, p.org_code, p.pgm_ele_code as PEC, prc.R as PRCs
+eb.revn_num, eb.budg_seq_yr, eb.budg_tot_dol AS dol, p.org_code, p.pgm_ele_code as PEC, p.obj_clas_code as Obj, prc.R as PRCs
 FROM #myProp pid
 JOIN csd.prop p ON p.prop_id = pid.prop_id
 LEFT OUTER JOIN #myPRCs prc ON prc.prop_id = pid.prop_id
@@ -788,7 +800,7 @@ LEFT OUTER JOIN #myBudg eb ON eb.prop_id = pid.prop_id
 UNION ALL SELECT p.nsf_rcvd_date, p.pgm_annc_id, p.org_code, p.pgm_ele_code, 
 pid.PO, pid.lead, pid.ILN, pid.prop_id, pid.L as pi_last_name, pid.I as inst_name, pid.M as pi_email, 
 null, null, null, null, null, null, (SELECT MAX(revn_num) from #myBudg b WHERE b.prop_id = pid.prop_id),
-null, (SELECT SUM(budg_tot_dol) from #myBudg b WHERE b.prop_id = pid.prop_id), p.org_code, p.pgm_ele_code, prc.R 
+null, (SELECT SUM(budg_tot_dol) from #myBudg b WHERE b.prop_id = pid.prop_id), p.org_code, p.pgm_ele_code, p.obj_clas_code, prc.R 
 FROM #myProp pid
 JOIN csd.prop p ON p.prop_id = pid.prop_id
 LEFT OUTER JOIN #myPRCs prc ON prc.prop_id = pid.prop_id

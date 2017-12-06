@@ -20,36 +20,28 @@ Sub ClearQueryParams()
 End Sub
 
 Sub PullDataFromTables()
+Dim PendOnly As String
 Dim awdSQL As String
 Dim allSQL As String
-
-awdSQL = IDsFromColumnRange("AND prop_id IN ", "AwdPropTable[[prop_id]]")
-
-awdSQL = "CREATE TABLE #myPid1 (prop_id char(7), RAtemplate varchar(63), RAsigner varchar(63), RAsign2(80))" & vbNewLine _
+'PendOnly = "prop_stts_code BETWEEN '03' AND '0Z' AND "
+'PendOnly = "prop_stts_code like ('0%') AND "
+'PendOnly = "prop_stts_code like ('0[01289]') AND "
+'PendOnly = "prop_stts_code like ('0[34]') AND "
+PendOnly = "prop_stts_code IN ('00','01','02','08','09') AND "
 
 With HiddenSettings
-    awdSQL = .Range("RA_pidSelect") & "convert(varchar(63),'" & _
-        RoboRA.Range("AwdTemplate") & "') as RAtemplate, " & vbNewLine _
-        & .Range("RA_pidJOIN") & vbNewLine _
-        & vbNewLine
-    
+ awdSQL = IDsFromColumnRange("INSERT INTO #myPid " & .Range("RA_pidSelect") _
+        & "'" & RoboRA.Range("AwdTemplate") & "' as RAtemplate FROM csd.prop p WHERE " _
+        & PendOnly & "prop_id IN ", "AwdPropTable[[prop_id]]")
+ allSQL = awdSQL & IDsFromColumnRange("INSERT INTO #myPid " & .Range("RA_pidSelect") _
+        & "'" & RoboRA.Range("DeclTemplate") & "' as RAtemplate FROM csd.prop p WHERE " _
+        & PendOnly & "prop_id IN ", "DeclPropTable[[prop_id]]") _
+    & IDsFromColumnRange("INSERT INTO #myPid " & .Range("RA_pidSelect") _
+        & "'" & RoboRA.Range("StdDeclTemplate") & "' as RAtemplate FROM csd.prop p WHERE " _
+        & PendOnly & "prop_id IN ", "StdDeclPropTable[[prop_id]]")
+ Call BasicQueries(.Range("RA_pidCreate") & allSQL)
+ Call AwdCodingQueries(.Range("RA_pidCreate") & awdSQL)
 End With
-
-
-awdSQL = "CREATE TABLE #myPid (prop_id char(7) primary key, RAtemplate varchar(63))" & vbNewLine _
-    & IDsFromColumnRange("INSERT INTO #myPid SELECT prop_id, convert(varchar(63),'" & _
-        RoboRA.Range("AwdTemplate") & "') as RAtemplate FROM csd.prop WHERE prop_id IN ", _
-        "AwdPropTable[[prop_id]]")
-
-allSQL = awdSQL & IDsFromColumnRange("INSERT INTO #myPid SELECT prop_id, '" & _
-        RoboRA.Range("DeclTemplate") & "' as RAtemplate FROM csd.prop WHERE prop_id IN ", _
-        "DeclPropTable[[prop_id]]") _
-    & IDsFromColumnRange("INSERT INTO #myPid SELECT prop_id, '" & _
-        RoboRA.Range("StdDeclTemplate") & "' as RAtemplate FROM csd.prop WHERE prop_id IN ", _
-        "StdDeclPropTable[[prop_id]]")
-
-Call BasicQueries(allSQL)
-Call AwdCodingQueries(awdSQL)
 End Sub
 
 Sub OptionButton_AreYouSure()
@@ -72,35 +64,46 @@ Call AwdCodingQueries(pidWhere)
 End Sub
 
 Sub RefreshFromBlock()
-'convert to parse
-Dim org_code As String
-org_code = Advanced.Range("org_code")
-Dim pgm_ele_code As String
-pgm_ele_code = Advanced.Range("pgm_ele_code")
-Dim pm_ibm_logn_id As String
-pm_ibm_logn_id = Advanced.Range("pm_ibm_logn_id")
-Dim rcvd_before As String
-rcvd_before = Format(Advanced.Range("rcvd_before"), "yyyy-mm-dd hh:mm:ss")
-Dim solicitation As String
-solicitation = Advanced.Range("solicitation")
+  mySQLFrom = "FROM csd.prop prop" & vbNewLine
+  mySQLWhere = ""
+  With Advanced
+    If hasValue("from_date") Then mySQLWhere = mySQLWhere & "AND prop.nsf_rcvd_date >= {ts '" & Format(.Range("from_date"), "yyyy-mm-dd hh:mm:ss") & "'} " & vbNewLine
+    If hasValue("to_date") Then mySQLWhere = mySQLWhere & "AND prop.nsf_rcvd_date <= {ts '" & Format(.Range("to_date"), "yyyy-mm-dd hh:mm:ss") & "'} " & vbNewLine
+  End With
+    Call whereField("pgm_annc_id")
+    Call whereField("org_code")
+    Call whereField("pgm_ele_code")
+    Call whereField("obj_clas_code")
+    Call whereField("prop_titl_txt")
+    Call whereField("pm_ibm_logn_id")
+    Call whereField("dir_div_abbr", "org", "_code")
+    Call whereField("panl_id", "panl_prop", "prop_id")
+    Call whereField("_code", "prop_atr", "prop_id", notPreamble:=" AND prop_atr.prop_atr_type_code = 'PRC'")
+    Call whereField("_abbr", "prop_stts", "_code")
+    Call whereField("_abbr", "natr_rqst", "_code")
+    If Len(mySQLWhere) < 3 Then
+        MsgBox ("Please restrict the set of proposals by panel, solicitation, PD, or something. Exiting.")
+        End
+    Else
+        mySQLWhere = "WHERE (1=1) " & mySQLWhere
+    End If
 
-Dim pidWhere As String
-pidWhere = "WHERE p.prop_stts_code IN ('00','01','02','08','09')" & vbNewLine _
-& "AND (p.pgm_annc_id like '" & solicitation & "') AND (p.org_code like '" & org_code & "') " & vbNewLine _
-& "AND (p.pgm_ele_code like '" & pgm_ele_code & "') AND (p.pm_ibm_logn_id like '" & pm_ibm_logn_id & "') " & vbNewLine _
-& "AND (p.nsf_rcvd_date < {ts '" & rcvd_before & "'}) " & vbNewLine
-Call BasicQueries(pidWhere)
-Call AwdCodingQueries(pidWhere)
+Dim query As String
+With HiddenSettings
+ query = "SET NOCOUNT ON" & .Range("RA_pidSelect") & "convert(varchar(63),'') as RAtemplate " & vbNewLine & mySQLFrom & mySQLWhere
+ Call BasicQueries(query)
+ Call AwdCodingQueries(query)
+End With
 End Sub
 
 Sub List_Templates() ' list RA templates available (used by data validation)
 Dim templateName As String
 Dim nTemplates As Integer
 nTemplates = 0
-
+Application.ScreenUpdating = False
 On Error GoTo ErrHandler
 With Advanced.ListObjects("AvailableTemplates")
-  If .ListRows.count > 0 Then .DataBodyRange.Delete
+  If Not .DataBodyRange Is Nothing Then .DataBodyRange.Delete
   templateName$ = Dir(Range("dirRAtemplate").Value & "\*RAt.docx")
     Do While templateName$ <> ""
       If Left(templateName$, 1) <> "~" Then
@@ -113,6 +116,7 @@ With Advanced.ListObjects("AvailableTemplates")
 End With
 If nTemplates = 0 Then MsgBox ("Did not find any RA templates in " & Range("dirRAtemplate").Value & vbNewLine & "Remember that RA template names must end with RAt.docm")
 ExitHandler:
+Application.ScreenUpdating = True
 Exit Sub
 ErrHandler:
 MsgBox ("Error " & Err.Number & ":" & Err.Description & vbNewLine & "while trying to list templates.  Ensure template directory, " & Range("dirRAtemplate").Value & ", is accessible.")

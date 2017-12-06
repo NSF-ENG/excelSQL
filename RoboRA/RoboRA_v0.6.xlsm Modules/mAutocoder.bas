@@ -2,16 +2,15 @@ Attribute VB_Name = "mAutocoder"
 Option Explicit
 
 Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
-
-Private Declare PtrSafe Sub keybd_event Lib "user32" (ByVal bVk As Byte, ByVal bScan As Byte, ByVal dwFlags As Long, ByVal dwExtraInfo As Long)
-Private Declare PtrSafe Function MapVirtualKey Lib "user32" Alias "MapVirtualKeyA" (ByVal wCode As Long, ByVal wMapType As Long) As Long
-Private Const VK_RETURN = &HD
+'Private Declare PtrSafe Sub keybd_event Lib "user32" (ByVal bVk As Byte, ByVal bScan As Byte, ByVal dwFlags As Long, ByVal dwExtraInfo As Long)
+'Private Declare PtrSafe Function MapVirtualKey Lib "user32" Alias "MapVirtualKeyA" (ByVal wCode As Long, ByVal wMapType As Long) As Long
+'Private Const VK_RETURN = &HD
 
 Function openEJacket() As InternetExplorerMedium
-Set openEJacket = New InternetExplorerMedium
-openEJacket.Navigate ("https://www.ejacket.nsf.gov")
-Call myWait(openEJacket)
-openEJacket.Visible = True
+    Set openEJacket = New InternetExplorerMedium
+    openEJacket.Navigate ("https://www.ejacket.nsf.gov")
+    Call myWait(openEJacket)
+    openEJacket.Visible = True
 End Function
 
 Sub closeEJacket(IE)
@@ -24,6 +23,8 @@ End Sub
 
 Sub autoPasteRA(IE As InternetExplorerMedium, prop_id As String, RA As String) ' stuff RA into text box
 Dim i As Integer, j As Integer
+Dim overwriteQ As Variant
+overwriteQ = RoboRA.Range("overwrite_option").Value
 
 If (Len(prop_id) = 7) Then ' Probably have a prop_id; go to Jacket
     IE.Navigate ("https://www.ejacket.nsf.gov/ej/showProposal.do?Continue=Y&ID=" & prop_id)
@@ -33,10 +34,11 @@ If (Len(prop_id) = 7) Then ' Probably have a prop_id; go to Jacket
     Call myWait(IE)
     
     With IE.Document.getElementsByName("text")(0)
-     .Focus
-     If (Len(.Value) < 10) Or (LCase$(Left$(Range("overwriteRAs").Value, 1)) = "y") Or _
-       MsgBox("OK to overwrite existing RA for " & prop_id & vbNewLine & .Value, vbOKCancel) = vbOK Then
-       .Value = RA
+      .Focus
+       If (Len(.Value) < 10) Or (overwriteQ = 2) Or ((overwriteQ = 1) And _
+         MsgBox("OK to overwrite existing RA for " & prop_id & vbNewLine & .Value, vbOKCancel) = vbOK) Then
+      .Focus
+      .Value = RA
      End If
     End With
     Call myWait(IE)
@@ -45,35 +47,37 @@ If (Len(prop_id) = 7) Then ' Probably have a prop_id; go to Jacket
     Call myWait(IE)
     
 Else
-  MsgBox ("Failing to recognize " & prop_id & " as an id in autoRA")
+  MsgBox ("Failing to recognize " & prop_id & " as an id in autoPasteRA")
 End If
 End Sub
 
 Private Sub myWait(IE)
     ' wait for IE to be ready
     Dim count As Long
-    Sleep 10 * Range("delayTime").Value
+    Dim delaytime As Long
+    delaytime = 10 * Range("delayTime").Value
+    Sleep delaytime
     count = 0
     While IE.Busy And (Not IE.ReadyState = READYSTATE_COMPLETE) And (count < 40)
         DoEvents
-        Sleep 10 * (Range("delayTime").Value + count)
+        Sleep delaytime
         DoEvents
         count = count + 1
     Wend
     If count > 35 Then MsgBox count & " in myWait.  We seem to be having problems."
 End Sub
 
-Private Sub CheckCollabs(IE)
-    ' cell in spreadsheet should be Y,Yes, or yes if we want to apply to collabs.
-    If (UCase(Left(Range("apply2Collabs").Value, 1)) = "Y") Then
-    ' look for apply to collabs button on IE and check it if it is present
-      Call myWait(IE)
-      If (IE.Document.getElementsByName("applyToCollabs").Length > 0) Then
-        IE.Document.getElementsByName("applyToCollabs").Click
-        Call myWait(IE)
-      End If
-    End If
-End Sub
+'Private Sub CheckCollabs(IE)
+'    ' cell in spreadsheet should be Y,Yes, or yes if we want to apply to collabs.
+'    If (UCase(Left(Range("apply2Collabs").Value, 1)) = "Y") Then
+'    ' look for apply to collabs button on IE and check it if it is present
+'      Call myWait(IE)
+'      If (IE.Document.getElementsByName("applyToCollabs").Length > 0) Then
+'        IE.Document.getElementsByName("applyToCollabs").Click
+'        Call myWait(IE)
+'      End If
+'    End If
+'End Sub
 
 
 Function FixIPSText(s As String) As String

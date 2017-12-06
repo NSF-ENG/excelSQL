@@ -20,8 +20,7 @@ Sub MakeIndicatedRAs()
  Dim prop_id As String
  Dim autoDeclineQ As Boolean, hasAuto As Boolean
  Dim IE As InternetExplorerMedium
- Dim PT As PivotTable
-
+ Dim pt As PivotTable
 
 strThisWorkbook = ThisWorkbook.FullName
 dirRAtemplate = Range("dirRAtemplate").Value
@@ -32,18 +31,18 @@ If Right(dirRAoutput, 1) <> Application.pathSeparator Then dirRAoutput = dirRAou
  'check that templates exist for all actionable items.
  'if any action is upload, check that eJ running.
 
-    For Each PT In Advanced.PivotTables ' find templatesUsed pivot table and refresh
+    For Each pt In HiddenSettings.PivotTables ' find templatesUsed pivot table and refresh
     On Error Resume Next
-    If PT.Name = "templatesUsed" Then Exit For
+    If pt.Name = "templatesUsed" Then Exit For
     Next
-    If Not PT Is Nothing Then PT.RefreshTable
-    If PT Is Nothing Or Err.Number <> 0 Then
-      MsgBox "Can't refresh pivot table " & PT.Name & " on Advanced tab."
+    If Not pt Is Nothing Then pt.RefreshTable
+    If pt Is Nothing Or Err.Number <> 0 Then
+      MsgBox "Can't refresh pivot table " & pt.Name & " on HiddenSettings tab."
       GoTo ErrHandler:
     End If
     On Error GoTo 0
 
-nRAtypes = PT.RowRange.count - 3 ' omit header, last, and total.  For t = 2 To .count - 2
+nRAtypes = pt.RowRange.count - 3 ' omit header, last, and total.  For t = 2 To .count - 2
 nRA = 0
 hasAuto = RoboRA.CheckBoxes("cbAutoloadAll").Value = 1
 With Range("RADataTable[RAtemplate]")
@@ -51,12 +50,12 @@ With Range("RADataTable[RAtemplate]")
   strRAtemplate = Application.Trim(.Cells(i, 1))
   If Len(strRAtemplate) > 8 Then
     nRA = nRA + 1 ' we have an RA to do
-    If Left$(strRAtemplate, 3) = "Std" Then hasAuto = True ' there is an Std (Auto) decline
+    If Not hasAuto Then hasAuto = (Left$(strRAtemplate, 3) = "Std") ' Look for first Std (Auto) decline
   End If
  Next i
 End With
 If nRA = 0 Then
-    MsgBox ("Please select RAtemplates from dropdown to indicate which RAs to prepare. If dropdown in the RAtemplate column is empty, pick or refresh the template folder on the Advanced.")
+    MsgBox ("On RAData, please select RAtemplates to indicate which RAs to prepare. If dropdown in RAtemplate column is empty, pick the RAtemplate folder on the Advanced tab.")
     GoTo ExitHandler:
 End If
     
@@ -71,8 +70,8 @@ On Error GoTo 0
  
  
 
-For t = 2 To PT.RowRange.count - 1
-strRAtemplate = Application.Trim(PT.RowRange.Cells(t, 1))
+For t = 2 To pt.RowRange.count - 1
+strRAtemplate = Application.Trim(pt.RowRange.Cells(t, 1))
  If Len(strRAtemplate) > 2 And strRAtemplate <> "(blank)" Then ' we have an RA template
    Set wdDoc = wdApp.Documents.Open(dirRAtemplate & strRAtemplate)
 
@@ -117,7 +116,7 @@ strRAtemplate = Application.Trim(PT.RowRange.Cells(t, 1))
           .OpenDataSource Name:=strThisWorkbook, _
               LinkToSource:=False, AddToRecentFiles:=False, Revert:=False, Format:=wdOpenFormatAuto, _
               Connection:="Data Source='" & strThisWorkbook & "';Mode=Read", _
-              SQLStatement:="SELECT * FROM `AllRACandidates$`"
+              SQLStatement:="SELECT * FROM `RAData$`"
      
           .Destination = wdSendToNewDocument
           .SuppressBlankLines = True
@@ -178,10 +177,16 @@ Sub makeProjText()
 
  Dim wdApp As Object, wdDoc As Object
  Dim strWordDoc As String, strThisWorkbook As String, strPDFOutputName As String
+ Dim dirRAtemplate As String, dirRAoutput As String
+ 
+ dirRAtemplate = Range("dirRAtemplate").Value
+If Right(dirRAtemplate, 1) <> Application.pathSeparator Then dirRAtemplate = dirRAtemplate & Application.pathSeparator
+dirRAoutput = Range("dirRAoutput").Value
+If Right(dirRAoutput, 1) <> Application.pathSeparator Then dirRAoutput = dirRAoutput & Application.pathSeparator
  
  strThisWorkbook = ThisWorkbook.FullName
- strWordDoc = ThisWorkbook.path & "\RAhelpTemplate.docx"
- strPDFOutputName = ThisWorkbook.path & "\RAhelp" & Format(Now(), "-yy_mm_dd-hh_mm")
+ strWordDoc = dirRAtemplate & "RAhelpTemplate.docx"
+ strPDFOutputName = dirRAoutput & "RAhelp" & Format(Now(), "-yy_mm_dd-hh_mm")
 
 On Error Resume Next
 Set wdApp = GetObject(, "Word.Application")

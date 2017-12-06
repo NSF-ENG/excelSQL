@@ -4,7 +4,10 @@ Option Explicit
 Sub BasicQueries(myPids As String)
 With HiddenSettings
     'need this first to get revtable in order
-    Call doQuery(PRCs.ListObjects("PRCGlossaryTable").QueryTable, myPids & .Range("revtable") _
+    Call doQuery(PRCs.ListObjects("PECGlossaryTable").QueryTable, myPids _
+        & .Range("RA_PECglossary") & .Range("revtable") & "DROP TABLE #myPid")
+
+    Call doQuery(PRCs.ListObjects("PRCGlossaryTable").QueryTable, myPids _
         & .Range("RA_leads") & .Range("RA_propPRCs") & .Range("RA_PRCglossary") _
         & "DROP TABLE #myPid, #myLead, #myRA DROP TABLE #myPRCs, #myPRCdata")
     
@@ -23,7 +26,6 @@ With HiddenSettings
         & .Range("RA_prop") & .Range("RA_panl") & .Range("RA_allRAdata") _
         & "DROP TABLE #myPid, #myLead, #myRA, #myProp, #myPropBudg, #myRevs, #myRevPanl, #myRevMarks, #myRevSumm, #myPanl, #myProjPanl, #myProjPanlSumm DROP TABLE #myDmog")
 End With
-
 Call CleanUpSheet(ckCoding)
 Call CleanUpSheet(ProjText)
 Call CleanUpSheet(RAData)
@@ -45,6 +47,7 @@ With HiddenSettings
         & .Range("RA_leads") & .Range("RA_propPRCs") & .Range("RA_prop") & .Range("RA_splits") _
         & "DROP TABLE #myPid, #myLead, #myRA, #myPRCs, #myPRCdata DROP TABLE #myProp, #myPropBudg DROP TABLE #myBSprc")
 End With
+Call RefreshPivotTables(ckSplits)
 Call CleanUpSheet(Budgets)
 Call CleanUpSheet(ckSplits)
 Call CleanUpSheet(ckAwd)
