@@ -22,13 +22,12 @@ CREATE TABLE #myPid (prop_id char(7), lead_prop_id char(7) null, pi_id char(9), 
 --]RA_pidCreate
 INSERT INTO #myPid 
 --[RA_pidSelect
-SELECT DISTINCT p.prop_id, p.lead_prop_id, p.pi_id, p.inst_id, p.pm_ibm_logn_id as PO, 
+SELECT DISTINCT prop.prop_id, prop.lead_prop_id, prop.pi_id, prop.inst_id, prop.pm_ibm_logn_id as PO, 
 --]RA_pidSelect
 '' as RAtemplate 
-FROM csd.prop p
-JOIN csd.panl_prop pp ON p.prop_id = pp.prop_id
-WHERE --p.prop_stts_code IN ('00','01','02','08','09') 
-      --AND dd_rcom_date = '1900-01-01' -- Not dd_concurred yet
+FROM csd.prop prop
+JOIN csd.panl_prop pp ON prop.prop_id = pp.prop_id
+WHERE prop.prop_stts_code LIKE '0[01289]' AND
 pp.panl_id in ('p172027','p170288','p180207','p180208')
 --pm_logn_id = 'jsnoeyi'
 

@@ -63,6 +63,8 @@ Sub handlePwd()
     Set cn = Nothing
     If bad Then
         HiddenSettings.Range("rpt_pwd").Value = ""
+        AppActivate Application.Caption
+        DoEvents
         If MsgBox("The reportserver userid and password are not working; please check if they have been updated and try again." _
         & vbNewLine & "If remote, ensure you have an active VPN connection into the NSF network.", vbOKCancel) <> vbOK Then End
         Call handlePwd

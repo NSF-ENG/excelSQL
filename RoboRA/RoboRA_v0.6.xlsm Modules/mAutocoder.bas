@@ -35,11 +35,17 @@ If (Len(prop_id) = 7) Then ' Probably have a prop_id; go to Jacket
     
     With IE.Document.getElementsByName("text")(0)
       .Focus
-       If (Len(.Value) < 10) Or (overwriteQ = 2) Or ((overwriteQ = 1) And _
-         MsgBox("OK to overwrite existing RA for " & prop_id & vbNewLine & .Value, vbOKCancel) = vbOK) Then
-      .Focus
-      .Value = RA
-     End If
+      If (Len(.Value) < 10) Or (overwriteQ = 2) Then
+       .Focus
+       .Value = RA
+      ElseIf (overwriteQ = 1) Then
+        AppActivate Application.Caption
+        DoEvents
+        If (MsgBox("OK to overwrite existing RA for " & prop_id & vbNewLine & .Value, vbOKCancel) = vbOK) Then
+         .Focus
+         .Value = RA
+        End If
+      End If
     End With
     Call myWait(IE)
     
@@ -47,6 +53,8 @@ If (Len(prop_id) = 7) Then ' Probably have a prop_id; go to Jacket
     Call myWait(IE)
     
 Else
+  AppActivate Application.Caption
+  DoEvents
   MsgBox ("Failing to recognize " & prop_id & " as an id in autoPasteRA")
 End If
 End Sub
@@ -64,7 +72,11 @@ Private Sub myWait(IE)
         DoEvents
         count = count + 1
     Wend
-    If count > 35 Then MsgBox count & " in myWait.  We seem to be having problems."
+    If count > 35 Then
+        AppActivate Application.Caption
+        DoEvents
+        MsgBox count & " in myWait.  We seem to be having problems."
+    End If
 End Sub
 
 'Private Sub CheckCollabs(IE)

@@ -11,7 +11,6 @@ Sub MakeIndicatedRAs()
  Dim i As Integer
  Dim t As Integer
  Dim nRA As Integer
- Dim nRAtypes As Integer
  Dim wdApp As Object
  Dim wdDoc As Object
  Dim strWordDoc As Variant
@@ -42,13 +41,12 @@ If Right(dirRAoutput, 1) <> Application.pathSeparator Then dirRAoutput = dirRAou
     End If
     On Error GoTo 0
 
-nRAtypes = pt.RowRange.count - 3 ' omit header, last, and total.  For t = 2 To .count - 2
 nRA = 0
 hasAuto = RoboRA.CheckBoxes("cbAutoloadAll").Value = 1
 With Range("RADataTable[RAtemplate]")
  For i = 1 To .Rows.count  ' quick check
   strRAtemplate = Application.Trim(.Cells(i, 1))
-  If Len(strRAtemplate) > 8 Then
+  If Len(strRAtemplate) > 2 And strRAtemplate <> "(blank)" And (Left(strRAtemplate, 2) <> "zz") Then
     nRA = nRA + 1 ' we have an RA to do
     If Not hasAuto Then hasAuto = (Left$(strRAtemplate, 3) = "Std") ' Look for first Std (Auto) decline
   End If
@@ -58,7 +56,9 @@ If nRA = 0 Then
     MsgBox ("On RAData, please select RAtemplates to indicate which RAs to prepare. If dropdown in RAtemplate column is empty, pick the RAtemplate folder on the Advanced tab.")
     GoTo ExitHandler:
 End If
-    
+
+ufProgress.Show vbModeless
+
 If hasAuto Then Set IE = openEJacket()
     
 On Error Resume Next ' start Word  'JSS mac version?
@@ -67,12 +67,10 @@ If wdApp Is Nothing Then
     Set wdApp = CreateObject("Word.Application")
 End If
 On Error GoTo 0
- 
- 
 
 For t = 2 To pt.RowRange.count - 1
 strRAtemplate = Application.Trim(pt.RowRange.Cells(t, 1))
- If Len(strRAtemplate) > 2 And strRAtemplate <> "(blank)" Then ' we have an RA template
+ If Len(strRAtemplate) > 2 And strRAtemplate <> "(blank)" And (Left(strRAtemplate, 2) <> "zz") Then ' we have an RA template
    Set wdDoc = wdApp.Documents.Open(dirRAtemplate & strRAtemplate)
 
     Do While wdDoc Is Nothing ' NOT TESTED
@@ -106,6 +104,7 @@ strRAtemplate = Application.Trim(pt.RowRange.Cells(t, 1))
         
     With Range("RADataTable[RAtemplate]") ' need RAfname as next column!!!
       For i = 1 To .Rows.count ' do the RAs
+      UpdateProgressBar (i / .Rows.count)
        If strRAtemplate = Application.Trim(.Cells(i, 1)) Then ' we have an RA to do
         strRAoutput = dirRAoutput & Application.Trim(.Cells(i, 2)) & ".docm" ' make output file name
     '    Application.ScreenUpdating = False
@@ -160,6 +159,7 @@ strRAtemplate = Application.Trim(pt.RowRange.Cells(t, 1))
  Next t
 
 ExitHandler:
+Unload ufProgress
 If hasAuto Then Call closeEJacket(IE)
 If Not (wdDoc Is Nothing) Then
    wdDoc.Close SaveChanges:=wdDoNotSaveChanges
@@ -179,9 +179,9 @@ Sub makeProjText()
  Dim strWordDoc As String, strThisWorkbook As String, strPDFOutputName As String
  Dim dirRAtemplate As String, dirRAoutput As String
  
- dirRAtemplate = Range("dirRAtemplate").Value
+ dirRAtemplate = Advanced.Range("dirRAtemplate").Value
 If Right(dirRAtemplate, 1) <> Application.pathSeparator Then dirRAtemplate = dirRAtemplate & Application.pathSeparator
-dirRAoutput = Range("dirRAoutput").Value
+dirRAoutput = Advanced.Range("dirRAoutput").Value
 If Right(dirRAoutput, 1) <> Application.pathSeparator Then dirRAoutput = dirRAoutput & Application.pathSeparator
  
  strThisWorkbook = ThisWorkbook.FullName
