@@ -1,27 +1,6 @@
 Attribute VB_Name = "mButtons"
 Option Explicit
-Public Function SummarizeQuestMarks(abstr As String) As String
-' Summarize ? from string that may have been converted from quotes, dashes, or other special characters.
-Dim i As Long
-Dim s As String
-s = " "
-i = InStrRev(abstr, "?")
-Do While i > 0
-  If i < 4 Then
-    s = Mid(abstr, i, 8) & "|" & s
-    Exit Do
-  ElseIf Not Mid(abstr, i - 1, 3) Like "[a-zA-Z][?] " Then
-    i = i - 3
-    s = Mid(abstr, i, 8) & "|" & s
-  End If
-  i = InStrRev(abstr, "?", i - 1)
-Loop
-SummarizeQuestMarks = s
-End Function
 
-Private Sub test_SummarizeQuestMarks()
-Debug.Print SummarizeQuestMarks("?Testing.? Is this OK? And this ? should not be??  ?Done?.")
-End Sub
 
 Sub ClearQueryParams()
  Call List_Templates
@@ -41,6 +20,7 @@ Dim allSQL As String
 ' Query pulling from tables
 sql2 = "' as RAtemplate FROM csd.prop prop WHERE prop_stts_code like '" _
         & Advanced.Range("prop_stts_code") & "' AND prop_id IN "
+
 
 With HiddenSettings
  awdSQL = IDsFromColumnRange("INSERT INTO #myPid " & .Range("RA_pidSelect") _
@@ -88,41 +68,6 @@ Sub RefreshFromBlock()
   End With
 End Sub
 
-Sub List_Templates() ' list RA templates available (used by data validation)
-Dim templateName As String
-Dim nTemplates As Integer
-nTemplates = 0
-Application.ScreenUpdating = False
-On Error GoTo ErrHandler
-With Advanced.ListObjects("AvailableTemplates")
-  If Not .DataBodyRange Is Nothing Then .DataBodyRange.Delete
-  templateName$ = Dir(Range("dirRAtemplate").Value & "\*RAt.docx")
-    Do While templateName$ <> ""
-      If Left(templateName$, 1) <> "~" Then
-        .ListRows.Add AlwaysInsert:=True
-        nTemplates = nTemplates + 1
-        .DataBodyRange(nTemplates, 1) = templateName$
-      End If
-      templateName$ = Dir
-    Loop
-End With
-If nTemplates = 0 Then MsgBox ("Did not find any RA templates in " & Range("dirRAtemplate").Value & vbNewLine & "Remember that RA template names must end with RAt.docm")
-ExitHandler:
-Application.ScreenUpdating = True
-Exit Sub
-ErrHandler:
-MsgBox ("Error " & Err.Number & ":" & Err.Description & vbNewLine & "while trying to list templates.  Ensure template directory, " & Range("dirRAtemplate").Value & ", is accessible.")
-Resume ExitHandler
-End Sub
-
-Sub Picker_dirRAtemplate()
-Range("dirRAtemplate").Value = FolderPicker("Choose input folder containing RA templates", Range("dirRAtemplate").Value)
-Call List_Templates
-End Sub
-
-Sub Picker_dirRAoutput()
-  Range("dirRAoutput").Value = FolderPicker("Choose output folder for populated RAs (.docm)", Range("dirRAoutput").Value)
-End Sub
 
 'Sub installMacros()
 'Dim pathName As String

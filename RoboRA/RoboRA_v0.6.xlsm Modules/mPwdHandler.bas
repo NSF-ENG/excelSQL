@@ -25,6 +25,32 @@ Dim cstring As String
  'Debug.Print "mc:" & makeConnectionString
 End Function
 
+Function needPassword() As Boolean
+   needPassword = True
+   If gPwdForm Is Nothing Then Exit Function
+   If gPwdForm.txtPassword.Value = "" Then Exit Function
+   #If Mac Then
+   needPassword = False ' assume we are ok (FIX)
+   ' maybe use applescript to check connection & password
+   #Else
+' use ADODB connection to try password; get a fresh one if it has expired.
+' Need to check that this actually uses the password
+    Dim cn As Object
+    Set cn = CreateObject("ADODB.Connection")
+    With cn
+      .ConnectionString = makeConnectionString
+      .ConnectionTimeout = 10 ' in seconds
+      On Error Resume Next
+      .Open
+      needPassword = Err.Number <> 0 ' if any error, we couldn't open connection.
+      .Close
+    End With
+    On Error GoTo 0
+    Set cn = Nothing
+
+   #End If
+End Function
+
 'Method handles password if we have one, else show password form to request one.
 'checks if password works.
 Sub handlePwd()
@@ -44,24 +70,8 @@ Sub handlePwd()
     End With
     #If Mac Then
     #Else
-' use ADODB connection to try password; get a fresh one if it has expired.
-' Need to check that this actually uses the password
-    Dim cn As Object
-    Dim bad As Boolean
-    Set cn = CreateObject("ADODB.Connection")
-    With cn
-      .ConnectionString = makeConnectionString
-      'Debug.Print "adodb:" & makeConnectionString
-      .ConnectionTimeout = 10 ' in seconds
-      On Error Resume Next
-      .Open
-      bad = Err.Number > 0 ' if any error, we couldn't open connection.
-      'Debug.Print "hp:" & bad
-      .Close
-    End With
-    On Error GoTo 0
-    Set cn = Nothing
-    If bad Then
+    
+    If needPassword Then
         HiddenSettings.Range("rpt_pwd").Value = ""
         AppActivate Application.Caption
         DoEvents
@@ -94,4 +104,5 @@ ErrHandler:
     MsgBox ("doQuery Error " & Err.Number & ":" & Err.Description)
     GoTo ExitHandler
 End Sub
+
 

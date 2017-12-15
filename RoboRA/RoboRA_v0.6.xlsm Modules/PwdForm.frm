@@ -32,6 +32,11 @@ Private Sub cmdPwdOK_Click()
     'Unload Me
 End Sub
 
+Private Sub UserForm_Initialize()
+'debugging
+Debug.Print ">" & Me.txtPassword.Value & "<"
+End Sub
+
 Private Sub UserForm_QueryClose(Cancel As Integer, CloseMode As Integer)
   'Intercept/repurpose Unload if user clicks form "X" close button.
   If CloseMode = 0 Then

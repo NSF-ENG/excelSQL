@@ -103,6 +103,8 @@ End Function
 Function confirm(msg As String, Optional abortQ As Boolean = False) As Integer
 ' Allow user to confirm action.  vbCancel, or vbNo with abort=True will call End, aborting calling Sub.
 ' Otherwise you can check the return value =vbNo to skip the action
+AppActivate Application.Caption
+DoEvents
 confirm = MsgBox(msg, vbYesNoCancel)
 If confirm <> vbYes And (confirm = vbCancel Or abortQ) Then
     MsgBox ("Aborting action: please recheck parameters before initiating action.")
@@ -126,7 +128,7 @@ Sub createPath(path As String)
     Next
 End Sub
 Sub renewFiles(from As String, topath As String, Optional verbosity As Integer = 1)
-' copy files matching from (include filter *.* or *RAt.docx or *.do*) that have been updated or that don't exist in topath
+' copy files matching from (include filter *.* or *RAt.docm or *.do*) that have been updated or that don't exist in topath
 ' old files get "backup"datetime added, so nothing is lost.
 Dim FSO As Object
 Dim fromdate As Date, todate As Date

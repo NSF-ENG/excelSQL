@@ -21,45 +21,7 @@ Set IE = Nothing
 End Sub
 
 
-Sub autoPasteRA(IE As InternetExplorerMedium, prop_id As String, RA As String) ' stuff RA into text box
-Dim i As Integer, j As Integer
-Dim overwriteQ As Variant
-overwriteQ = RoboRA.Range("overwrite_option").Value
-
-If (Len(prop_id) = 7) Then ' Probably have a prop_id; go to Jacket
-    IE.Navigate ("https://www.ejacket.nsf.gov/ej/showProposal.do?Continue=Y&ID=" & prop_id)
-    Call myWait(IE)
-
-    IE.Navigate ("https://www.ejacket.nsf.gov/ej/processReviewAnalysis.do?dispatch=add&uniqId=" & prop_id & LCase(Left(Environ("USERNAME"), 7)))
-    Call myWait(IE)
-    
-    With IE.Document.getElementsByName("text")(0)
-      .Focus
-      If (Len(.Value) < 10) Or (overwriteQ = 2) Then
-       .Focus
-       .Value = RA
-      ElseIf (overwriteQ = 1) Then
-        AppActivate Application.Caption
-        DoEvents
-        If (MsgBox("OK to overwrite existing RA for " & prop_id & vbNewLine & .Value, vbOKCancel) = vbOK) Then
-         .Focus
-         .Value = RA
-        End If
-      End If
-    End With
-    Call myWait(IE)
-    
-    IE.Document.getElementsByName("save")(0).Click
-    Call myWait(IE)
-    
-Else
-  AppActivate Application.Caption
-  DoEvents
-  MsgBox ("Failing to recognize " & prop_id & " as an id in autoPasteRA")
-End If
-End Sub
-
-Private Sub myWait(IE)
+Sub myWait(IE)
     ' wait for IE to be ready
     Dim count As Long
     Dim delaytime As Long
@@ -90,57 +52,6 @@ End Sub
 '      End If
 '    End If
 'End Sub
-
-
-Function FixIPSText(s As String) As String
-'
-' Replace special characters
-'
-
-Dim fromC As String, toC As String
-Dim i As Long
-fromC = "–”“’‘•ãèéàáâåçêëìíîïòóôõùúû"
-toC = "-""""''*aeeaaaaceeiiiioooouuu"
-
-'MsgBox Len(fromC) & " : " & Len(toC)
-
-    s = Replace(Replace(Replace(Replace(Replace(s, "…", "..."), "—", "--"), "ä", "ae"), "ö", "oe"), "ü", "ue") ' mulitcharacter replaces —äöü
-
-    For i = 1 To Len(fromC)
-       'MsgBox AscW(Mid(fromC, i, 1)) & " - " & AscW(Mid(toC, i, 1))
-       s = Replace(s, Mid(fromC, i, 1), Mid(toC, i, 1))
-    Next i
-FixIPSText = s
-End Function
-
-
-
-Function StripDoubleBrackets(s As String) As String
-' does not handle nesting.
-Dim i As Long, j As Long, k As Long, lenS As Long
-
-
-j = InStrRev(s, "]]")
-Do While j > 0
-    i = InStrRev(s, "[[", j)
-    k = InStrRev(s, "]]", j - 1)
-    If i < k Then
-      MsgBox "Warning: Consecutive close comment brackets with no open." & vbNewLine & Mid(s, k, j - k + 1)
-      j = k
-    End If
-    If i < 1 Then
-      MsgBox "Warning: missing open comment brackets for first close." & vbNewLine & Left(s, j)
-    Else
-      s = Left(s, i - 1) & Right(s, Len(s) - j - 1)
-    End If
-    j = InStrRev(s, "]]", i)
-Loop
-
-StripDoubleBrackets = s
-End Function
-
-
-
 '
 '    IE.Navigate ("https://www.ejacket.nsf.gov/ej/showProposal.do?Continue=Y&optimize=Y&ID=" & prop_id)
 '    Call myWait(IE)

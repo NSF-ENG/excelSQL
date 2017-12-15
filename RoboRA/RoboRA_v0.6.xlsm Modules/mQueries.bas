@@ -1,8 +1,6 @@
 Attribute VB_Name = "mQueries"
 Option Explicit
 
-
-
 Sub BasicQueries(myPids As String)
 ufProgress.Show vbModeless
 With HiddenSettings
@@ -92,8 +90,8 @@ Private Sub ckCodingCF()
     .Item(1).StopIfTrue = False
     End With
     
-    With Range("ckCodingTable[[pgm_annc_id]:[propPRCs]]").FormatConditions
-    .Add Type:=xlExpression, Formula1:="=AND($T2=""N"", M2<>M1)"
+    With Range("ckCodingTable[[pgm_annc_id]:[PO]]").FormatConditions
+    .Add Type:=xlExpression, Formula1:="=AND($T2=""N"", C2<>C1)"
     .Item(.count).SetFirstPriority
     With .Item(1).Interior
         .PatternColorIndex = xlAutomatic

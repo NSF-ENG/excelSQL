@@ -57,6 +57,7 @@ If nRA = 0 Then
     GoTo ExitHandler:
 End If
 
+'If RoboRA.CheckBoxes("cbConfirmActions").Value = 1 Then confirm ("About to start Mail Merge to create RA drafts")
 ufProgress.Show vbModeless
 
 If hasAuto Then Set IE = openEJacket()
@@ -187,6 +188,8 @@ If Right(dirRAoutput, 1) <> Application.pathSeparator Then dirRAoutput = dirRAou
  strThisWorkbook = ThisWorkbook.FullName
  strWordDoc = dirRAtemplate & "RAhelpTemplate.docx"
  strPDFOutputName = dirRAoutput & "RAhelp" & Format(Now(), "-yy_mm_dd-hh_mm")
+ 
+ufProgress.Show vbModeless
 
 On Error Resume Next
 Set wdApp = GetObject(, "Word.Application")
@@ -197,11 +200,13 @@ On Error GoTo 0
  
 '    Application.ScreenUpdating = False
 '    Application.DisplayAlerts = False
+Call UpdateProgressBar(0.05)
 
  Set wdDoc = wdApp.Documents.Open(strWordDoc)
  wdDoc.Activate
  wdApp.Visible = True
 
+Call UpdateProgressBar(0.1)
 'Connection:= "Provider=Microsoft.ACE.OLEDB.12.0;User ID=Admin;Data Source=C:\Users\Jack Snoeyink\Desktop\tmp.xlsm';Mode=Read;Extended Properties=""HDR=YES;IMEX=1;"";Jet OLEDB:System database="""";Jet OLEDB:Registry Path="""";Jet OLEDB:Engine Type=3"
     With wdDoc.MailMerge
        .MainDocumentType = 0 'wdFormLetters, wdOpenFormatAuto
@@ -219,7 +224,7 @@ On Error GoTo 0
         End With
         .Execute Pause:=True 'False
     End With
-    
+Call UpdateProgressBar(0.6)
     'export format pdf=17, opt for screen=1,wdExportCreateHeadingBookmarks=1
     wdApp.ActiveDocument.ExportAsFixedFormat OutputFileName:=strPDFOutputName, ExportFormat:= _
         17, OpenAfterExport:=True, OptimizeFor:= _
@@ -227,8 +232,8 @@ On Error GoTo 0
         Item:=0, IncludeDocProps:=True, KeepIRM:=True, _
         CreateBookmarks:=1, DocStructureTags:=True, _
         BitmapMissingFonts:=True, UseISO19005_1:=False
-        
+Call UpdateProgressBar(0.9)
  wdApp.ActiveDocument.Close SaveChanges:=0 ' don't save changes
  wdDoc.Close SaveChanges:=0
-
+Unload ufProgress
 End Sub
