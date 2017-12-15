@@ -1,19 +1,15 @@
 Attribute VB_Name = "mCleanCopy"
 Function FixIPSText(s As String) As String
-'
 ' Replace special characters
-'
+' IMPORTANT: don't save this on a Mac; you will lose the special characters
+' since the Mac VBE will convert them, but the PC won't convert them back.
 
-Dim fromC, toC As String
+' Edit this code on a PC only -- DON'T SAVE ON MAC
+Dim fromC As String, toC As String
 Dim i As Long
-toC = " -""""''*aeeaaaaceeiiiiooooouuu"
-#If Mac Then
- fromC = ChrW(160) & "ΠΣÒΥΤ¥‹‡‰‘“’”•—™›Ώ"
- s = Replace(Replace(Replace(Replace(Replace(s, "Ι", "..."), "Ρ", "--"), "", "ae"), "", "oe"), "", "ue") ' mulitcharacter replaces Ρ
-#Else
- fromC = ChrW(160) & "–”“’‘•γθιΰαβεηκλμνξοςστυψωϊϋ"
- s = Replace(Replace(Replace(Replace(Replace(s, "…", "..."), "—", "--"), "δ", "ae"), "φ", "oe"), "ό", "ue") ' mulitcharacter replaces Ρ
-#End If
+ toC = " -""""''*aaaaaAceeeeiiiioooooOuuu"
+ fromC = ChrW(160) & "–”“’‘•γΰαβεΕηθικλμνξοςστυψΨωϊϋ"
+ s = Replace(Replace(Replace(Replace(Replace(s, "…", "..."), "—", "--"), "δ", "ae"), "φ", "oe"), "ό", "ue") ' mulitcharacter replaces
 'MsgBox Len(fromC) & " : " & Len(toC)
     For i = 1 To Len(fromC)
        'MsgBox AscW(Mid(fromC, i, 1)) & " - " & AscW(Mid(toC, i, 1))
