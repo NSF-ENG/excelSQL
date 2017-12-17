@@ -296,7 +296,7 @@ UPDATE #myPanl SET S = (SELECT isnull(convert(varchar,SUM(ps.rtCount)),'No') + '
 FROM #myPanl pl DROP TABLE #myPanlOutcomes
 --per project panel summary 
 SELECT rp.lead, ps.*, rp.N, rp.V, s.RCOM_SEQ_NUM AS RS, d.RCOM_ABBR as RA, d.RCOM_TXT as RT, s.PROP_ORDR as RK,
-(SELECT count(*) FROM #myRevs c WHERE confl=1 AND c.panl_id = rp.panl_id AND c.lead = rp.lead ) as C,
+nullif((SELECT count(*) FROM #myRevs c WHERE confl=1 AND c.panl_id = rp.panl_id AND c.lead = rp.lead ),0) as C,
 CASE WHEN panl_summ_unrl_flag = 'Y' THEN 1 ELSE 0 END as summ_unrls, 
 CASE WHEN panl_summ_unrl_flag = 'Y' OR panl_summ_rlse_flag = 'Y'  THEN 0 ELSE 1 END as summ_unmrkd,id=identity(18), 0 as seq
 INTO #myProjPanl FROM #myRevPanl rp
@@ -621,6 +621,7 @@ SELECT lead, upld_date, convert(text, convert(varchar(16384),js.PROJ_SUMM_TXT) +
 INTO #mySumm FROM #myLead p 
 JOIN csd.prop_subm_ctl_vw psc ON psc.prop_id = p.lead
 JOIN FLflpdb.flp.proj_summ js ON js.SPCL_CHAR_PDF <> 'Y' AND js.TEMP_PROP_ID = psc.TEMP_PROP_ID
+
 SELECT p.lead, p.L, rs.string, rs.score, rp.revr_id, rp.rev_rtrn_date, id=identity(18), 0 as 'seq'
 INTO #myRevInfo FROM #myLead p
 JOIN csd.rev_prop_vw rp ON rp.prop_id = p.lead
@@ -629,18 +630,21 @@ ORDER BY lead, score DESC
 SELECT lead, MIN(id) as 'start' INTO #myRISt FROM #myRevInfo GROUP BY lead
 UPDATE #myRevInfo set seq = id-M.start FROM #myRevInfo r, #myRISt M WHERE r.lead = M.lead
 DROP TABLE #myRISt
+
 SELECT rv.lead, rv.L as pi_last_name, 'Review' as docType, rev_prop.pm_logn_id, rv.revr_id as panl_revr_id,  revr.revr_last_name as 'name', revr_opt_addr_line.revr_addr_txt as 'info',
 convert(varchar,rev_prop.rev_type_code) AS type, convert(varchar,rev_prop.rev_stts_code) as stts, rev_prop.rev_due_date as due, rv.rev_rtrn_date as returned,
  rv.string as score, rev_txt.REV_PROP_TXT_FLDS as 'text'
 FROM #myRevInfo rv, csd.revr revr, csd.rev_prop rev_prop, csd.revr_opt_addr_line revr_opt_addr_line, csd.rev_prop_txt_flds_vw rev_txt
 WHERE rv.lead = rev_prop.prop_id AND rv.lead = rev_txt.PROP_ID AND rv.revr_id = rev_prop.revr_id AND rv.revr_id = revr.revr_id AND rv.revr_id = revr_opt_addr_line.revr_id
   AND rv.revr_id = rev_txt.REVR_ID AND ((revr_opt_addr_line.addr_lne_type_code='E'))
-UNION ALL SELECT p.lead, p.L, ' PanlSumm', panl.pm_logn_id, panl_prop_summ.PANL_ID,  ' '+panl.panl_name, panl_rcom_def.RCOM_TXT,
-convert(varchar,panl_prop_summ.RCOM_SEQ_NUM), convert(varchar,panl_prop_summ.PROP_ORDR), panl.panl_bgn_date, panl_prop_summ.panl_summ_rlse_date,
-panl_rcom_def.RCOM_ABBR , panl_prop_summ.PANL_SUMM_TXT
-FROM #myLead p, FLflpdb.flp.panl_prop_summ panl_prop_summ, FLflpdb.flp.panl_rcom_def panl_rcom_def, csd.panl panl
-WHERE p.lead = panl_prop_summ.PROP_ID AND panl_prop_summ.PANL_ID = panl.panl_id
-  AND panl_prop_summ.RCOM_SEQ_NUM = panl_rcom_def.RCOM_SEQ_NUM AND panl_prop_summ.PANL_ID = panl_rcom_def.PANL_ID
+UNION ALL SELECT p.lead, p.L, ' PanlSumm' as docType, p.PO, panl_prop_summ.PANL_ID,  ' '+panl.panl_name, panl_rcom_def.RCOM_TXT,
+convert(varchar,panl_prop_summ.RCOM_SEQ_NUM), convert(varchar,panl_prop_summ.PROP_ORDR), panl.panl_bgn_date, panl_prop_summ.last_updt_tmsp,
+panl_rcom_def.RCOM_ABBR, panl_prop_summ.PANL_SUMM_TXT
+    FROM #myLead p 
+    JOIN FLflpdb.flp.panl_prop_summ panl_prop_summ ON panl_prop_summ.PROP_ID = p.lead
+    JOIN csd.panl panl ON panl.panl_id = panl_prop_summ.PANL_ID
+    LEFT JOIN FLflpdb.flp.panl_rcom_def panl_rcom_def ON panl_rcom_def.RCOM_SEQ_NUM = panl_prop_summ.RCOM_SEQ_NUM AND panl_rcom_def.PANL_ID = panl_prop_summ.PANL_ID
+
 UNION ALL SELECT p.lead, p.L, 'POCmnt', p.PO, p.prop_id, cmt.cmnt_cre_id, '', '', convert(varchar,cmt.cmnt_prop_stts_code), cmt.beg_eff_date, cmt.end_eff_date,'', cmt.cmnt
 FROM #myProp p, FLflpdb.flp.cmnt_prop cmt WHERE p.prop_id = cmt.prop_id AND (p.ILN < 'M' OR LEN(cmt.cmnt) <> (SELECT LEN(l.cmnt) FROM FLflpdb.flp.cmnt_prop l WHERE p.lead = l.prop_id))
 UNION ALL SELECT p.lead, p.L, 'RA' as docType, p.PO, '', ra.last_updt_user, '', '', null, null, ra.last_updt_tmsp, '', ra.prop_rev_anly_txt
@@ -653,6 +657,16 @@ UNION ALL SELECT p.lead, p.L, 'xDiaryNt',p.PO, p.prop_id, crtd_by_user, ej_diry_
 FROM #myProp p, FLflpdb.flp.ej_diry_note d WHERE d.prop_id = p.prop_id
 ORDER BY lead, docType, revr_last_name, revr_id
 --]RA_projText
+
+--consider adding scribe?  I'm having timing issues with these
+--select pav.panl_id +'('+rtrim(revr.revr_last_name)+')', pav.* from FLflpdb.flp.panl_asgn_view pav JOIN csd.revr revr ON revr.revr_id = pav.Scribe WHERE panl_id = 'p180637'
+--select p.* from #myLead p
+
+SELECT prop_id, pav.panl_id, '('+rtrim(revr.revr_last_name)+')' as scribe
+FROM #myLead p
+JOIN FLflpdb.flp.panl_asgn_view pav ON pav.prop_id 
+JOIN csd.revr revr ON revr.revr_id = pav.Scribe WHERE panl_id = 'p180637'
+
 
 
 --splits details

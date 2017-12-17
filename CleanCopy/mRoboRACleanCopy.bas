@@ -31,12 +31,80 @@ Option Explicit
 "Applications:Microsoft Office 2011:Office:MicrosoftOffice.framework:MicrosoftOffice" () As Long
   #End If
  #End If
+' use this on mac; use windows api on PC.  May change this so both use api calls
+'Private
+Sub CopyText(Text As String)
+    'VBA Macro using late binding to copy text to clipboard.
+    'By Justin Kay, 8/15/2014
+    'Thanks to http://akihitoyamashiro.com/en/VBA/LateBindingDataObject.htm
+    'Needs reference MS Office Object Library
+    Dim cb As Object
+    
+    #If Mac Then
+        Set cb = New DataObject
+    #Else
+        Set cb = CreateObject("new:{1C3B4210-F441-11CE-B9EA-00AA006B1A69}")
+    #End If
+    cb.Clear
+    cb.SetText Text
+    cb.PutInClipboard
+    Set cb = Nothing
+End Sub
+
 #Else 'PC
     #If VBA7 Then
       Public Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As LongPtr)
     #Else
       Public Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
     #End If
+' Clipboard via windows API. https://www.thespreadsheetguru.com/blog/2015/1/13/how-to-use-vba-code-to-copy-text-to-the-clipboard
+' Handle 64-bit and 32-bit Office:
+#If VBA7 Then
+  Declare PtrSafe Function GlobalUnlock Lib "kernel32" (ByVal hMem As LongPtr) As Long
+  Declare PtrSafe Function GlobalLock Lib "kernel32" (ByVal hMem As LongPtr) As Long
+  Declare PtrSafe Function GlobalAlloc Lib "kernel32" (ByVal wFlags As LongPtr, ByVal dwBytes As LongPtr) As Long
+  Declare PtrSafe Function CloseClipboard Lib "User32" () As Long
+  Declare PtrSafe Function OpenClipboard Lib "User32" (ByVal hwnd As LongPtr) As Long
+  Declare PtrSafe Function EmptyClipboard Lib "User32" () As Long
+  Declare PtrSafe Function lstrcpy Lib "kernel32" (ByVal lpString1 As Any, ByVal lpString2 As Any) As Long
+  Declare PtrSafe Function SetClipboardData Lib "User32" (ByVal wFormat As LongPtr, ByVal hMem As LongPtr) As Long
+#Else
+  Declare Function GlobalUnlock Lib "kernel32" (ByVal hMem As Long) As Long
+  Declare Function GlobalLock Lib "kernel32" (ByVal hMem As Long) As Long
+  Declare Function GlobalAlloc Lib "kernel32" (ByVal wFlags As Long, ByVal dwBytes As Long) As Long
+  Declare Function CloseClipboard Lib "User32" () As Long
+  Declare Function OpenClipboard Lib "User32" (ByVal hwnd As Long) As Long
+  Declare Function EmptyClipboard Lib "User32" () As Long
+  Declare Function lstrcpy Lib "kernel32" (ByVal lpString1 As Any, ByVal lpString2 As Any) As Long
+  Declare Function SetClipboardData Lib "User32" (ByVal wFormat As Long, ByVal hMem As Long) As Long
+#End If
+
+Public Const GHND = &H42
+Public Const CF_TEXT = 1
+Public Const MAXSIZE = 4096
+
+Sub CopyText(MyString As String)
+'PURPOSE: API function to copy text to clipboard
+'SOURCE: www.msdn.microsoft.com/en-us/library/office/ff192913.aspx
+
+Dim hGlobalMemory As Long, lpGlobalMemory As Long
+Dim hClipMemory As Long, X As Long
+  hGlobalMemory = GlobalAlloc(GHND, Len(MyString) + 1) 'Allocate moveable global memory
+  lpGlobalMemory = GlobalLock(hGlobalMemory) 'Lock the block to get a far pointer to this memory.
+  lpGlobalMemory = lstrcpy(lpGlobalMemory, MyString) 'Copy the string to this global memory.
+  If GlobalUnlock(hGlobalMemory) <> 0 Then 'Unlock the memory.
+    MsgBox "Could not unlock memory location. Copy aborted."
+    GoTo OutOfHere2
+  End If
+  If OpenClipboard(0&) = 0 Then 'Open the Clipboard to copy data to.
+    MsgBox "Could not open the Clipboard. Copy aborted."
+    Exit Sub
+  End If
+  X = EmptyClipboard() 'Clear the Clipboard.
+  hClipMemory = SetClipboardData(CF_TEXT, hGlobalMemory) 'Copy the data to the Clipboard.
+OutOfHere2:
+  If CloseClipboard() = 0 Then MsgBox "Could not close Clipboard."
+End Sub
 #End If
 
 Private Sub BusyWait(t As Long)
@@ -97,23 +165,7 @@ Loop
 
 StripDoubleBrackets = s
 End Function
-Private Sub CopyText(Text As String)
-    'VBA Macro using late binding to copy text to clipboard.
-    'By Justin Kay, 8/15/2014
-    'Thanks to http://akihitoyamashiro.com/en/VBA/LateBindingDataObject.htm
-    'Needs reference MS Office Object Library
-    Dim cb As Object
-    
-    #If Mac Then
-        Set cb = New DataObject
-    #Else
-        Set cb = CreateObject("new:{1C3B4210-F441-11CE-B9EA-00AA006B1A69}")
-    #End If
-    cb.Clear
-    cb.SetText Text
-    cb.PutInClipboard
-    Set cb = Nothing
-End Sub
+
 
 Public Sub CleanIPSCopy()
 ' Clean up special characters in selection and copy to clipboard.
@@ -177,9 +229,10 @@ Private Function InputPropid(docName As String) As String
        j = j + 1
      Wend
      prop_id = Mid(prop_id, i, j - i)
-   End If
-   If (Len(prop_id) <> 7 Or Val(prop_id) = 0) Then
-      prop_id = VBA.Format$(VBA.Trim$(InputBox("7 digit proposal id for this " & docName, "Enter prop_id")), "0000000")
+  End If
+  If (Len(prop_id) <> 7 Or Val(prop_id) = 0) Then
+     prop_id = VBA.Format$(VBA.Trim$(InputBox("7 digit proposal id for this " & docName, "Enter prop_id")), "0000000")
+  End If
   If (Len(prop_id) <> 7 Or Val(prop_id) = 0) Then
     If Len(prop_id) > 0 Then MsgBox ("Did not get a valid prop_id " & prop_id)
     prop_id = ""
@@ -193,7 +246,7 @@ Public Sub Abst2EJ()
   Dim prop_id As String
   prop_id = InputPropid("Project Abstract")
   If Not prop_id = "" Then
-    Call CleanIPSCopy
+    Call StripCleanIPSCopy
     'https://www.ejacket.nsf.gov/ej/processProposalAbstract.do?dispatch=showAdd
     Call VisitEJacket(prop_id, "processProposalAbstract.do?dispatch=showAdd")
   End If

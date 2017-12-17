@@ -22,11 +22,18 @@ Attribute VB_Exposed = False
 '    DoEvents
 'End Sub
 ' when done: unload ufProgress
+
 Private Sub UserForm_Initialize()
     ' Set the width of the progress bar to 0.
     ufProgress.LabelProgress.Width = 0
 End Sub
 
 
-
-
+Private Sub UserForm_QueryClose(Cancel As Integer, CloseMode As Integer)
+  'Intercept/repurpose Unload if user clicks form "X" close button.
+  If CloseMode = 0 Then
+    Cancel = True
+    Unload Me
+    End
+  End If
+End Sub

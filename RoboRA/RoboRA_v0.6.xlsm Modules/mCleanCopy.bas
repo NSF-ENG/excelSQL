@@ -7,6 +7,7 @@ Function FixIPSText(s As String) As String
 
 Dim fromC As String, toC As String
 Dim i As Long
+'Do not edit & save on Mac or it well munge the special characters
 fromC = ChrW(160) & "–”“’‘•γθιΰαβεηκλμνξοςστυωϊϋ"
 toC = " -""""''*aeeaaaaceeiiiioooouuu"
 
@@ -46,3 +47,20 @@ Loop
 StripDoubleBrackets = s
 End Function
 
+Sub CopyText(Text As String)
+    'VBA Macro using late binding to copy text to clipboard.
+    'By Justin Kay, 8/15/2014
+    'Thanks to http://akihitoyamashiro.com/en/VBA/LateBindingDataObject.htm
+    'Needs reference MS Office Object Library
+    Dim cb As Object
+    
+    #If Mac Then
+        Set cb = New DataObject
+    #Else
+        Set cb = CreateObject("new:{1C3B4210-F441-11CE-B9EA-00AA006B1A69}")
+    #End If
+    cb.Clear
+    cb.SetText Text
+    cb.PutInClipboard
+    Set cb = Nothing
+End Sub

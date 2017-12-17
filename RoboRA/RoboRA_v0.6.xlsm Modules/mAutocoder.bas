@@ -37,7 +37,7 @@ Sub myWait(IE)
     If count > 35 Then
         AppActivate Application.Caption
         DoEvents
-        MsgBox count & " in myWait.  We seem to be having problems."
+        MsgBox count & " in myWait.  We seem to be having problems with Internet Explorer."
     End If
 End Sub
 

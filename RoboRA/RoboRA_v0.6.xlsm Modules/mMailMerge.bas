@@ -17,10 +17,11 @@ Sub MakeIndicatedRAs()
  Dim strThisWorkbook As String, strOutputPath As String, strFilename As String, strRAtemplate As String, strRAoutput As String
  Dim dirRAtemplate As String, dirRAoutput As String
  Dim prop_id As String
+ Dim warn As String
  Dim autoDeclineQ As Boolean, hasAuto As Boolean
  Dim IE As InternetExplorerMedium
  Dim pt As PivotTable
-
+warn = ""
 strThisWorkbook = ThisWorkbook.FullName
 dirRAtemplate = Range("dirRAtemplate").Value
 If Right(dirRAtemplate, 1) <> Application.pathSeparator Then dirRAtemplate = dirRAtemplate & Application.pathSeparator
@@ -135,10 +136,10 @@ strRAtemplate = Application.Trim(pt.RowRange.Cells(t, 1))
             wdApp.ActiveDocument.ActiveWindow.Selection.Collapse
             prop_id = Trim(Range("RADataTable[[prop_id0]]").Cells(i, 1).Value)
             
-           Call autoPasteRA(IE, prop_id, RAtext)
+           warn = warn & autoPasteRA(IE, prop_id, RAtext)
            wdApp.ActiveDocument.ReadOnlyRecommended = True
           End If
-          '.AttachedTemplate = "RAaddin.dotm" 'JSS what if this is on a different computer?
+          .AttachedTemplate = HiddenSettings.Range("RoboRACleanCopy.dotm").Value 'JSS what if this is on a different computer?
           wdApp.ActiveDocument.SaveAs2 Filename:=strRAoutput, FileFormat:=wdFormatXMLDocumentMacroEnabled, LockComments:=False, Password:="", AddToRecentFiles _
             :=True, WritePassword:="", ReadOnlyRecommended:=False, EmbedTrueTypeFonts _
             :=False, SaveNativePictureFormat:=False, SaveFormsData:=False, _
@@ -147,7 +148,6 @@ strRAtemplate = Application.Trim(pt.RowRange.Cells(t, 1))
            '        AddToRecentFiles:=True, ReadOnlyRecommended:=False
           wdApp.ActiveDocument.Close SaveChanges:=wdSaveChanges
           End With 'document
-          
        ' ActiveWindow.Close
       End If ' done mailmerge
      Next i
@@ -165,6 +165,12 @@ If hasAuto Then Call closeEJacket(IE)
 If Not (wdDoc Is Nothing) Then
    wdDoc.Close SaveChanges:=wdDoNotSaveChanges
    Set wdDoc = Nothing
+End If
+If warn <> "" Then
+  AppActivate Application.Caption
+  DoEvents
+  MsgBox ("Warnings copied to clipboard: " & vbNewLine & warn)
+  CopyText (warn)
 End If
 Exit Sub
 
@@ -187,7 +193,7 @@ If Right(dirRAoutput, 1) <> Application.pathSeparator Then dirRAoutput = dirRAou
  
  strThisWorkbook = ThisWorkbook.FullName
  strWordDoc = dirRAtemplate & "RAhelpTemplate.docx"
- strPDFOutputName = dirRAoutput & "RAhelp" & Format(Now(), "-yy_mm_dd-hh_mm")
+ strPDFOutputName = dirRAoutput & "RAhelp" & VBA.Format$(Now(), "_yymmdd_hhmm")
  
 ufProgress.Show vbModeless
 
@@ -210,8 +216,7 @@ Call UpdateProgressBar(0.1)
 'Connection:= "Provider=Microsoft.ACE.OLEDB.12.0;User ID=Admin;Data Source=C:\Users\Jack Snoeyink\Desktop\tmp.xlsm';Mode=Read;Extended Properties=""HDR=YES;IMEX=1;"";Jet OLEDB:System database="""";Jet OLEDB:Registry Path="""";Jet OLEDB:Engine Type=3"
     With wdDoc.MailMerge
        .MainDocumentType = 0 'wdFormLetters, wdOpenFormatAuto
-      
-      .OpenDataSource Name:=strThisWorkbook, _
+       .OpenDataSource Name:=strThisWorkbook, _
           LinkToSource:=False, AddToRecentFiles:=False, Revert:=False, Format:=0, _
           Connection:="Data Source='" & strThisWorkbook & "';Mode=Read" _
           , SQLStatement:="SELECT * FROM `ProjText$`"
@@ -235,5 +240,6 @@ Call UpdateProgressBar(0.6)
 Call UpdateProgressBar(0.9)
  wdApp.ActiveDocument.Close SaveChanges:=0 ' don't save changes
  wdDoc.Close SaveChanges:=0
-Unload ufProgress
+ Set wdDoc = Nothing
+ Unload ufProgress
 End Sub

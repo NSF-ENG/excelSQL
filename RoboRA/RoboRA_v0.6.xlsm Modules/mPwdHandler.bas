@@ -69,8 +69,8 @@ Sub handlePwd()
     'Debug.Print "pwdout:" & .txtPassword.Value
     End With
     #If Mac Then
+    ' need to supply
     #Else
-    
     If needPassword Then
         HiddenSettings.Range("rpt_pwd").Value = ""
         AppActivate Application.Caption
@@ -78,7 +78,6 @@ Sub handlePwd()
         If MsgBox("The reportserver userid and password are not working; please check if they have been updated and try again." _
         & vbNewLine & "If remote, ensure you have an active VPN connection into the NSF network.", vbOKCancel) <> vbOK Then End
         Call handlePwd
-        End
     End If
     #End If
 End Sub
@@ -89,7 +88,8 @@ Public Sub doQuery(qt As QueryTable, SQL As String, Optional backgroundFlag As B
     
     'Debug.Print "doQuery: " & (gPwdForm Is Nothing)
    If gPwdForm Is Nothing Then Call handlePwd
-   On Error GoTo ErrHandler
+RetryHandler:
+On Error GoTo ErrHandler
    With qt
         .Connection = "ODBC;" & makeConnectionString(db)
         #If Mac Then
@@ -101,7 +101,10 @@ Public Sub doQuery(qt As QueryTable, SQL As String, Optional backgroundFlag As B
     End With
 ExitHandler: Exit Sub
 ErrHandler:
-    MsgBox ("doQuery Error " & Err.Number & ":" & Err.Description)
+    Dim rtn As Integer
+    rtn = MsgBox("doQuery Error " & Err.Number & ":" & Err.Description, vbAbortRetryIgnore)
+    If rtn = vbAbort Then End
+    If rtn = vbRetry Then GoTo RetryHandler
     GoTo ExitHandler
 End Sub
 

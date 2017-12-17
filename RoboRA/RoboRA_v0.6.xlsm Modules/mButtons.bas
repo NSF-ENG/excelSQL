@@ -40,8 +40,8 @@ Sub RefreshFromBlock()
   mySQLFrom = "INTO #myPid FROM csd.prop prop" & vbNewLine
   mySQLWhere = ""
   With Advanced
-    If hasValue("from_date") Then mySQLWhere = mySQLWhere & "AND prop.nsf_rcvd_date >= {ts '" & Format(.Range("from_date"), "yyyy-mm-dd hh:mm:ss") & "'} " & vbNewLine
-    If hasValue("to_date") Then mySQLWhere = mySQLWhere & "AND prop.nsf_rcvd_date <= {ts '" & Format(.Range("to_date"), "yyyy-mm-dd hh:mm:ss") & "'} " & vbNewLine
+    If hasValue("from_date") Then mySQLWhere = mySQLWhere & "AND prop.nsf_rcvd_date >= {ts '" & VBA.Format$(.Range("from_date"), "yyyy-mm-dd hh:mm:ss") & "'} " & vbNewLine
+    If hasValue("to_date") Then mySQLWhere = mySQLWhere & "AND prop.nsf_rcvd_date <= {ts '" & VBA.Format$(.Range("to_date"), "yyyy-mm-dd hh:mm:ss") & "'} " & vbNewLine
   End With
   Call whereField("pgm_annc_id")
   Call whereField("org_code")

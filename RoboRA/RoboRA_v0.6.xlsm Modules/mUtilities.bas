@@ -153,7 +153,7 @@ While fName <> ""
                If confirm("Update file " & topath & fName) = vbNo Then GoTo nextFile
             End If
             On Error GoTo 0
-            FSO.moveFile Source:=topath & fName, Destination:=topath & fName & "backup" & Format(Now, "yyyy-mm-dd hh-mm-ss")
+            FSO.moveFile Source:=topath & fName, Destination:=topath & fName & "backup" & VBA.Format$(Now, "yymmdd_hhmm")
             FSO.copyFile Source:=frompath & fName, Destination:=topath & fName
         Case 53: ' file not found; create it
             If verbosity > 1 Then
