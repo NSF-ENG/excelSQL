@@ -33,7 +33,7 @@ Dim hasComma As Boolean, hasRange As Boolean, hasSqlWildcard As Boolean
 optNeg = "("
 andWhere = ""
 On Error Resume Next
-field = Trim(ActiveSheet.Range(fieldname).Value) ' Warning: trims spaces on values
+field = Application.Trim(ActiveSheet.Range(fieldname).Value) ' Warning: trims spaces on values
 
 On Error GoTo 0
 If Err.Number > 0 Then

@@ -11,6 +11,7 @@ Sub MakeIndicatedRAs()
  Dim i As Integer
  Dim t As Integer
  Dim nRA As Integer
+ Dim countRA As Integer
  Dim wdApp As Object
  Dim wdDoc As Object
  Dim strWordDoc As Variant
@@ -37,7 +38,7 @@ If Right(dirRAoutput, 1) <> Application.pathSeparator Then dirRAoutput = dirRAou
     Next
     If Not pt Is Nothing Then pt.RefreshTable
     If pt Is Nothing Or Err.Number <> 0 Then
-      MsgBox "Can't refresh pivot table " & pt.Name & " on HiddenSettings tab."
+      MsgBox "Can't refresh pivot table templatesUsed on HiddenSettings tab."
       GoTo ErrHandler:
     End If
     On Error GoTo 0
@@ -70,7 +71,19 @@ If wdApp Is Nothing Then
 End If
 On Error GoTo 0
 
-For t = 2 To pt.RowRange.count - 1
+' Sort by RecRkMin because our dummy line for formatting must come first.
+   With RAData.ListObjects("RADataTable").Sort
+        .SortFields.Clear
+        .SortFields.Add Key:=Range("RADataTable[[#All],[RecRkMin]]"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortTextAsNumbers
+        .Header = xlYes
+        .MatchCase = False
+        .Orientation = xlTopToBottom
+        .SortMethod = xlPinYin
+        .Apply
+    End With
+    
+countRA = 0
+For t = 2 To pt.RowRange.count - 1 ' skip header and totals rows in pivot table
 strRAtemplate = Application.Trim(pt.RowRange.Cells(t, 1))
  If Len(strRAtemplate) > 2 And strRAtemplate <> "(blank)" And (Left(strRAtemplate, 2) <> "zz") Then ' we have an RA template
    Set wdDoc = wdApp.Documents.Open(dirRAtemplate & strRAtemplate)
@@ -89,26 +102,17 @@ strRAtemplate = Application.Trim(pt.RowRange.Cells(t, 1))
     Loop
     On Error GoTo 0
     
-   autoDeclineQ = (RoboRA.CheckBoxes("cbAutoloadAll").Value = 1) Or (Left$(strRAtemplate, 3) = "Std")
+    autoDeclineQ = (RoboRA.CheckBoxes("cbAutoloadAll").Value = 1) Or (Left$(strRAtemplate, 3) = "Std")
     wdDoc.Activate
     wdApp.Visible = True
     
-' Sort by RecRkMin because our dummy line for formatting must come first.
-   With RAData.ListObjects("RADataTable").Sort
-        .SortFields.Clear
-        .SortFields.Add Key:=Range("RADataTable[[#All],[RecRkMin]]"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortTextAsNumbers
-        .Header = xlYes
-        .MatchCase = False
-        .Orientation = xlTopToBottom
-        .SortMethod = xlPinYin
-        .Apply
-    End With
         
     With Range("RADataTable[RAtemplate]") ' need RAfname as next column!!!
-      For i = 1 To .Rows.count ' do the RAs
-      UpdateProgressBar (i / .Rows.count)
-       If strRAtemplate = Application.Trim(.Cells(i, 1)) Then ' we have an RA to do
-        strRAoutput = dirRAoutput & Application.Trim(.Cells(i, 2)) & ".docm" ' make output file name
+      For i = 2 To .Rows.count ' do the RAs, skipping the first
+        If strRAtemplate = Application.Trim(.Cells(i, 1)) Then ' we have an RA to do
+        countRA = countRA + 1
+        UpdateProgressBar (countRA / (nRA + 1))
+        strRAoutput = dirRAoutput & Application.Trim(.Cells(i, 2)) & VBA.Format$(Now, "yymmdd_hhmm") & ".docm" ' make output file name
     '    Application.ScreenUpdating = False
     '    Application.DisplayAlerts = False
        With wdDoc.MailMerge
@@ -134,12 +138,12 @@ strRAtemplate = Application.Trim(pt.RowRange.Cells(t, 1))
             wdApp.ActiveDocument.ActiveWindow.Selection.WholeStory
             RAtext = FixIPSText(StripDoubleBrackets(wdApp.ActiveDocument.ActiveWindow.Selection.Text))
             wdApp.ActiveDocument.ActiveWindow.Selection.Collapse
-            prop_id = Trim(Range("RADataTable[[prop_id0]]").Cells(i, 1).Value)
+            prop_id = Application.Trim(Range("RADataTable[[prop_id0]]").Cells(i, 1).Value)
             
            warn = warn & autoPasteRA(IE, prop_id, RAtext)
            wdApp.ActiveDocument.ReadOnlyRecommended = True
           End If
-          .AttachedTemplate = HiddenSettings.Range("RoboRACleanCopy.dotm").Value 'JSS what if this is on a different computer?
+          .AttachedTemplate = dirRAoutput & "RoboRACleanCopy.dotm" 'JSS what if this is on a different computer?
           wdApp.ActiveDocument.SaveAs2 Filename:=strRAoutput, FileFormat:=wdFormatXMLDocumentMacroEnabled, LockComments:=False, Password:="", AddToRecentFiles _
             :=True, WritePassword:="", ReadOnlyRecommended:=False, EmbedTrueTypeFonts _
             :=False, SaveNativePictureFormat:=False, SaveFormsData:=False, _

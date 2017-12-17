@@ -25,6 +25,7 @@ Attribute VB_Exposed = False
 
 Private Sub UserForm_Initialize()
     ' Set the width of the progress bar to 0.
+    gCancelProgress = False
     ufProgress.LabelProgress.Width = 0
 End Sub
 
@@ -32,8 +33,11 @@ End Sub
 Private Sub UserForm_QueryClose(Cancel As Integer, CloseMode As Integer)
   'Intercept/repurpose Unload if user clicks form "X" close button.
   If CloseMode = 0 Then
-    Cancel = True
-    Unload Me
-    End
+    If MsgBox("This will abort the current sequence of actions, leaving partial results.  Is that what you want?" & vbNewLine _
+              & "Note: the current action may still need to complete before the sequence can be aborted.", vbYesNo) <> vbYes Then
+      Cancel = True
+    Else
+      gCancelProgress = True
+    End If
   End If
 End Sub
