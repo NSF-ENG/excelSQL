@@ -28,7 +28,9 @@ With HiddenSettings
  allSQL = awdSQL & IDsFromColumnRange("INSERT INTO #myPid " & .Range("RA_pidSelect") _
         & "'" & RoboRA.Range("DeclTemplate") & sql2, "DeclPropTable[[prop_id]]") _
     & IDsFromColumnRange("INSERT INTO #myPid " & .Range("RA_pidSelect") _
-        & "'" & RoboRA.Range("StdDeclTemplate") & sql2, "StdDeclPropTable[[prop_id]]")
+        & "'" & RoboRA.Range("StdDeclTemplate") & sql2, "StdDeclPropTable[[prop_id]]") _
+    & IDsFromColumnRange("INSERT INTO #myPid " & .Range("RA_pidSelect") _
+        & "'" & RoboRA.Range("StdNDPDeclTemplate") & sql2, "StdNDPDeclPropTable[[prop_id]]")
  Call BasicQueries(.Range("RA_pidCreate") & allSQL)
  Call AwdCodingQueries(.Range("RA_pidCreate") & awdSQL)
 End With
@@ -67,21 +69,3 @@ Sub RefreshFromBlock()
    Call AwdCodingQueries(query)
   End With
 End Sub
-
-
-'Sub installMacros()
-'Dim pathName As String
-'
-'On Error GoTo ErrHandler:
-''JSS PC vs mac version
-'pathName$ = "%appdata%\Microsoft\Word\STARTUP"
-'If Dir(pathName$, vbDirectory) = "" Then MkDir (pathName$)
-'MsgBox ("copying RAaddin.dotm into " & pathName$)
-''JSS copy file RAaddin.dotm and trust it.
-'ExitHandler:
-'  On Error GoTo 0
-'  Exit Sub
-'ErrHandler:
-'  MsgBox ("Error in Install_Raddin: " & Err.Number & ":" & Err.Description)
-'  Resume ExitHandler
-'End Sub

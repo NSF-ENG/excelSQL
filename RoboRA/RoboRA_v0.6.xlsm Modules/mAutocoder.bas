@@ -198,24 +198,24 @@ x = "https://www.ejacket.nsf.gov" ' Sheet1.Range("F1").Value ' change sheet acco
     n = IE.Document.forms.Length
     Debug.Print n & " forms"
     For i = 0 To n - 1
-        Debug.Print i & ":" & IE.Document.forms(i).Name & "," & IE.Document.forms(i).InnerText
+        Debug.Print i & ":" & IE.Document.forms(i).name & "," & IE.Document.forms(i).InnerText
     Next
     
     n = IE.Document.Links.Length
     Debug.Print n & " links"
     For i = 0 To n - 1
-        Debug.Print i & ":" & IE.Document.Links(i).Name & "," & IE.Document.Links(i).InnerText
+        Debug.Print i & ":" & IE.Document.Links(i).name & "," & IE.Document.Links(i).InnerText
     Next
 
     n = IE.Document.anchors.Length
     Debug.Print n & " anchors"
     For i = 0 To n - 1
-        Debug.Print i & ":" & IE.Document.anchors(i).Name & "," & IE.Document.anchors(i).InnerText
+        Debug.Print i & ":" & IE.Document.anchors(i).name & "," & IE.Document.anchors(i).InnerText
     Next
     
     n = IE.Document.all.Length
     Debug.Print n & " all"
     For i = 0 To n - 1
-        Debug.Print i & ":" & IE.Document.all(i).Name & "," & IE.Document.all(i).InnerText
+        Debug.Print i & ":" & IE.Document.all(i).name & "," & IE.Document.all(i).InnerText
     Next
 End Sub

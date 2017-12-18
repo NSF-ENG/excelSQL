@@ -34,7 +34,7 @@ If Right(dirRAoutput, 1) <> Application.pathSeparator Then dirRAoutput = dirRAou
 
     For Each pt In HiddenSettings.PivotTables ' find templatesUsed pivot table and refresh
     On Error Resume Next
-    If pt.Name = "templatesUsed" Then Exit For
+    If pt.name = "templatesUsed" Then Exit For
     Next
     If Not pt Is Nothing Then pt.RefreshTable
     If pt Is Nothing Or Err.Number <> 0 Then
@@ -118,7 +118,7 @@ strRAtemplate = Application.Trim(pt.RowRange.Cells(t, 1))
        With wdDoc.MailMerge
            .MainDocumentType = wdFormLetters
           
-          .OpenDataSource Name:=strThisWorkbook, _
+          .OpenDataSource name:=strThisWorkbook, _
               LinkToSource:=False, AddToRecentFiles:=False, Revert:=False, Format:=wdOpenFormatAuto, _
               Connection:="Data Source='" & strThisWorkbook & "';Mode=Read", _
               SQLStatement:="SELECT * FROM `RAData$`"
@@ -220,7 +220,7 @@ Call UpdateProgressBar(0.1)
 'Connection:= "Provider=Microsoft.ACE.OLEDB.12.0;User ID=Admin;Data Source=C:\Users\Jack Snoeyink\Desktop\tmp.xlsm';Mode=Read;Extended Properties=""HDR=YES;IMEX=1;"";Jet OLEDB:System database="""";Jet OLEDB:Registry Path="""";Jet OLEDB:Engine Type=3"
     With wdDoc.MailMerge
        .MainDocumentType = 0 'wdFormLetters, wdOpenFormatAuto
-       .OpenDataSource Name:=strThisWorkbook, _
+       .OpenDataSource name:=strThisWorkbook, _
           LinkToSource:=False, AddToRecentFiles:=False, Revert:=False, Format:=0, _
           Connection:="Data Source='" & strThisWorkbook & "';Mode=Read" _
           , SQLStatement:="SELECT * FROM `ProjText$`"

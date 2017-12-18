@@ -45,7 +45,7 @@ Sub RefreshPivotTablesQT(ws As Worksheet, qt As QueryTable)
 ' refreshing pivot tables that are tied to a given query table  (PD-3PO only?)
  Dim pt As PivotTable
  For Each pt In ws.PivotTables
-   pt.PivotTableWizard SourceType:=xlDatabase, SourceData:=qt.ListObject.Name
+   pt.PivotTableWizard SourceType:=xlDatabase, SourceData:=qt.ListObject.name
    If Not (pt Is Nothing) Then pt.RefreshTable
   Next
 End Sub
@@ -83,6 +83,7 @@ End Function
 
 Function wordAddinPath() As String
 ' This is where VBA Add-ins go on Mac and PC
+' not used
 #If Mac Then
     wordAddinPath = "/Library/Application Support/Microsoft/Office365/User Content/Startup/Word"
 #Else
@@ -100,6 +101,7 @@ With Application.FileDialog(msoFileDialogFolderPicker)
     If .SelectedItems.count > 0 Then FolderPicker = .SelectedItems(1)
 End With
 End Function
+
 Function confirm(msg As String, Optional abortQ As Boolean = False) As Integer
 ' Allow user to confirm action.  vbCancel, or vbNo with abort=True will call End, aborting calling Sub.
 ' Otherwise you can check the return value =vbNo to skip the action
@@ -111,6 +113,7 @@ If confirm <> vbYes And (confirm = vbCancel Or abortQ) Then
     End
 End If
 End Function
+
 Sub createPath(path As String)
 ' make all directories on path if needed
 ' needs error handling
@@ -124,7 +127,7 @@ Sub createPath(path As String)
         s = s & arrPath(i) & separator
         If Dir(s, vbDirectory) = "" Then
           MkDir s
-        End If
+9        End If
     Next
 End Sub
 Sub renewFiles(from As String, topath As String, Optional verbosity As Integer = 1)

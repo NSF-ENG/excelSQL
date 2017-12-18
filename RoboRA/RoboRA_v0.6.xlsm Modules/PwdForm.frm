@@ -23,6 +23,10 @@ Private Sub UserForm_Initialize()
 ' take saved values first time this is opened
     Me.txtUserId.Value = HiddenSettings.Range("user_id").Value
     Me.txtPassword.Value = HiddenSettings.Range("rpt_pwd").Value
+ 'Start Userform Centered inside Excel Screen (for dual monitors)
+    Me.StartUpPosition = 0
+    Me.Left = Application.Left + (Application.Width - Me.Width) / 2
+    Me.Top = Application.Top + (Application.Height - Me.Height) / 2
 End Sub
 
 Private Sub cmdPwdCancel_Click()
