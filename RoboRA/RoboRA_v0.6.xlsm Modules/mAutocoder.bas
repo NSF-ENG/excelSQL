@@ -43,7 +43,7 @@ End Sub
 
 'Private Sub CheckCollabs(IE)
 '    ' cell in spreadsheet should be Y,Yes, or yes if we want to apply to collabs.
-'    If (UCase(Left(Range("apply2Collabs").Value, 1)) = "Y") Then
+'    If (UCase(vba.left$(Range("apply2Collabs").Value, 1)) = "Y") Then
 '    ' look for apply to collabs button on IE and check it if it is present
 '      Call myWait(IE)
 '      If (IE.Document.getElementsByName("applyToCollabs").Length > 0) Then

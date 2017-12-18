@@ -23,14 +23,14 @@ Sub saveSQLcode()
 '    If cb.ContainsText Then
     s = cb.GetText()
     i = InStr(s, "--[")
-    If i = 0 Then MsgBox (" No --[rangename --]rangename  pairs found in text " & vbNewLine & Left(s, 100))
+    If i = 0 Then MsgBox (" No --[rangename --]rangename  pairs found in text " & vbNewLine & VBA.Left$(s, 100))
     While i > 0
         j = InStr(i, s, vbLf)
         If j = 0 Then
-            MsgBox ("Need line feed (vbLF) here: " & Mid(s, i, 100))
+            MsgBox ("Need line feed (vbLF) here: " & VBA.Mid$(s, i, 100))
             End
         End If
-        varname = Mid(s, i + 3, j - i - 4)
+        varname = VBA.Mid$(s, i + 3, j - i - 4)
         On Error Resume Next
         Set rng = HiddenSettings.Range(varname) ' check if varname is defined
         If Err.Number = 0 Then
@@ -50,12 +50,12 @@ Sub saveSQLcode()
             MsgBox ("Error: unterminated --[" & varname)
             k = Len(s) + 1
            Else
-            MsgBox ("Warning: terminating --[" & varname & " with " & Mid(s, k, 15))
+            MsgBox ("Warning: terminating --[" & varname & " with " & VBA.Mid$(s, k, 15))
            End If
         End If
         HiddenSettings.Cells(r, 1).Value = varname
         HiddenSettings.Cells(r, 2).Value = Now
-        HiddenSettings.Cells(r, 3).Value = Mid(s, j + 1, k - j - 1)
+        HiddenSettings.Cells(r, 3).Value = VBA.Mid$(s, j + 1, k - j - 1)
         i = InStr(k, s, "--[")
     Wend
     cb.Clear

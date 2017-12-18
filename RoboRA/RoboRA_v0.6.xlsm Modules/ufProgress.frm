@@ -27,10 +27,10 @@ Private Sub UserForm_Initialize()
     ' Set the width of the progress bar to 0.
     gCancelProgress = False
     ufProgress.LabelProgress.Width = 0
-'Start Userform Centered near top of Excel Screen
-  Me.StartUpPosition = 0
-  Me.Left = Application.Left + (Application.Width - Me.Width) / 2
-  Me.Top = Application.Top + Me.Height
+    ' Start Userform Centered in Excel Screen
+    Me.StartUpPosition = 0
+    Me.Left = Application.Left + (Application.Width - Me.Width) / 2
+    Me.Top = Application.Top + (Application.Height - Me.Height) / 2
 End Sub
 
 

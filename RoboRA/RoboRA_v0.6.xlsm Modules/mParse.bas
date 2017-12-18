@@ -7,7 +7,7 @@ Global mySQLFrom As String
 Function hasValue(rangeName As String) As Boolean
 ' check if there is non-example data in this range
  With ActiveSheet.Range(rangeName)
-   hasValue = (Trim$(.Value) <> "" And Left$(.Value, 3) <> "eg:")
+   hasValue = (VBA.Trim$(.Value) <> "" And VBA.Left$(.Value, 3) <> "eg:")
   End With
 End Function
 
@@ -66,7 +66,7 @@ If Len(field) < 1 Then ' do nothing; andwhere is blank
 ElseIf hasComma Then ' IN/NOT IN list
   andWhere = " AND " & optNeg & tablename & fieldname & " IN ('" & Replace(Replace(Join(Split(Replace(Replace(field, """", ""), "'", ""), ","), "','") & "') ", " '", "'"), "' ", "'") & andMore & ")"
 ElseIf hasRange Then ' BETWEEN / NOT BETWEEN
-  andWhere = " AND " & optNeg & tablename & fieldname & " BETWEEN '" & Replace(Replace(Left(field, InStr(field, "::") - 1), """", ""), "'", "") & "' AND '" & Replace(Replace(Mid(field, InStr(field, "::") + 2), """", ""), "'", "") & "' " & andMore & ")"
+  andWhere = " AND " & optNeg & tablename & fieldname & " BETWEEN '" & Replace(Replace(VBA.Left$(field, InStr(field, "::") - 1), """", ""), "'", "") & "' AND '" & Replace(Replace(VBA.Mid$(field, InStr(field, "::") + 2), """", ""), "'", "") & "' " & andMore & ")"
 ElseIf hasSqlWildcard Then ' LIKE / NOT LIKE
   andWhere = " AND " & optNeg & tablename & fieldname & " LIKE '" & Replace(Replace(field, """", ""), "'", "") & "' " & andMore & ")"
 Else ' = / NOT =
@@ -87,15 +87,15 @@ Sub whereField(fieldname As String, Optional tablename As String = "prop", Optio
 Dim andclause As String
 Dim tablealias As String
 
-If Left(fieldname, 1) = "_" Then fieldname = tablename & fieldname ' expand abbreviated names
-If Left(joinname, 1) = "_" Then joinname = tablename & joinname
+If VBA.Left$(fieldname, 1) = "_" Then fieldname = tablename & fieldname ' expand abbreviated names
+If VBA.Left$(joinname, 1) = "_" Then joinname = tablename & joinname
 andclause = andWhere(tablename & ".", fieldname, notPreamble, andMore)
 If Len(andclause) > 2 Then
     If isIntField Then andclause = Replace(andclause, "'", "") ' for integer field, strip quotes.
     mySQLWhere = mySQLWhere & andclause & andMore & vbLf
     If tablename <> "prop" Then ' need to join a new table to prop
        If InStr(tablename, ".") = 0 Then tablename = "csd." & tablename 'fully qualify, if not already
-       tablealias = Mid(tablename, InStrRev(tablename, ".") + 1)
+       tablealias = VBA.Mid$(tablename, InStrRev(tablename, ".") + 1)
        mySQLFrom = mySQLFrom & "JOIN " & tablename & " " & tablealias _
         & " ON prop." & joinname & " = " & tablealias & "." & joinname & vbLf
     End If
@@ -121,7 +121,7 @@ With rng
     Else ' we have at least two, and can use transpose
         ids = Join(Application.Transpose(.Value), "','") ' quote column entries and make a comma-separated row
     End If
-    ids = "'" & Replace(Replace(ids, " ", ""), Chr(160), "") & "'" ' strip spaces (visible and invisible) and ,'' from string.
+    ids = "'" & Replace(Replace(ids, " ", ""), VBA.Chr$(160), "") & "'" ' strip spaces (visible and invisible) and ,'' from string.
     ids = Replace(ids, ",''", "")  ' strip blank column entries
     'MsgBox "please check your ids : " + ids
     If Len(ids) > 2 Then IDsFromColumnRange = prefix & " (" & ids & ")" & vbLf
@@ -155,7 +155,7 @@ prefix = "CREATE TABLE " & tempTable & tableDefn & vbNewLine _
 
 For i = LBound(a) To UBound(a)
   If a(i, 1).Value <> "" Then ' skip any row with blank first column
-   If Left(types, 1) <> i Then
+   If VBA.Left$(types, 1) <> i Then
      s = s & prefix & "'" & a(i, 1).Value & "'" ' string
    Else
      s = s & prefix & a(i, 1).Value 'integer
@@ -163,7 +163,7 @@ For i = LBound(a) To UBound(a)
    For j = 2 To UBound(a, 2) ' handle remaining columns
     If a(i, j).Value = "" Then
       s = s & ",NULL" 'null
-    ElseIf Mid(types, j, 1) <> "i" Then
+    ElseIf VBA.Mid$(types, j, 1) <> "i" Then
       s = s & ",'" & a(i, j).Value & "'" 'string
     Else
       s = s & "," & a(i, j).Value ' integer

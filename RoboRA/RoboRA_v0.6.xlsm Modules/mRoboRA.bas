@@ -9,11 +9,11 @@ s = " "
 i = InStrRev(abstr, "?")
 Do While i > 0
   If i < 4 Then
-    s = Mid(abstr, i, 5) & "|" & s
+    s = VBA.Mid$(abstr, i, 5) & "|" & s
     Exit Do
-  ElseIf Not Mid(abstr, i - 1, 3) Like "[a-zA-Z][?][ '""]" Then
+  ElseIf Not VBA.Mid$(abstr, i - 1, 3) Like "[a-zA-Z][?][ '""]" Then
     i = i - 3
-    s = Mid(abstr, i, 8) & "|" & s
+    s = VBA.Mid$(abstr, i, 8) & "|" & s
   End If
   i = InStrRev(abstr, "?", i - 1)
 Loop
@@ -37,7 +37,7 @@ End If
 
 IE.Navigate ("https://www.ejacket.nsf.gov/ej/showProposal.do?Continue=Y&ID=" & prop_id)
 Call myWait(IE)
-IE.Navigate ("https://www.ejacket.nsf.gov/ej/processReviewAnalysis.do?dispatch=add&uniqId=" & prop_id & LCase(Left(Environ("USERNAME"), 7)))
+IE.Navigate ("https://www.ejacket.nsf.gov/ej/processReviewAnalysis.do?dispatch=add&uniqId=" & prop_id & VBA.LCase$(VBA.Left$(VBA.Environ$("USERNAME"), 7)))
 Call myWait(IE)
 
 If IE.Document.getElementsByName("text")(0) Is Nothing Then
@@ -87,7 +87,7 @@ With Advanced.ListObjects("AvailableTemplates")
   If Not .DataBodyRange Is Nothing Then .DataBodyRange.Delete
   templateName$ = Dir(Range("dirRAtemplate").Value & "\*RAt.docx") ' ensure consistency with messages below
     Do While templateName$ <> ""
-      If Left(templateName$, 1) <> "~" Then
+      If VBA.Left$(templateName$, 1) <> "~" Then
         .ListRows.Add AlwaysInsert:=True
         nTemplates = nTemplates + 1
         .DataBodyRange(nTemplates, 1) = templateName$

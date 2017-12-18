@@ -18,7 +18,7 @@ Dim cstring As String
   #Else
     cstring = HiddenSettings.Range("PC_connect_string")
   #End If
-  If Right(cstring, 1) <> ";" Then cstring = cstring & ";"
+  If VBA.Right$(cstring, 1) <> ";" Then cstring = cstring & ";"
   makeConnectionString = cstring & "database=" & db _
     & ";UID=" & gPwdForm.txtUserId.Value _
     & ";PWD=" & gPwdForm.txtPassword.Value & ";"

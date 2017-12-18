@@ -16,12 +16,12 @@ toC = " -""""''*aeeaaaaceeiiiioooouuu"
 
     For i = 1 To Len(fromC)
        'MsgBox AscW(Mid(fromC, i, 1)) & " - " & AscW(Mid(toC, i, 1))
-       s = Replace(s, Mid(fromC, i, 1), Mid(toC, i, 1))
+       s = Replace(s, VBA.Mid$(fromC, i, 1), VBA.Mid$(toC, i, 1))
     Next i
     For i = 1 To Len(s) ' replace anything I missed with ?
-      If AscW(Mid(s, i, 1)) > 127 Then s = Replace(s, Mid(s, i, 1), "?")
+      If AscW(Mid(s, i, 1)) > 127 Then s = Replace(s, VBA.Mid$(s, i, 1), "?")
     Next i
-FixIPSText = s
+FixIPSText = Replace(s, Chr(11), Chr(13)) ' fix vertical tab to CR
 End Function
 
 Function StripDoubleBrackets(s As String) As String
@@ -33,13 +33,13 @@ Do While j > 0
     i = InStrRev(s, "[[", j)
     k = InStrRev(s, "]]", j - 1)
     If i < k Then
-      MsgBox "Warning: Consecutive close comment brackets with no open." & vbNewLine & Mid(s, k, j - k + 1)
+      MsgBox "Warning: Consecutive close comment brackets with no open." & vbNewLine & VBA.Mid$(s, k, j - k + 1)
       j = k
     End If
     If i < 1 Then
-      MsgBox "Warning: missing open comment brackets for first close." & vbNewLine & Left(s, j)
+      MsgBox "Warning: missing open comment brackets for first close." & vbNewLine & VBA.Left$(s, j)
     Else
-      s = Left(s, i - 1) & Right(s, Len(s) - j - 1)
+      s = VBA.Left$(s, i - 1) & VBA.Right$(s, Len(s) - j - 1)
     End If
     j = InStrRev(s, "]]", i)
 Loop

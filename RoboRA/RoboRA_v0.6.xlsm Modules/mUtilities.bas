@@ -87,7 +87,7 @@ Function wordAddinPath() As String
 #If Mac Then
     wordAddinPath = "/Library/Application Support/Microsoft/Office365/User Content/Startup/Word"
 #Else
-    wordAddinPath = Environ("AppData") & "\Microsoft\Word\STARTUP"
+    wordAddinPath = VBA.Environ$("AppData") & "\Microsoft\Word\STARTUP"
 #End If
 End Function
 
@@ -143,7 +143,7 @@ If Not FSO.FolderExists(topath) Then
   Call confirm("Create folder " & topath, True) ' abort if vbCancel or vbNo
   createPath (topath)
 End If
-If Right$(topath, 1) <> separator Then topath = topath & separator ' add separator if needed
+If VBA.Right$(topath, 1) <> separator Then topath = topath & separator ' add separator if needed
 frompath = VBA.Left$(from, InStrRev(from, separator))
 fName = Dir(from) ' get first matching file
 While fName <> ""

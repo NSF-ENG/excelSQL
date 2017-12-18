@@ -23,34 +23,36 @@ Sub MakeIndicatedRAs()
  Dim IE As InternetExplorerMedium
  Dim pt As PivotTable
 warn = ""
+
 strThisWorkbook = ThisWorkbook.FullName
 dirRAtemplate = Range("dirRAtemplate").Value
-If Right(dirRAtemplate, 1) <> Application.pathSeparator Then dirRAtemplate = dirRAtemplate & Application.pathSeparator
+If VBA.Right$(dirRAtemplate, 1) <> Application.pathSeparator Then dirRAtemplate = dirRAtemplate & Application.pathSeparator
 dirRAoutput = Range("dirRAoutput").Value
-If Right(dirRAoutput, 1) <> Application.pathSeparator Then dirRAoutput = dirRAoutput & Application.pathSeparator
- 
- 'check that templates exist for all actionable items.
- 'if any action is upload, check that eJ running.
+If VBA.Right$(dirRAoutput, 1) <> Application.pathSeparator Then dirRAoutput = dirRAoutput & Application.pathSeparator
 
-    For Each pt In HiddenSettings.PivotTables ' find templatesUsed pivot table and refresh
-    On Error Resume Next
-    If pt.name = "templatesUsed" Then Exit For
-    Next
-    If Not pt Is Nothing Then pt.RefreshTable
-    If pt Is Nothing Or Err.Number <> 0 Then
-      MsgBox "Can't refresh pivot table templatesUsed on HiddenSettings tab."
-      GoTo ErrHandler:
-    End If
-    On Error GoTo 0
+'If Not checkRoboRAFolders Then Exit Sub
+'check that templates exist for all actionable items.
+'if any action is upload, check that eJ running.
+
+For Each pt In HiddenSettings.PivotTables ' find templatesUsed pivot table and refresh
+On Error Resume Next
+If pt.name = "templatesUsed" Then Exit For
+Next
+If Not pt Is Nothing Then pt.RefreshTable
+If pt Is Nothing Or Err.Number <> 0 Then
+  MsgBox "Can't refresh pivot table templatesUsed on HiddenSettings tab."
+  GoTo ErrHandler:
+End If
+On Error GoTo 0
 
 nRA = 0
 hasAuto = RoboRA.CheckBoxes("cbAutoloadAll").Value = 1
 With Range("RADataTable[RAtemplate]")
  For i = 1 To .Rows.count  ' quick check
   strRAtemplate = Application.Trim(.Cells(i, 1))
-  If Len(strRAtemplate) > 2 And strRAtemplate <> "(blank)" And (Left(strRAtemplate, 2) <> "zz") Then
+  If Len(strRAtemplate) > 2 And strRAtemplate <> "(blank)" And (VBA.Left$(strRAtemplate, 2) <> "zz") Then
     nRA = nRA + 1 ' we have an RA to do
-    If Not hasAuto Then hasAuto = (Left$(strRAtemplate, 3) = "Std") ' Look for first Std (Auto) decline
+    If Not hasAuto Then hasAuto = (VBA.Left$(strRAtemplate, 3) = "Std") ' Look for first Std (Auto) decline
   End If
  Next i
 End With
@@ -59,6 +61,7 @@ If nRA = 0 Then
     GoTo ExitHandler:
 End If
 
+Call renewFiles("\\collaboration.inside.nsf.gov@SSL\DavWWWRoot\eng\meritreview\SiteAssets\ENG Tools Websites and Best Practices\RoboRA\RoboRACleanCopy.dotm", dirRAoutput)
 'If RoboRA.CheckBoxes("cbConfirmActions").Value = 1 Then confirm ("About to start Mail Merge to create RA drafts")
 ufProgress.Show vbModeless
 
@@ -85,7 +88,7 @@ On Error GoTo 0
 countRA = 0
 For t = 2 To pt.RowRange.count - 1 ' skip header and totals rows in pivot table
 strRAtemplate = Application.Trim(pt.RowRange.Cells(t, 1))
- If Len(strRAtemplate) > 2 And strRAtemplate <> "(blank)" And (Left(strRAtemplate, 2) <> "zz") Then ' we have an RA template
+ If Len(strRAtemplate) > 2 And strRAtemplate <> "(blank)" And (VBA.Left$(strRAtemplate, 2) <> "zz") Then ' we have an RA template
    Set wdDoc = wdApp.Documents.Open(dirRAtemplate & strRAtemplate)
 
     Do While wdDoc Is Nothing ' NOT TESTED
@@ -102,7 +105,7 @@ strRAtemplate = Application.Trim(pt.RowRange.Cells(t, 1))
     Loop
     On Error GoTo 0
     
-    autoDeclineQ = (RoboRA.CheckBoxes("cbAutoloadAll").Value = 1) Or (Left$(strRAtemplate, 3) = "Std")
+    autoDeclineQ = (RoboRA.CheckBoxes("cbAutoloadAll").Value = 1) Or (VBA.Left$(strRAtemplate, 3) = "Std")
     wdDoc.Activate
     wdApp.Visible = True
     
@@ -131,26 +134,28 @@ strRAtemplate = Application.Trim(pt.RowRange.Cells(t, 1))
              .LastRecord = i
            End With 'data source
           .Execute Pause:=True 'False
-          
+        End With 'mail merge
+        With wdApp.ActiveDocument
           If autoDeclineQ Then
             Dim RAtext As String
-    
-            wdApp.ActiveDocument.ActiveWindow.Selection.WholeStory
-            RAtext = FixIPSText(StripDoubleBrackets(wdApp.ActiveDocument.ActiveWindow.Selection.Text))
-            wdApp.ActiveDocument.ActiveWindow.Selection.Collapse
+            With .ActiveWindow.Selection
+              .WholeStory
+              RAtext = FixIPSText(StripDoubleBrackets(.Text))
+              .Collapse
+            End With ' selection
             prop_id = Application.Trim(Range("RADataTable[[prop_id0]]").Cells(i, 1).Value)
             
-           warn = warn & autoPasteRA(IE, prop_id, RAtext)
-           wdApp.ActiveDocument.ReadOnlyRecommended = True
+            warn = warn & autoPasteRA(IE, prop_id, RAtext)
+            .ReadOnlyRecommended = True
           End If
           .AttachedTemplate = dirRAoutput & "RoboRACleanCopy.dotm" 'JSS what if this is on a different computer?
-          wdApp.ActiveDocument.SaveAs2 Filename:=strRAoutput, FileFormat:=wdFormatXMLDocumentMacroEnabled, LockComments:=False, Password:="", AddToRecentFiles _
+          .SaveAs2 Filename:=strRAoutput, FileFormat:=wdFormatXMLDocumentMacroEnabled, LockComments:=False, Password:="", AddToRecentFiles _
             :=True, WritePassword:="", ReadOnlyRecommended:=False, EmbedTrueTypeFonts _
             :=False, SaveNativePictureFormat:=False, SaveFormsData:=False, _
             SaveAsAOCELetter:=False
           '.SaveAs Filename:=strRAoutput, FileFormat:=wdFormatXMLDocumentMacroEnabled, _
            '        AddToRecentFiles:=True, ReadOnlyRecommended:=False
-          wdApp.ActiveDocument.Close SaveChanges:=wdSaveChanges
+          .Close SaveChanges:=wdSaveChanges
           End With 'document
        ' ActiveWindow.Close
       End If ' done mailmerge
@@ -191,9 +196,9 @@ Sub makeProjText()
  Dim dirRAtemplate As String, dirRAoutput As String
  
  dirRAtemplate = Advanced.Range("dirRAtemplate").Value
-If Right(dirRAtemplate, 1) <> Application.pathSeparator Then dirRAtemplate = dirRAtemplate & Application.pathSeparator
+If VBA.Right$(dirRAtemplate, 1) <> Application.pathSeparator Then dirRAtemplate = dirRAtemplate & Application.pathSeparator
 dirRAoutput = Advanced.Range("dirRAoutput").Value
-If Right(dirRAoutput, 1) <> Application.pathSeparator Then dirRAoutput = dirRAoutput & Application.pathSeparator
+If VBA.Right$(dirRAoutput, 1) <> Application.pathSeparator Then dirRAoutput = dirRAoutput & Application.pathSeparator
  
  strThisWorkbook = ThisWorkbook.FullName
  strWordDoc = dirRAtemplate & "RAhelpTemplate.docx"
