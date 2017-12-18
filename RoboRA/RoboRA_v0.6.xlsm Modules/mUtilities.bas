@@ -130,6 +130,7 @@ End Sub
 Sub renewFiles(from As String, topath As String, Optional verbosity As Integer = 1)
 ' copy files matching from (include filter *.* or *RAt.docm or *.do*) that have been updated or that don't exist in topath
 ' old files get "backup"datetime added, so nothing is lost.
+' unused
 Dim FSO As Object
 Dim fromdate As Date, todate As Date
 Dim frompath As String, fName As String, separator As String
@@ -140,7 +141,7 @@ If Not FSO.FolderExists(topath) Then
   createPath (topath)
 End If
 If Right$(topath, 1) <> separator Then topath = topath & separator ' add separator if needed
-frompath = Left(from, InStrRev(from, separator))
+frompath = VBA.Left$(from, InStrRev(from, separator))
 fName = Dir(from) ' get first matching file
 While fName <> ""
     fromdate = FileDateTime(frompath & fName)

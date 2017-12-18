@@ -44,11 +44,11 @@ If Err.Number > 0 Then
       If MsgBox("Unexpected error: " & Err.Number & ":" & Err.Description & ". Continuing", vbOKCancel) <> vbOK Then End
     End If
 End If
-If Left(field, 3) = "eg:" Then field = "" ' ignore example fields
+If VBA.Left$(field, 3) = "eg:" Then field = "" ' ignore example fields
 
-If Left(field, 1) = "~" Then ' have negation
+If VBA.Left$(field, 1) = "~" Then ' have negation
   optNeg = notPreamble ' default should be NOT (, but can be NOT EXIST (SELECT... or NOT IN (SELECT...
-  field = Right(field, Len(field) - 1)
+  field = VBA.Right$(field, Len(field) - 1)
 End If
 
 hasComma = (InStr(field, ",") > 0) 'have list
@@ -59,7 +59,7 @@ If (hasSqlWildcard And (hasRange Or hasComma)) Then
  End
 End If
 If Len(tablename) > 1 Then ' make sure we end in "."
-    If Right(tablename, 1) <> "." Then tablename = tablename & "."
+    If VBA.Right$(tablename, 1) <> "." Then tablename = tablename & "."
 End If
 
 If Len(field) < 1 Then ' do nothing; andwhere is blank

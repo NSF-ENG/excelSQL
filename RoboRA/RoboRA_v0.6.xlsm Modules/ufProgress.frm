@@ -33,8 +33,8 @@ End Sub
 Private Sub UserForm_QueryClose(Cancel As Integer, CloseMode As Integer)
   'Intercept/repurpose Unload if user clicks form "X" close button.
   If CloseMode = 0 Then
-    If MsgBox("This will abort the current sequence of actions, leaving partial results.  Is that what you want?" & vbNewLine _
-              & "Note: the current action may still need to complete before the sequence can be aborted.", vbYesNo) <> vbYes Then
+    If MsgBox("Do you want to abort the current sequence of actions?  May leave partial results." & vbNewLine _
+              & "The current action may need to complete before aborting sequence.", vbYesNo) <> vbYes Then
       Cancel = True
     Else
       gCancelProgress = True
