@@ -80,12 +80,16 @@ End Function
 Sub List_Templates() ' list RA templates available (used by data validation)
 Dim templateName As String
 Dim nTemplates As Integer
+Dim dirRAtemplate As String
+dirRAtemplate = Advanced.Range("dirRAtemplate").Value
+If VBA.Right$(dirRAtemplate, 1) <> Application.pathSeparator Then dirRAtemplate = dirRAtemplate & Application.pathSeparator
+
 nTemplates = 0
 Application.ScreenUpdating = False
 On Error GoTo ErrHandler
 With Advanced.ListObjects("AvailableTemplates")
   If Not .DataBodyRange Is Nothing Then .DataBodyRange.Delete
-  templateName$ = Dir(Range("dirRAtemplate").Value & "\*RAt.docx") ' ensure consistency with messages below
+  templateName$ = Dir(dirRAtemplate & "*RAt.docx") ' ensure consistency with messages below
     Do While templateName$ <> ""
       If VBA.Left$(templateName$, 1) <> "~" Then
         .ListRows.Add AlwaysInsert:=True
@@ -95,11 +99,18 @@ With Advanced.ListObjects("AvailableTemplates")
       templateName$ = Dir
     Loop
 End With
-If nTemplates = 0 Then MsgBox ("Did not find any RA templates in " & Range("dirRAtemplate").Value & vbNewLine & "RA template names must end with RAt.docx; award templates must start with Awd and standard templates (autoloaded) must start with Std")
-ExitHandler:
 Application.ScreenUpdating = True
+If nTemplates = 0 Then
+  If MsgBox("Did not find any RA templates in " & dirRAtemplate & "; shall I copy the standard templates to that folder?" _
+           & vbNewLine & "Note: RA template names must end with RAt.docx; award templates must start with Awd and standard templates (autoloaded) must start with Std", vbOKCancel) = vbOK Then
+             Call renewFiles("\\collaboration.inside.nsf.gov@SSL\DavWWWRoot\eng\meritreview\SiteAssets\ENG Tools Websites and Best Practices\RoboRA\RAtemplates\*.docx", Range("dirRAtemplate").Value & "\")
+             Call List_Templates
+  End If
+End If
+ExitHandler:
 Exit Sub
 ErrHandler:
+Application.ScreenUpdating = True
 MsgBox ("Error " & Err.Number & ":" & Err.Description & vbNewLine & "while trying to list templates.  Ensure template directory, " & Range("dirRAtemplate").Value & ", is accessible.")
 Resume ExitHandler
 End Sub
