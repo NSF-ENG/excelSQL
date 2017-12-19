@@ -101,11 +101,13 @@ If Len(andclause) > 2 Then
     End If
 End If
 End Sub
-
-Function IDsFromColumnRange(prefix As String, tbl As ListObject) As String
+' can use wildcards to name table, but must have a single column.
+Function IDsFromTable(prefix As String, tblname As String) As String
 Dim ids As String
+Dim tbl As ListObject
 ' make comma separated list of column ids, with sql prefix
-IDsFromColumnRange = ""
+IDsFromTable = ""
+Set tbl = FindTable(tblname)
 If tbl Is Nothing Then
    MsgBox ("Error: can't find table on " & ActiveSheet.Name & " for " & prefix & vbNewLine & "This is a bug in the VBA code, or the table was deleted. Ignoring & continuing.")
    Exit Function
@@ -120,7 +122,7 @@ With tbl.DataBodyRange
     ids = "'" & Replace(Replace(ids, " ", ""), Chr(160), "") & "'" ' strip spaces (visible and invisible) and ,'' from string.
     ids = Replace(ids, ",''", "")  ' strip blank column entries
     'MsgBox "please check your ids : " + ids
-    If Len(ids) > 2 Then IDsFromColumnRange = prefix & " (" & ids & ")" & vbLf
+    If Len(ids) > 2 Then IDsFromTable = prefix & " (" & ids & ")" & vbLf
 End With
 End Function
 

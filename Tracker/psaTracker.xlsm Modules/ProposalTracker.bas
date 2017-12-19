@@ -14,7 +14,7 @@ Dim dateWhere As String
 Dim addProps As String
 Dim start As String ' True or false to start where
 
-addProps = IDsFromColumnRange("OR prop.prop_id IN", FindTable("props_add*"))
+addProps = IDsFromTable("OR prop.prop_id IN", "props_add*")
 
 dateWhere = ""
 If hasValue("from_date") Then dateWhere = " AND prop.nsf_rcvd_date >= {ts '" & Format(ActiveSheet.Range("from_date"), "yyyy-mm-dd hh:mm:ss") & "'}" & vbNewLine
@@ -65,7 +65,7 @@ myProp = myProp _
 & andWhere("", "pa.prop_atr_code", "NOT EXISTS (SELECT * FROM csd.prop_atr pa WHERE pa.prop_id=prop.prop_id AND ", "AND pa.prop_atr_type_code='PRC'") & vbNewLine
 
 myProp = myProp _
-& ") " & addProps & ") " & IDsFromColumnRange("AND prop.prop_id NOT IN", FindTable("props_omit*")) & vbNewLine _
+& ") " & addProps & ") " & IDsFromTable("AND prop.prop_id NOT IN", "props_omit*") & vbNewLine _
 & "ORDER BY lead_id,ILN" & vbNewLine & "CREATE INDEX myProp_ix ON #myProp(prop_id)" & vbNewLine
 
 Dim myPanl As String

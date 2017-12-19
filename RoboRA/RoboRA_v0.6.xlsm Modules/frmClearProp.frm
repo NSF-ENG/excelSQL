@@ -28,10 +28,12 @@ End With
 End Sub
 
 Private Sub propClear_Click()
-If cboxClearPropParams.Value Then ActiveSheet.Range("PropParams").Cells.Value = HiddenSettings.Range("PropParams").Cells.Value
-If cboxClearPropAddOmit.Value Then Call ClearMatchingTables("props_*")
-If cboxClearPropData.Value Then Call ClearMatchingTables("PropQueryTable*")
+If cboxClearPropParams.Value Then Advanced.Range("query_params").Cells.Value = HiddenSettings.Range("query_params").Cells.Value
+If cboxClearPropAddOmit.Value Then Call ClearMatchingTables("*PropTable", RoboRA)
+If cboxClearPropData.Value Then Call ClearQTables
 If cboxClearSavedPwd.Value Then
+  Advanced.Range("dirRAtemplate") = ""
+  Advanced.Range("dirRAoutput") = ""
   HiddenSettings.Range("user_id").Value = ""
   HiddenSettings.Range("rpt_pwd").Value = ""
 End If

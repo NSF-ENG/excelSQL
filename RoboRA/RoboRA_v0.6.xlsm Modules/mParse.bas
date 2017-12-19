@@ -38,7 +38,7 @@ field = Application.Trim(ActiveSheet.Range(fieldname).Value) ' Warning: trims sp
 On Error GoTo 0
 If Err.Number > 0 Then
     If Err.Number = 1004 Then
-      If MsgBox("Named range " & fieldname & " may have been lost from " & ActiveSheet.name & vbNewLine & _
+      If MsgBox("Named range " & fieldname & " may have been lost from " & ActiveSheet.Name & vbNewLine & _
          "Continuing without, but if a cell was moved by Copy/Paste consider Undo and Paste Values Only (mac:Paste Special>Text)", vbOKCancel) <> vbOK Then End
     Else
       If MsgBox("Unexpected error: " & Err.Number & ":" & Err.Description & ". Continuing", vbOKCancel) <> vbOK Then End
@@ -110,7 +110,7 @@ IDsFromColumnRange = ""
 'On Error Resume Next
 Set rng = ActiveSheet.Range(rngname)
 If Err <> 0 Then
-   MsgBox ("Error: no range on " & ActiveSheet.name & " for " & prefix & vbNewLine & "This is a bug in the VBA code, or the table was deleted. Ignoring & continuing.")
+   MsgBox ("Error: no range on " & ActiveSheet.Name & " for " & prefix & vbNewLine & "This is a bug in the VBA code, or the table was deleted. Ignoring & continuing.")
    Exit Function
 End If
 On Error GoTo 0

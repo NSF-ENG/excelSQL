@@ -2,7 +2,7 @@ Attribute VB_Name = "mUtilities"
 Option Explicit
 ' general utilities PD-3PO family of tools, Jack Snoeyink, Oct 2017
 
-Sub CleanUpSheet(ws As Worksheet, Optional emptyRow As Long = 7)
+Sub CleanUpSheet(ws As Worksheet, Optional emptyRow As Long = 4)
 ' delete blank rows on sheet below lowest listObject range
 ' pass emptyrow as the index of the first row that could be empty.
 ' Avoid blanks past a table for mail merge.
@@ -10,29 +10,33 @@ Sub CleanUpSheet(ws As Worksheet, Optional emptyRow As Long = 7)
 Dim tb As ListObject
 Dim pt As PivotTable
 Dim r As Long, lastRow As Long
-With ws
-    On Error Resume Next
-    For Each tb In ws.ListObjects
-      If Not tb.TotalsRowRange Is Nothing Then
-        r = tb.TotalsRowRange.Row + 1
-      ElseIf tb.DataBodyRange Is Nothing Then
-        r = tb.InsertRowRange.Row
-      Else
-        r = tb.ListRows(tb.ListRows.count).Range.Row + 1
-      End If
-      If emptyRow < r Then emptyRow = r
-    Next
-    
-    For Each pt In ws.PivotTables
-      If Not pt.RowRange Is Nothing Then
-        r = pt.RowRange.Rows(pt.RowRange.count).Row + 1
-        If emptyRow < r Then emptyRow = r
-      End If
-    Next
-    On Error GoTo 0
-    lastRow = ws.UsedRange.Rows.count
-    If emptyRow < lastRow Then ws.Rows(emptyRow & ":" & lastRow).Delete
-End With
+
+If ws.Name = "HiddenSettings" Then Exit Sub ' don't clear sql code at bottom of HiddenSettings
+On Error Resume Next
+For Each tb In ws.ListObjects
+  If Not tb.TotalsRowRange Is Nothing Then
+    r = tb.TotalsRowRange.Row + 1
+  ElseIf tb.DataBodyRange Is Nothing Then
+    r = tb.InsertRowRange.Row
+  Else
+    r = tb.ListRows(tb.ListRows.count).Range.Row + 1
+  End If
+  If emptyRow < r Then emptyRow = r
+Next
+
+For Each pt In ws.PivotTables
+  If Not pt.RowRange Is Nothing Then
+    r = pt.RowRange.Rows(pt.RowRange.count).Row + 1
+    If emptyRow < r Then emptyRow = r
+  End If
+Next
+
+emptyRow = emptyRow + 1
+lastRow = ws.UsedRange.Rows.count
+Application.DisplayAlerts = False
+If emptyRow < lastRow Then ws.Rows(emptyRow & ":" & lastRow).Delete
+Application.DisplayAlerts = True
+On Error GoTo 0
 End Sub
 Sub RefreshPivotTables(ws As Worksheet)
 ' refreshing pivot tables that are tied to a given query table  (PD-3PO only?)
@@ -45,17 +49,26 @@ Sub RefreshPivotTablesQT(ws As Worksheet, qt As QueryTable)
 ' refreshing pivot tables that are tied to a given query table  (PD-3PO only?)
  Dim pt As PivotTable
  For Each pt In ws.PivotTables
-   pt.PivotTableWizard SourceType:=xlDatabase, SourceData:=qt.ListObject.name
+   pt.PivotTableWizard SourceType:=xlDatabase, SourceData:=qt.ListObject.Name
    If Not (pt Is Nothing) Then pt.RefreshTable
   Next
 End Sub
 
-Sub ClearTable(LO As ListObject)
-  With LO
+Sub ClearTable(lo As ListObject)
+  With lo
     If Not .DataBodyRange Is Nothing Then .DataBodyRange.Delete
   End With
 End Sub
 
+Sub ClearMatchingTables(t As String, Optional ws As Worksheet = Nothing)
+' use wildcards to match table names to clear items in activesheet.
+' note: probably want to use something that doesn't depend on activesheet.
+If ws Is Nothing Then ws = ActiveSheet
+Dim lo As ListObject
+For Each lo In ws.ListObjects
+  If (lo.Name Like t) Then Call ClearTable(lo)
+Next
+End Sub
 Sub PivotCacheClearRubbish()
 ' not used because it will remove timeline slicers
 Dim pc As PivotCache
@@ -70,6 +83,16 @@ For Each pc In ActiveWorkbook.PivotCaches
   pc.Refresh
 Next pc
 On Error GoTo 0
+End Sub
+Sub ClearQTables()
+Dim ws As Worksheet
+Dim lo As ListObject
+For Each ws In ThisWorkbook.Sheets
+  Call ClearMatchingTables("*QTable", ws)
+  Call RefreshPivotTables(ws)
+  Call CleanUpSheet(ws)
+Next
+Call PivotCacheClearRubbish
 End Sub
 
 Function pathSeparator() As String

@@ -36,7 +36,7 @@ If VBA.Right$(dirRAoutput, 1) <> Application.pathSeparator Then dirRAoutput = di
 
 For Each pt In HiddenSettings.PivotTables ' find templatesUsed pivot table and refresh
 On Error Resume Next
-If pt.name = "templatesUsed" Then Exit For
+If pt.Name = "templatesUsed" Then Exit For
 Next
 If Not pt Is Nothing Then pt.RefreshTable
 If pt Is Nothing Or Err.Number <> 0 Then
@@ -47,7 +47,7 @@ On Error GoTo 0
 
 nRA = 0
 hasAuto = RoboRA.CheckBoxes("cbAutoloadAll").Value = 1
-With Range("RADataTable[RAtemplate]")
+With Range("RADataQTable[RAtemplate]")
  For i = 1 To .Rows.count  ' quick check
   strRAtemplate = Application.Trim(.Cells(i, 1))
   If Len(strRAtemplate) > 2 And strRAtemplate <> "(blank)" And (VBA.Left$(strRAtemplate, 2) <> "zz") Then
@@ -75,9 +75,9 @@ End If
 On Error GoTo 0
 
 ' Sort by RecRkMin because our dummy line for formatting must come first.
-   With RAData.ListObjects("RADataTable").Sort
+   With RAData.ListObjects("RADataQTable").Sort
         .SortFields.Clear
-        .SortFields.Add Key:=Range("RADataTable[[#All],[RecRkMin]]"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortTextAsNumbers
+        .SortFields.Add Key:=Range("RADataQTable[[#All],[RecRkMin]]"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortTextAsNumbers
         .Header = xlYes
         .MatchCase = False
         .Orientation = xlTopToBottom
@@ -110,7 +110,7 @@ strRAtemplate = Application.Trim(pt.RowRange.Cells(t, 1))
     wdApp.Visible = True
     
         
-    With Range("RADataTable[RAtemplate]") ' need RAfname as next column!!!
+    With Range("RADataQTable[RAtemplate]") ' need RAfname as next column!!!
       For i = 2 To .Rows.count ' do the RAs, skipping the first
         If strRAtemplate = Application.Trim(.Cells(i, 1)) Then ' we have an RA to do
         countRA = countRA + 1
@@ -121,7 +121,7 @@ strRAtemplate = Application.Trim(pt.RowRange.Cells(t, 1))
        With wdDoc.MailMerge
            .MainDocumentType = wdFormLetters
           
-          .OpenDataSource name:=strThisWorkbook, _
+          .OpenDataSource Name:=strThisWorkbook, _
               LinkToSource:=False, AddToRecentFiles:=False, Revert:=False, Format:=wdOpenFormatAuto, _
               Connection:="Data Source='" & strThisWorkbook & "';Mode=Read", _
               SQLStatement:="SELECT * FROM `RAData$`"
@@ -143,7 +143,7 @@ strRAtemplate = Application.Trim(pt.RowRange.Cells(t, 1))
               RAtext = FixIPSText(StripDoubleBrackets(.Text))
               .Collapse
             End With ' selection
-            prop_id = Application.Trim(Range("RADataTable[[prop_id0]]").Cells(i, 1).Value)
+            prop_id = Application.Trim(Range("RADataQTable[[prop_id0]]").Cells(i, 1).Value)
             
             warn = warn & autoPasteRA(IE, prop_id, RAtext)
             .ReadOnlyRecommended = True
@@ -225,7 +225,7 @@ Call UpdateProgressBar(0.1)
 'Connection:= "Provider=Microsoft.ACE.OLEDB.12.0;User ID=Admin;Data Source=C:\Users\Jack Snoeyink\Desktop\tmp.xlsm';Mode=Read;Extended Properties=""HDR=YES;IMEX=1;"";Jet OLEDB:System database="""";Jet OLEDB:Registry Path="""";Jet OLEDB:Engine Type=3"
     With wdDoc.MailMerge
        .MainDocumentType = 0 'wdFormLetters, wdOpenFormatAuto
-       .OpenDataSource name:=strThisWorkbook, _
+       .OpenDataSource Name:=strThisWorkbook, _
           LinkToSource:=False, AddToRecentFiles:=False, Revert:=False, Format:=0, _
           Connection:="Data Source='" & strThisWorkbook & "';Mode=Read" _
           , SQLStatement:="SELECT * FROM `ProjText$`"

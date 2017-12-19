@@ -34,7 +34,7 @@ Sub ClearTable(lo As ListObject)
     If Not .DataBodyRange Is Nothing Then .DataBodyRange.Delete
   End With
 End Sub
-Sub ClearMatchingTable(t As String)
+Sub ClearMatchingTables(t As String)
 ' use wildcards to match table names to clear.
 Dim lo As ListObject
 For Each lo In ActiveSheet.ListObjects

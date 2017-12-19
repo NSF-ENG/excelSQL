@@ -3,9 +3,7 @@ Option Explicit
 
 
 Sub ClearQueryParams()
- Call List_Templates
- If MsgBox("Ok to clear query parameters?  (Can't undo)", vbOKCancel) <> vbOK Then End
- ActiveSheet.Range("query_params").Cells.Value = HiddenSettings.Range("query_params").Cells.Value
+ frmClearProp.Show
 End Sub
 
 Sub OptionButton_AreYouSure()
