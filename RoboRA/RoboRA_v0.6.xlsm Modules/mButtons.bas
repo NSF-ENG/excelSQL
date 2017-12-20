@@ -1,8 +1,7 @@
 Attribute VB_Name = "mButtons"
 Option Explicit
 
-
-Sub ClearQueryParams()
+Sub ClearData()
  frmClearProp.Show
 End Sub
 
@@ -18,7 +17,6 @@ Dim allSQL As String
 ' Query pulling from tables
 sql2 = "' as RAtemplate FROM csd.prop prop WHERE prop_stts_code like '" _
         & Advanced.Range("prop_stts_code") & "' AND prop_id IN "
-
 
 With HiddenSettings
  awdSQL = IDsFromColumnRange("INSERT INTO #myPid " & .Range("RA_pidSelect") _
@@ -66,4 +64,37 @@ Sub RefreshFromBlock()
    Call BasicQueries(query)
    Call AwdCodingQueries(query)
   End With
+End Sub
+
+Sub pasteFromMyWork()
+' Meant for copying proposal ids from the eJ mywork screen,
+' this gets anything that is 5-7 digit number in the first 10 characters of each line in the clipboard.
+' and pastes as a column down from the active cell
+Dim i As Long, p As Long
+Dim txt() As String
+Dim prop_id As String
+Dim cb As DataObject
+#If Mac Then
+    Set cb = New DataObject
+#Else
+    Set cb = CreateObject("new:{1C3B4210-F441-11CE-B9EA-00AA006B1A69}")
+#End If
+cb.GetFromClipboard
+txt = Split(cb.GetText(), vbLf)
+prop_id = ""
+For i = LBound(txt) To UBound(txt)
+  p = Val(Left(txt(i), 10))
+'  Debug.Print i & Left(txt(i), 10) & p
+  If (p >= 100000# And p < 100000000#) Then prop_id = prop_id & Format(p, "0000000") & vbLf
+Next
+If Len(prop_id) < 8 Then
+ MsgBox ("No prop_ids in clipboard. Please copy your eJacket MyWork page, select a cell in any prop_id table, then click Paste From MyWork.")
+ Exit Sub
+End If
+cb.Clear
+If MsgBox("OK to paste these proposal ids starting in cell " & Selection.Address & "?" & vbNewLine & prop_id, vbOKCancel) = vbOK Then
+    txt = Split(prop_id, vbLf)
+    Range(ActiveCell, ActiveCell.Offset(UBound(txt) - LBound(txt))).Value = Application.Transpose(txt)
+    HiddenSettings.Range("select_prop_stts").Value = 3 ' set to DD_concur
+End If
 End Sub

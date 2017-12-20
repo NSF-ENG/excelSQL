@@ -3,33 +3,37 @@ Option Explicit
 
 Sub BasicQueries(myPids As String)
 ufProgress.Show vbModeless
+Call UpdateProgressBar(0.01)
 With HiddenSettings
     'need this first to get revtable in order
     Call doQuery(PRCs.ListObjects("PECGlossaryQTable").QueryTable, myPids _
-        & .Range("RA_PECglossary") & .Range("revtable") & "DROP TABLE #myPid")
+        & .Range("RA_leads") & .Range("RA_PECglossary") & .Range("revtable") & "DROP TABLE #myProp, #myLead, #myRA")
 Call UpdateProgressBar(0.1)
     Call doQuery(PRCs.ListObjects("PRCGlossaryQTable").QueryTable, myPids _
         & .Range("RA_leads") & .Range("RA_propPRCs") & .Range("RA_PRCglossary") _
         & "DROP TABLE #myPid, #myLead, #myRA DROP TABLE #myPRCs, #myPRCdata")
 Call UpdateProgressBar(0.2)
+    Call doQuery(Conflict.ListObjects("ConflictQTable").QueryTable, myPids _
+        & .Range("RA_leads") & .Range("RA_ckConfRevrInst") & "DROP TABLE #myProp, #myLead, #myRA")
+Call UpdateProgressBar(0.3)
     ' this is the slowest; do it in the background
     Call doQuery(ProjText.ListObjects("ProjTextQTable").QueryTable, myPids _
         & .Range("RA_leads") & .Range("RA_projText") _
         & "DROP TABLE #myPid, #myLead, #myRA DROP TABLE #myRevInfo, #mySumm")
-Call UpdateProgressBar(0.4)
+Call UpdateProgressBar(0.5)
     Call doQuery(ckCoding.ListObjects("ckCodingQTable").QueryTable, myPids _
         & .Range("RA_leads") & .Range("RA_propPRCs") & .Range("RA_revs") _
-        & .Range("RA_prop") & .Range("RA_panl") & .Range("RA_propCheck") _
-        & "DROP TABLE #myPid, #myLead, #myRA, #myPRCs, #myPRCdata DROP TABLE #myRevs, #myRevPanl, #myRevMarks, #myRevSumm DROP TABLE #myPropBudg, #myProp DROP TABLE #myPanl, #myProjPanl, #myProjPanlSumm")
+        & .Range("RA_prop") & .Range("RA_confl") & .Range("RA_panl") & .Range("RA_propCheck") _
+        & "DROP TABLE #myPid, #myLead, #myRA, #myPRCs, #myPRCdata DROP TABLE #myRevs, #myRevPanl, #myRevMarks, #myRevSumm DROP TABLE #myPropBudg, #myProp DROP TABLE #myPPConfl, #myPanl, #myProjPanl, #myProjPanlSumm")
    Call ckCodingCF
-Call UpdateProgressBar(0.5)
+Call UpdateProgressBar(0.6)
     Call doQuery(RAData.ListObjects("RADataQTable").QueryTable, myPids _
         & .Range("RA_leads") & .Range("RA_propPRCs") & .Range("RA_revs") _
-        & .Range("RA_prop") & .Range("RA_panl") & .Range("RA_allRAdata") _
-        & "DROP TABLE #myPid, #myLead, #myRA, #myProp, #myPropBudg, #myRevs, #myRevPanl, #myRevMarks, #myRevSumm, #myPanl, #myProjPanl, #myProjPanlSumm DROP TABLE #myDmog")
-Call UpdateProgressBar(0.6)
+        & .Range("RA_prop") & .Range("RA_confl") & .Range("RA_panl") & .Range("RA_allRAdata") & .Range("RA_allRAdata2") _
+        & "DROP TABLE #myPid, #myLead, #myRA, #myProp, #myPropBudg, #myRevs, #myRevPanl, #myRevMarks, #myRevSumm, #myPPConfl, #myPanl, #myProjPanl, #myProjPanlSumm DROP TABLE #myDmog")
 End With
 Call CleanUpSheet(ckCoding)
+Call CleanUpSheet(Conflict)
 Call CleanUpSheet(ProjText)
 Call CleanUpSheet(RAData)
 End Sub
@@ -175,6 +179,7 @@ End Sub
 Private Sub ckAwdCF()
 'conditional formating for ckAwd
   Call ckAwd.Cells.FormatConditions.Delete
+  Range("ckAwdQTable").RowHeight = 15 ' don't let abstracts mess up row height
     With Range("ckAwdQTable").FormatConditions
          .Add Type:=xlExpression, Formula1:="=MOD($M2,2)"
 '         .Item(.count).SetLastPriority

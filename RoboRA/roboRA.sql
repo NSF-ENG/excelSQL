@@ -31,15 +31,6 @@ WHERE prop.prop_stts_code LIKE '0[01289]' AND
 pp.panl_id in ('p172027','p170288','p180207','p180208')
 --pm_logn_id = 'jsnoeyi'
 
---[RA_PECglossary
---DROP TABLE #myPid 
-SELECT p.pgm_ele_code AS PEC, pec.pgm_ele_name AS PEC_Description
-FROM (SELECT DISTINCT pgm_ele_code FROM #myPid pid 
-JOIN csd.prop p ON p.prop_id = pid.prop_id) p
-JOIN csd.pgm_ele pec ON pec.pgm_ele_code = p.pgm_ele_code
-ORDER BY PEC
---]RA_PECglossary
-
 
 -- Every other query will begin with this: 
 --  Add collabs not already there, then make props, leads, and get RA update time
@@ -78,6 +69,33 @@ FROM (SELECT p.lead, ra.last_updt_tmsp
 GROUP BY lead
 --]RA_leads
 -- select * from #myProp select * from #myLead select * from #myRA
+
+--[RA_PECglossary
+--Needs: RA_lead(#myProp) 
+SELECT p.pgm_ele_code AS PEC, pec.pgm_ele_name AS PEC_Description
+FROM (SELECT DISTINCT pgm_ele_code FROM #myProp pid 
+JOIN csd.prop p ON p.prop_id = pid.prop_id) p
+JOIN csd.pgm_ele pec ON pec.pgm_ele_code = p.pgm_ele_code
+ORDER BY PEC
+--]RA_PECglossary
+
+-- check institutions of reviewers with conflicts
+select top 200 pp.prop_id, panl_id, count(revr_id) as nConfl
+from csd.panl_prop pp 
+JOIN csd.rev_prop rp on rp.prop_id = pp.prop_id AND rp.rev_stts_code = 'C'
+where panl_id like 'P17%'
+group by pp.prop_id, panl_id
+order by nConfl desc
+
+--[RA_ckConfRevrInst
+--Needs: RA_lead(#myLead)
+SELECT r.revr_id, i.inst_shrt_name, rtrim(revr.revr_last_name) + ', ' + rtrim(revr.revr_frst_name) AS Panelist
+FROM (SELECT DISTINCT rp.revr_id FROM #myLead p
+     JOIN csd.rev_prop rp ON rp.prop_id = p.lead AND rp.rev_stts_code = 'C') as r
+JOIN csd.revr revr ON revr.revr_id = r.revr_id
+LEFT JOIN csd.inst i ON i.inst_id = revr.inst_id
+ORDER BY i.inst_shrt_name, Panelist
+--]RA_ckConfRevrInst
 
 -- PRCs for props: all
 --[RA_propPRCs
@@ -263,6 +281,39 @@ GROUP BY lead, panl_id
 CREATE INDEX myRevPanl_ix ON #myRevPanl(lead, panl_id)
 --]RA_revs
 
+--per project conflicts recorded
+--[RA_confl
+--Needs: #myRevs, #myRevPanl
+--DROP TABLE #myPPConfl
+select rp.lead, rp.panl_id, rtrim(r.revr_frst_name) + ' ' + rtrim(r.revr_last_name) +', ' + rtrim(i.inst_shrt_name) as confl,
+--c.revr_id, r.revr_last_name, r.revr_frst_name, i.inst_shrt_name, 
+id=identity(18), 0 as seq
+INTO #myPConfl FROM #myRevPanl rp
+JOIN #myRevs c ON c.panl_id = rp.panl_id and c.lead = rp.lead and c.confl=1
+JOIN csd.revr r ON r.revr_id = c.revr_id
+LEFT JOIN csd.inst i ON i.inst_id = r.inst_id
+ORDER BY rp.lead, rp.panl_id, r.revr_last_name
+
+SELECT lead, panl_id, MIN(id) as start INTO #myCStarts FROM #myPConfl GROUP BY lead, panl_id
+UPDATE #myPConfl SET seq = id-M.start FROM #myPConfl r, #myCStarts M  WHERE r.lead = M.lead and r.panl_id = M.panl_id
+DROP TABLE #myCStarts
+
+SELECT lead, panl_id, count(confl) as C,  
+ MAX(CASE r.seq WHEN  0 THEN r.confl ELSE '' END)+
+ MAX(CASE r.seq WHEN  1 THEN '; '+r.confl ELSE '' END)+
+ MAX(CASE r.seq WHEN  2 THEN ','+r.confl ELSE '' END)+
+ MAX(CASE r.seq WHEN  3 THEN ','+r.confl ELSE '' END)+
+ MAX(CASE r.seq WHEN  4 THEN ','+r.confl ELSE '' END)+
+ MAX(CASE r.seq WHEN  5 THEN ','+r.confl ELSE '' END)+
+ MAX(CASE r.seq WHEN  6 THEN ','+r.confl ELSE '' END) AS CR
+INTO #myPPConfl  FROM #myPConfl r 
+GROUP BY lead, panl_id
+CREATE INDEX myPPConfl_ix ON #myPPConfl(lead, panl_id)
+DROP TABLE #myPConfl
+--]RA_confl
+--select * from #myPConfl
+
+
 -- panel outcomes
 -- The information on how other projects fared in a panel is hard to get except by sql query, so this is valuable info for RAs.
 -- The #myPanlOutcomes queries identify all relevant panels, then pull recommendations for ALL proposals on the panels and concatenates.
@@ -273,7 +324,7 @@ CREATE INDEX myRevPanl_ix ON #myRevPanl(lead, panl_id)
 --DROP TABLE #myPanl, #myProjPanl, #myProjPanlSumm
 SELECT pn.panl_id AS I, panl_name AS PN, panl_end_date AS E, 
   (SELECT COUNT(DISTINCT revr_id) FROM csd.panl_revr r WHERE r.panl_id = pn.panl_id) AS P,
-  convert(varchar(126),NULL) AS S
+  convert(varchar(126),NULL) AS S 
 INTO #myPanl FROM (SELECT DISTINCT panl_id FROM #myLead pid JOIN csd.panl_prop pp ON pp.prop_id = pid.lead) pn
 JOIN csd.panl panl ON panl.panl_id = pn.panl_id
 CREATE INDEX myPanl_ix ON #myPanl(I)
@@ -294,13 +345,16 @@ UPDATE #myPanl SET S = (SELECT isnull(convert(varchar,SUM(ps.rtCount)),'No') + '
     MAX( CASE ps.RCOM_SEQ_NUM WHEN 6 THEN ', ' + convert(varchar,ps.rtCount) + ' ' +  ps.RCOM_ABBR ELSE '' END )
     FROM #myPanlOutcomes ps WHERE ps.panl_id = pl.I) 
 FROM #myPanl pl DROP TABLE #myPanlOutcomes
+
 --per project panel summary 
 SELECT rp.lead, ps.*, rp.N, rp.V, s.RCOM_SEQ_NUM AS RS, d.RCOM_ABBR as RA, d.RCOM_TXT as RT, s.PROP_ORDR as RK,
-nullif((SELECT count(*) FROM #myRevs c WHERE confl=1 AND c.panl_id = rp.panl_id AND c.lead = rp.lead ),0) as C,
+c.C, C.CR,
+--nullif((SELECT count(*) FROM #myRevs c WHERE confl=1 AND c.panl_id = rp.panl_id AND c.lead = rp.lead ),0) as C2,
 CASE WHEN panl_summ_unrl_flag = 'Y' THEN 1 ELSE 0 END as summ_unrls, 
-CASE WHEN panl_summ_unrl_flag = 'Y' OR panl_summ_rlse_flag = 'Y'  THEN 0 ELSE 1 END as summ_unmrkd,id=identity(18), 0 as seq
+CASE WHEN panl_summ_unrl_flag = 'Y' OR panl_summ_rlse_flag = 'Y'  THEN 0 ELSE 1 END as summ_unmrkd, id=identity(18), 0 as seq
 INTO #myProjPanl FROM #myRevPanl rp
 JOIN #myPanl ps ON ps.I = rp.panl_id
+LEFT JOIN #myPPConfl c ON c.lead = rp.lead AND c.panl_id = rp.panl_id
 LEFT JOIN FLflpdb.flp.panl_prop_summ s ON s.panl_id = rp.panl_id AND s.prop_id = rp.lead
 LEFT JOIN FLflpdb.flp.panl_rcom_def d ON d.panl_id = rp.panl_id  AND d.RCOM_SEQ_NUM = s.RCOM_SEQ_NUM
 ORDER BY lead, ps.E
@@ -313,100 +367,13 @@ SELECT lead, count(I) AS nPanl, min(RS)+isnull(min(RK),0)/100.0 AS RecRkMin, nul
 INTO #myProjPanlSumm FROM #myProjPanl GROUP BY lead
 --]RA_panl
 --select * from #myPanl select * from #myProjPanl select * from #myProjPanlSumm 
+--select lead,C,C2,CR from #myProjPanl 
 --
----- main query steps
+---- main query steps -- mostly deleted, but available on github
 --SELECT p.lead,
 --ra.RAupdate
 --FROM #myLead p
 --LEFT JOIN #myRA ra ON ra.lead = p.lead
---
---
---select p.lead,
---p0.prop_id as prop_id0, p0.L as last0, p0.F as frst0, p0.I as inst0, p0.D as rqst0, p0.T as b0tot, p0.R as PRC0,
---p1.prop_id as prop_id1, p1.L as last1, p1.F as frst1, p1.I as inst1, p1.D as rqst1, p1.T as b1tot, p1.R as PRC1,
---p2.prop_id as prop_id2, p2.L as last2, p2.F as frst2, p2.I as inst2, p2.D as rqst2, p2.T as b2tot, p2.R as PRC2,
---p3.prop_id as prop_id3, p3.L as last3, p3.F as frst3, p3.I as inst3, p3.D as rqst3, p3.T as b3tot, p3.R as PRC3,
---p4.prop_id as prop_id4, p4.L as last4, p4.F as frst4, p4.I as inst4, p4.D as rqst4, p4.T as b4tot, p4.R as PRC4,
---p5.prop_id as prop_id5, p5.L as last5, p5.F as frst5, p5.I as inst5, p5.D as rqst5, p5.T as b5tot, p5.R as PRC5,
---p6.prop_id as prop_id6, p6.L as last6, p6.F as frst6, p6.I as inst6, p6.D as rqst6, p6.T as b6tot, p6.R as PRC6,
---p0.M AS email, (SELECT MAX(CASE r.seq WHEN  0 THEN r.M ELSE '' END)+
--- MAX(CASE r.seq WHEN  1 THEN ';'+r.M ELSE '' END)+
--- MAX(CASE r.seq WHEN  2 THEN ';'+r.M ELSE '' END)+
--- MAX(CASE r.seq WHEN  3 THEN ';'+r.M ELSE '' END)+
--- MAX(CASE r.seq WHEN  4 THEN ';'+r.M ELSE '' END)+
--- MAX(CASE r.seq WHEN  5 THEN ';'+r.M ELSE '' END)+
--- MAX(CASE r.seq WHEN  6 THEN ';'+r.M ELSE '' END) 
---FROM #myPropInfo r WHERE r.lead = p.lead) AS allPIemail
---FROM #myLead p
---LEFT JOIN (SELECT * FROM #myPropInfo mp WHERE mp.seq = 0) p0 ON p0.lead = p.lead
---LEFT JOIN (SELECT * FROM #myPropInfo mp WHERE mp.seq = 1) p1 ON p1.lead = p.lead
---LEFT JOIN (SELECT * FROM #myPropInfo mp WHERE mp.seq = 2) p2 ON p2.lead = p.lead
---LEFT JOIN (SELECT * FROM #myPropInfo mp WHERE mp.seq = 3) p3 ON p3.lead = p.lead
---LEFT JOIN (SELECT * FROM #myPropInfo mp WHERE mp.seq = 4) p4 ON p4.lead = p.lead
---LEFT JOIN (SELECT * FROM #myPropInfo mp WHERE mp.seq = 5) p5 ON p5.lead = p.lead
---LEFT JOIN (SELECT * FROM #myPropInfo mp WHERE mp.seq = 6) p6 ON p6.lead = p.lead
---
---
---SELECT p.lead, nPanl, isnull(RecRkMin,99) AS RecRkMin, pn0.RA as rec0, pn1.RA as rec1, pn2.RA as rec2, 
---   pn0.I AS panl_id0, pn0.RT AS RCOM_TXT0, pn0.RK AS rank0, pn0.PN AS panl_name0,pn0.E AS panl_end0,pn0.V AS revs0,pn0.S AS PanlString0,pn0.P as pnlst0, pn0.C as confl0,
---   pn1.I AS panl_id1, pn1.RT AS RCOM_TXT1, pn1.RK AS rank1, pn1.PN AS panl_name1,pn1.E AS panl_end1,pn1.V AS revs1,pn1.S AS PanlString1,pn0.P as pnlst1, pn0.C as confl1,
---   pn2.I AS panl_id2, pn2.RT AS RCOM_TXT2, pn2.RK AS rank2, pn2.PN AS panl_name2,pn2.E AS panl_end2,pn2.V AS revs2,pn2.S AS PanlString2,pn0.P as pnlst2, pn0.C as confl2
---FROM #myLead p
---LEFT JOIN (SELECT * FROM #myProjPanl WHERE 0=seq) pn0 ON pn0.lead = p.lead
---LEFT JOIN (SELECT * FROM #myProjPanl WHERE 1=seq) pn1 ON pn1.lead = p.lead
---LEFT JOIN (SELECT * FROM #myProjPanl WHERE 2=seq) pn2 ON pn2.lead = p.lead 
---LEFT JOIN (SELECT lead, count(I) AS nPanl, min(RS)+isnull(min(RK),0)/100.0 AS RecRkMin 
---           FROM #myProjPanl GROUP BY lead) pn ON pn.lead = p.lead
---
---select p.lead,
---projTot.rqst_tot,budg_tot,budRevnMax
---FROM #myLead p
---LEFT JOIN (SELECT lead, SUM(D) AS rqst_tot, SUM(T) AS budg_tot, MAX(RN) AS budRevnMax
---           FROM #myPropInfo GROUP BY lead) projTot ON projTot.lead = p.lead
---
---select p.lead,
---rm.*
---FROM #myLead p
---LEFT JOIN #myRevMarks rm ON rm.lead = p.lead
---
---SELECT p.lead,
---rs.*, -- Nrev, min, avg, max scores, allReviews, last_rev_date 
---ah.N as AhNrev, ah.V as AhRevs, ah.last_rev_date as AhLast
---FROM #myLead p
---LEFT JOIN #myRevSumm rs ON rs.lead = p.lead
---LEFT JOIN #myRevPanl ah ON ah.lead = p.lead AND ah.panl_id =  @adhoc
-
---select p.lead,
---LEFT JOIN (SELECT lead, count(I) AS nPanl, min(RS)+isnull(min(RK),0)/100.0 AS RecRkMin, nullif(sum(summ_rlse),0) as nPSrlse, 
---    nullif(sum(summ_unmrkd),0) as nPSunmrkd FROM #myProjPanl GROUP BY lead) pn ON pn.lead = p.lead
---nPanl,  nPSumRlsd,lead nPSrlse, nPSunmrkd
---
---SELECT getdate() AS pulldate, nsf_rcvd_date, 
---nullif(dd_rcom_date,'1900-01-01') AS dd_rcom_date, ra.RAupdate, 
---cntx_stmt_id, prop.pgm_annc_id, prop.org_code, prop.pgm_ele_code,p.PO,
---prop_stts_abbr,natr_rqst.natr_rqst_abbr,prop.obj_clas_code,
---org.dir_div_abbr as Div, p.lead,rtrim(prop_titl_txt) AS prop_titl_txt, 
-----projTot.rqst_tot,budg_tot,budRevnMax, 
---prop.rqst_eff_date, prop.rqst_mnth_cnt, 
---rtrim(pa.dflt_prop_titl_txt) AS solicitation, org.org_long_name as Div_name, 
---pgm_ele_name, sign_blck_name, prop_stts.prop_stts_txt, obj_clas_name,
---o2.dir_div_abbr as Dir, o2.org_long_name as Dir_name
---FROM #myLead p
---JOIN csd.prop prop ON prop.prop_id = p.lead
---JOIN csd.org org ON org.org_code = prop.org_code
---LEFT JOIN csd.org o2 ON o2.org_code =left(prop.org_code,2)+'000000' 
---LEFT JOIN csd.pgm_ele pe ON pe.pgm_ele_code = prop.pgm_ele_code
---LEFT JOIN csd.pgm_annc pa ON pa.pgm_annc_id = prop.pgm_annc_id
---LEFT JOIN #myRA ra ON ra.lead = p.lead
---JOIN csd.obj_clas oc ON oc.obj_clas_code = prop.obj_clas_code
---JOIN csd.prop_stts prop_stts ON prop_stts.prop_stts_code = prop.prop_stts_code
---JOIN csd.natr_rqst natr_rqst ON natr_rqst.natr_rqst_code = prop.natr_rqst_code
---LEFT JOIN csd.po_vw po_vw ON po_vw.po_ibm_logn_id = p.PO
---
---select * from #myRA ra order by lead
---select * from #myRevSumm order by lead
---select * from #myRevMarks order by lead
---select * from #myRevPanl order by lead
 
 --declare @adhoc char(7), @olddate datetime  SELECT @adhoc = '.ad hoc ',  @olddate = '1/1/2000' -- for formatting dates
 --[RA_allRAdata
@@ -420,9 +387,9 @@ rm.Nunrlsbl, projTot.rqst_tot, budg_tot, budRevnMax,
 prop.rqst_eff_date, prop.rqst_mnth_cnt, 
 rtrim(prop_titl_txt) AS prop_titl_txt, 
 ah.N as AhNrev, ah.V as AhRevs, ah.last_rev_date as AhLast,
- pn0.I AS panl_id0, pn0.RT AS RCOM_TXT0, pn0.RK AS rank0, pn0.PN AS panl_name0,pn0.E AS panl_end0,pn0.V AS revs0,pn0.S AS PanlString0,pn0.P as pnlst0, pn0.C as confl0,
- pn1.I AS panl_id1, pn1.RT AS RCOM_TXT1, pn1.RK AS rank1, pn1.PN AS panl_name1,pn1.E AS panl_end1,pn1.V AS revs1,pn1.S AS PanlString1,pn1.P as pnlst1, pn1.C as confl1,
- pn2.I AS panl_id2, pn2.RT AS RCOM_TXT2, pn2.RK AS rank2, pn2.PN AS panl_name2,pn2.E AS panl_end2,pn2.V AS revs2,pn2.S AS PanlString2,pn2.P as pnlst2, pn2.C as confl2,
+ pn0.I AS panl_id0, pn0.RT AS RCOM_TXT0, pn0.RK AS rank0, pn0.PN AS panl_name0,pn0.E AS panl_end0,pn0.V AS revs0,pn0.S AS PanlString0,pn0.P as pnlst0, pn0.C as confl0, pn0.CR as conflrev0,
+ pn1.I AS panl_id1, pn1.RT AS RCOM_TXT1, pn1.RK AS rank1, pn1.PN AS panl_name1,pn1.E AS panl_end1,pn1.V AS revs1,pn1.S AS PanlString1,pn1.P as pnlst1, pn1.C as confl1, pn1.CR as conflrev1,
+ pn2.I AS panl_id2, pn2.RT AS RCOM_TXT2, pn2.RK AS rank2, pn2.PN AS panl_name2,pn2.E AS panl_end2,pn2.V AS revs2,pn2.S AS PanlString2,pn2.P as pnlst2, pn2.C as confl2, pn2.CR as conflrev2,
 p0.prop_id as prop_id0, p0.L as last0, p0.F as frst0, p0.I as inst0, p0.D as rqst0, p0.T as b0tot, p0.R as PRC0,
 p1.prop_id as prop_id1, p1.L as last1, p1.F as frst1, p1.I as inst1, p1.D as rqst1, p1.T as b1tot, p1.R as PRC1,
 p2.prop_id as prop_id2, p2.L as last2, p2.F as frst2, p2.I as inst2, p2.D as rqst2, p2.T as b2tot, p2.R as PRC2,
@@ -470,6 +437,8 @@ LEFT JOIN (SELECT * FROM #myPropInfo mp WHERE mp.seq = 5) p5 ON p5.lead = p.lead
 LEFT JOIN (SELECT * FROM #myPropInfo mp WHERE mp.seq = 6) p6 ON p6.lead = p.lead
 LEFT JOIN (SELECT lead, SUM(D) AS rqst_tot, SUM(T) AS budg_tot, MAX(RN) AS budRevnMax
            FROM #myPropInfo GROUP BY lead) projTot ON projTot.lead = p.lead
+--]RA_allRAdata
+--[RA_allRAdata2
 UNION ALL SELECT @olddate,@olddate -- example to set mail merge format.  
 ,'.first line.','..please','keep','for ','mail','merge','formatting.','thx.',@olddate
 ,0,-0.99999999,'NRFP','NRFP','NRFP','zztemplateFname RAt.docx'
@@ -477,9 +446,9 @@ UNION ALL SELECT @olddate,@olddate -- example to set mail merge format.
 ,99999999.0,99999999.0,0,@olddate,36
 ,'This first row is needed so that mail merge formatting will be correct. Please do not remove it.  Mail merge takes its formatting from the first rows of the table............'
 ,0,'E,V,G,F,P',@olddate
-,'P123456','Dont remove this line for panel rec formatting....',99,'Panel name spelled out; keep this line for formatting.......',@olddate,'E,E/V,V,V/G,G,G/F,F,F/P,P','Reports rank & all recs (HC, etc.) from Interactive Panel System (IPS).  I suggest Standard competition rank  (wikipedia) .',0,0
-,'P123456','Dont remove this line for panel rec formatting....',99,'Panel name spelled out; keep this line for formatting.......',@olddate,'E,E/V,V,V/G,G,G/F,F,F/P,P','Reports rank & all recs (HC, etc.) from Interactive Panel System (IPS).  I suggest Standard competition rank  (wikipedia) .',0,0
-,'P123456','Dont remove this line for panel rec formatting....',99,'Panel name spelled out; keep this line for formatting.......',@olddate,'E,E/V,V,V/G,G,G/F,F,F/P,P','Reports rank & all recs (HC, etc.) from Interactive Panel System (IPS).  I suggest Standard competition rank  (wikipedia) .',0,0
+,'P123456','Dont remove this line for panel rec formatting....',99,'Panel name spelled out; keep this line for formatting.......',@olddate,'E,E/V,V,V/G,G,G/F,F,F/P,P','Reports rank & all recs (HC, etc.) from Interactive Panel System (IPS).  I suggest Standard competition rank  (wikipedia) .',0,0,'List of conflicted panelists separated by semicolons. Not everyone will need this list, but some divisions request this information, so I am seeing if we can provide it. There is a limit of seven names returned, though all will be counted.'
+,'P123456','Dont remove this line for panel rec formatting....',99,'Panel name spelled out; keep this line for formatting.......',@olddate,'E,E/V,V,V/G,G,G/F,F,F/P,P','Reports rank & all recs (HC, etc.) from Interactive Panel System (IPS).  I suggest Standard competition rank  (wikipedia) .',0,0,'List of conflicted panelists separated by semicolons. Not everyone will need this list, but some divisions request this information, so I am seeing if we can provide it. There is a limit of seven names returned, though all will be counted.'
+,'P123456','Dont remove this line for panel rec formatting....',99,'Panel name spelled out; keep this line for formatting.......',@olddate,'E,E/V,V,V/G,G,G/F,F,F/P,P','Reports rank & all recs (HC, etc.) from Interactive Panel System (IPS).  I suggest Standard competition rank  (wikipedia) .',0,0,'List of conflicted panelists separated by semicolons. Not everyone will need this list, but some divisions request this information, so I am seeing if we can provide it. There is a limit of seven names returned, though all will be counted.'
 ,'1234567','PI last name for format.','PI first name..','Inst name for formatting',99999999.0,99999999.0,'Proposal PRCs assgnd; see glossary '
 ,'1234567','PI last name for format.','PI first name..','Inst name for formatting',99999999.0,99999999.0,'Proposal PRCs assgnd; see glossary '
 ,'1234567','PI last name for format.','PI first name..','Inst name for formatting',99999999.0,99999999.0,'Proposal PRCs assgnd; see glossary '
@@ -492,7 +461,7 @@ UNION ALL SELECT @olddate,@olddate -- example to set mail merge format.
 ,'Program Element name retrieved','Name for PO signature','Proposal status details','Nature of request full name','Object Class full name','DIR'
 ,'Directorate name retrieved by modified org_code from org. This example is for formatting; please do not remove this line............'
 ,@olddate,'Email of lead PI on the project','list of all emails for Pis on Lead and non-lead proposals on the project.  Does not include the co-Pis. '
---]RA_allRAdata
+--]RA_allRAdata2
 
 -- To get types for formatting, uncomment this line above --INTO #myTmp 
 --    & run query (ignore warning about row size)
@@ -662,10 +631,11 @@ ORDER BY lead, docType, revr_last_name, revr_id
 --select pav.panl_id +'('+rtrim(revr.revr_last_name)+')', pav.* from FLflpdb.flp.panl_asgn_view pav JOIN csd.revr revr ON revr.revr_id = pav.Scribe WHERE panl_id = 'p180637'
 --select p.* from #myLead p
 
-SELECT prop_id, pav.panl_id, '('+rtrim(revr.revr_last_name)+')' as scribe
-FROM #myLead p
-JOIN FLflpdb.flp.panl_asgn_view pav ON pav.prop_id 
-JOIN csd.revr revr ON revr.revr_id = pav.Scribe WHERE panl_id = 'p180637'
+--SELECT prop_id, pav.panl_id, '('+rtrim(revr.revr_last_name)+')' as scribe
+--FROM #myLead p
+--JOIN FLflpdb.flp.panl_asgn_view pav ON pav.prop_id 
+--JOIN csd.revr revr ON revr.revr_id = pav.Scribe 
+--WHERE panl_id = 'p180637'
 
 
 
@@ -825,6 +795,7 @@ DROP TABLE #myProp, #myLead, #myRA
 DROP TABLE #myPRCs,#myPRCdata
 DROP TABLE #myPropBudg, #myPropInfo
 DROP TABLE #myRevs, #myRevPanl, #myRevMarks, #myRevSumm
+DROP TABLE #myPPConfl
 DROP TABLE #myPanl, #myProjPanl, #myProjPanlSumm
 DROP TABLE #myRevInfo, #mySumm
 DROP TABLE #myDmog

@@ -56,7 +56,11 @@ End Sub
 
 Sub ClearTable(lo As ListObject)
   With lo
-    If Not .DataBodyRange Is Nothing Then .DataBodyRange.Delete
+    If Not .DataBodyRange Is Nothing Then
+      Application.DisplayAlerts = False
+      .DataBodyRange.Delete
+      Application.DisplayAlerts = True
+    End If
   End With
 End Sub
 
