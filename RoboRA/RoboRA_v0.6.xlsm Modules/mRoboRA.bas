@@ -103,7 +103,7 @@ Application.ScreenUpdating = True
 If nTemplates = 0 Then
   If MsgBox("Did not find any RA templates in " & dirRAtemplate & "; shall I copy the standard templates to that folder?" _
            & vbNewLine & "Note: RA template names must end with RAt.docx; award templates must start with Awd and standard templates (autoloaded) must start with Std", vbOKCancel) = vbOK Then
-             Call renewFiles("\\collaboration.inside.nsf.gov@SSL\DavWWWRoot\eng\meritreview\SiteAssets\ENG Tools Websites and Best Practices\RoboRA\RAtemplates\*.docx", Range("dirRAtemplate").Value & "\")
+             Call renewFiles(Range("SharedRAtemplate").Value, Range("dirRAtemplate").Value & "\")
              Call List_Templates
   End If
 End If
@@ -128,9 +128,11 @@ folderName = FolderPicker("Choose output folder for populated RA drafts (.docm)"
 If folderName <> "" Then Range("dirRAoutput").Value = folderName
 End Sub
 
+
+'\\collaboration.inside.nsf.gov@SSL\DavWWWRoot\eng\meritreview\SiteAssets\ENG Tools Websites and Best Practices\RoboRA\RAtemplates\*.docx
 Sub CheckRAFolders()
-  If Len(Range("dirRAtemplate").Value) < 2 Then Range("dirRAtemplate").Value = ThisWorkbook.path
-  If Len(Range("dirRAoutput").Value) < 2 Then Call Picker_dirRAoutput
+  If Len(Range("SharedRAtemplate").Value) < 2 Then Range("SharedRAtemplate").Value = ThisWorkbook.path & "RAtemplates\*.docx"
+'  If Len(Range("dirRAoutput").Value) < 2 Then Call Picker_dirRAoutput
 End Sub
 
 

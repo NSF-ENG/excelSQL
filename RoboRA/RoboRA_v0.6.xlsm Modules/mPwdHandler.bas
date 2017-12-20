@@ -87,6 +87,7 @@ Public Sub doQuery(qt As QueryTable, SQL As String, Optional backgroundFlag As B
     'Debug.Print "doQuery: " & (gPwdForm Is Nothing)
 If gPwdForm Is Nothing And Not handlePwd Then Exit Sub ' abort
 RetryHandler:
+DoEvents
 On Error GoTo ErrHandler
   With qt
     .Connection = "ODBC;" & makeConnectionString(db)
