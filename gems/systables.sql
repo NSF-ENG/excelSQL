@@ -14,7 +14,15 @@ JOIN syscolumns sc ON sc.id = so.id
 JOIN systypes t on t.usertype = sc.usertype
 LEFT JOIN sysprotects sp ON sp.id = sc.id
 LEFT JOIN sysusers su ON su.uid = sp.uid
-WHERE so.name like 'pi%' and sc.name like '%' -- table name, field name
-AND (su.name is null OR su.name = 'public'OR su.name like 'ccfuser')
+WHERE so.name like 'obj_clas%' and sc.name like '%' -- table name, field name
+AND (su.name is null OR su.name = 'public'OR su.name like 'iipuser')
 order by so.name, colid, su.name
 
+SELECT so.name as tablename, so.crdate, su.name as username, sp.uid, sp.action, sp.protecttype, 
+inttohex(sp.columns) as col
+from sysobjects so 
+LEFT JOIN sysprotects sp ON sp.id = so.id
+LEFT JOIN sysusers su ON su.uid = sp.uid
+WHERE so.name like '%oblg%'  -- table name, field name
+--AND (su.name like 'public')
+order by so.name, su.name
