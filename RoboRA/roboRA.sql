@@ -116,7 +116,11 @@ SELECT prop_id,convert(varchar(35),
     MAX( CASE pa.seq WHEN 3 THEN ' ' + pa.prop_atr_code ELSE '' END ) +
     MAX( CASE pa.seq WHEN 4 THEN ' ' + pa.prop_atr_code ELSE '' END ) +
     MAX( CASE pa.seq WHEN 5 THEN ' ' + pa.prop_atr_code ELSE '' END ) +
-    MAX( CASE pa.seq WHEN 6 THEN ' ' + pa.prop_atr_code ELSE '' END )) AS R
+    MAX( CASE pa.seq WHEN 6 THEN ' ' + pa.prop_atr_code ELSE '' END ) +
+    MAX( CASE pa.seq WHEN 7 THEN ' ' + pa.prop_atr_code ELSE '' END ) +
+    MAX( CASE pa.seq WHEN 8 THEN ' ' + pa.prop_atr_code ELSE '' END ) +
+    MAX( CASE pa.seq WHEN 9 THEN ' ' + pa.prop_atr_code ELSE '' END ) +
+    MAX( CASE pa.seq WHEN 10 THEN ' ' + pa.prop_atr_code ELSE '' END )) AS R
 INTO #myPRCs
 FROM #myPRCdata pa 
 GROUP BY prop_id
@@ -255,7 +259,9 @@ convert(varchar(50), MAX(CASE r.seq WHEN  0 THEN     r.string ELSE '' END)+
  MAX(CASE r.seq WHEN  9 THEN ','+r.string ELSE '' END)+
  MAX(CASE r.seq WHEN 10 THEN ','+r.string ELSE '' END)+
  MAX(CASE r.seq WHEN 11 THEN ','+r.string ELSE '' END)+
- MAX(CASE r.seq WHEN 12 THEN ','+r.string ELSE '' END)) AS allReviews, 
+ MAX(CASE r.seq WHEN 12 THEN ','+r.string ELSE '' END)+
+ MAX(CASE r.seq WHEN 13 THEN ','+r.string ELSE '' END)+
+ MAX(CASE r.seq WHEN 14 THEN ','+r.string ELSE '' END)) AS allReviews, 
 MAX(r.rev_rtrn_date) AS last_rev_date
 INTO #myRevSumm FROM #myRevs r WHERE confl = 0
 GROUP BY r.lead
@@ -274,7 +280,9 @@ SELECT lead, panl_id, count(revr_id) as N, convert(varchar(50), STUFF(LTRIM(
  MAX(CASE r.seq WHEN  9 THEN ','+r.string ELSE '' END)+
  MAX(CASE r.seq WHEN 10 THEN ','+r.string ELSE '' END)+
  MAX(CASE r.seq WHEN 11 THEN ','+r.string ELSE '' END)+
- MAX(CASE r.seq WHEN 12 THEN ','+r.string ELSE '' END)),1,1,'')) AS V, 
+ MAX(CASE r.seq WHEN 12 THEN ','+r.string ELSE '' END)+
+ MAX(CASE r.seq WHEN 13 THEN ','+r.string ELSE '' END)+
+ MAX(CASE r.seq WHEN 14 THEN ','+r.string ELSE '' END)),1,1,'')) AS V, 
 MAX(r.rev_rtrn_date) AS last_rev_date
 INTO #myRevPanl FROM #myRevs r WHERE confl = 0
 GROUP BY lead, panl_id
