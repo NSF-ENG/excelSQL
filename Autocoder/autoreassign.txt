@@ -1,0 +1,28 @@
+var str = '';
+var t = document.getElementsByTagName('table')[0];
+for (var i = 2; i< t.rows.length; i++) {
+ var c = t.rows[i].cells;
+  if (c.length > 3)
+  str += c[2].getElementsByTagName('a')[0].href.slice(-7) + '\t' 
+      + c[1].getElementsByTagName('input')[0].value + '\t' 
+      + c[0].innerHTML +'\n';
+  }
+window.alert(str);
+
+
+
+var str = '';
+var t = document.getElementsByTagName('table')[0];
+for (var i = 4; i< 8; i++) {
+ var c = t.rows[i].cells;
+  if (c.length > 3)
+  str += c[2].getElementsByTagName('a')[0].href.slice(-7) +'\n';
+  }
+ 
+
+ for (var i = 2; i< t.rows.length; i++) {
+ var c = t.rows[i].cells;
+  if (c.length > 3)
+    if (str.indexOf(c[2].getElementsByTagName('a')[0].href.slice(-7))>=0) 
+      c[1].getElementsByTagName('input')[0].click();
+  }
