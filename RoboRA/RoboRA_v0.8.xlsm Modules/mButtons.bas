@@ -5,6 +5,10 @@ Sub ClearData()
  frmClearProp.Show
 End Sub
 
+Sub setPrefs()
+
+End Sub
+
 Sub OptionButton_AreYouSure()
   If MsgBox("Are you sure that you want to overwrite RAs that may exist in eJacket?", _
             vbOKCancel) <> vbOK Then RoboRA.Range("overwrite_option").Value = 2

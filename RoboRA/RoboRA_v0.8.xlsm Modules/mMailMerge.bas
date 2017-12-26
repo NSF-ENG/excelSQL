@@ -47,7 +47,7 @@ End If
 On Error GoTo 0
 
 nRA = 0
-hasAuto = RoboRA.CheckBoxes("cbAutoloadAll").Value = 1
+hasAuto = Prefs.CheckBoxes("cbAutoloadAll").Value = 1
 With Range("RADataQTable[RAtemplate]")
  For i = 1 To .Rows.count  ' quick check
   strRAtemplate = Application.Trim(.Cells(i, 1))
@@ -63,7 +63,7 @@ If nRA = 0 Then
 End If
 
 Call renewFiles("\\collaboration.inside.nsf.gov@SSL\DavWWWRoot\eng\meritreview\SiteAssets\ENG Tools Websites and Best Practices\RoboRA\RoboRACleanCopy.dotm", dirRAoutput)
-'If RoboRA.CheckBoxes("cbConfirmActions").Value = 1 Then confirm ("About to start Mail Merge to create RA drafts")
+'If Prefs.CheckBoxes("cbConfirmActions").Value = 1 Then confirm ("About to start Mail Merge to create RA drafts")
 ufProgress.Show vbModeless
 
 If hasAuto Then Set IE = openEJacket()
@@ -106,7 +106,7 @@ strRAtemplate = Application.Trim(pt.RowRange.Cells(t, 1))
     Loop
     On Error GoTo 0
     
-    autoDeclineQ = (RoboRA.CheckBoxes("cbAutoloadAll").Value = 1) Or (VBA.Left$(strRAtemplate, 3) = "Std")
+    autoDeclineQ = (Prefs.CheckBoxes("cbAutoloadAll").Value = 1) Or (VBA.Left$(strRAtemplate, 3) = "Std")
     wdDoc.Activate
     wdApp.Visible = True
     
@@ -197,7 +197,7 @@ Sub makeProjText()
  Dim dirRAtemplate As String, dirRAoutput As String
  
 Call CheckRAFolders
-dirRAtemplate = Advanced.Range("dirRAtemplate").Value
+dirRAtemplate = Range("dirRAtemplate").Value
 If VBA.Right$(dirRAtemplate, 1) <> Application.pathSeparator Then dirRAtemplate = dirRAtemplate & Application.pathSeparator
 dirRAoutput = Range("dirRAoutput").Value
 If VBA.Right$(dirRAoutput, 1) <> Application.pathSeparator Then dirRAoutput = dirRAoutput & Application.pathSeparator

@@ -75,7 +75,7 @@ GROUP BY lead
 SELECT p.pgm_ele_code AS PEC, pec.pgm_ele_name AS PEC_Description
 FROM (SELECT DISTINCT pgm_ele_code FROM #myProp pid 
 JOIN csd.prop p ON p.prop_id = pid.prop_id) p
-JOIN csd.pgm_ele pec ON pec.pgm_ele_code = p.pgm_ele_code
+JOIN FLflpdb.flp.pgm_ele pec ON pec.pgm_ele_code = p.pgm_ele_code
 ORDER BY PEC
 --]RA_PECglossary
 
@@ -419,11 +419,11 @@ FROM #myPropInfo r WHERE r.lead = p.lead)) AS allPIemail
 --INTO #myTmp -- save to get types for formatting dummy line
 FROM #myLead p
 JOIN csd.prop prop ON prop.prop_id = p.lead
-JOIN csd.org org ON org.org_code = prop.org_code
-LEFT JOIN csd.org o2 ON o2.org_code =left(prop.org_code,2)+'000000' 
-LEFT JOIN csd.pgm_ele pe ON pe.pgm_ele_code = prop.pgm_ele_code
+JOIN FLflpdb.flp.org org ON org.org_code = prop.org_code
+LEFT JOIN FLflpdb.flp.org o2 ON o2.org_code =left(prop.org_code,2)+'000000' 
+LEFT JOIN FLflpdb.flp.pgm_ele pe ON pe.pgm_ele_code = prop.pgm_ele_code
 LEFT JOIN csd.pgm_annc pa ON pa.pgm_annc_id = prop.pgm_annc_id
-JOIN csd.obj_clas oc ON oc.obj_clas_code = prop.obj_clas_code
+JOIN FLflpdb.flp.obj_clas_pars oc ON oc.obj_clas_code = prop.obj_clas_code
 JOIN csd.prop_stts prop_stts ON prop_stts.prop_stts_code = prop.prop_stts_code
 JOIN csd.natr_rqst natr_rqst ON natr_rqst.natr_rqst_code = prop.natr_rqst_code
 LEFT JOIN #myRA ra ON ra.lead = p.lead
@@ -511,6 +511,7 @@ select ''YYYYN'', ''E/V/G/F'', 5.99 union all select ''YYYYY'', ''E/V/G/F/P'', 4
 --]revtable
 
 --[RA_PRCglossary
+--NON-PUBLIC TABLE: csd.pgm_ref
 --Needs: RA_lead, RA_propPRCs(#myPRCdata)
 SELECT p.prop_atr_code AS PRC, prc.pgm_ref_txt AS PRC_Description
 FROM (SELECT DISTINCT prop_atr_code FROM #myPRCdata) p
@@ -518,7 +519,13 @@ JOIN csd.pgm_ref prc ON prc.pgm_ref_code = p.prop_atr_code
 ORDER BY PRC
 --]RA_PRCglossary
 -----------------
-
+--[RA_no_PRC
+--Needs: RA_lead, RA_propPRCs(#myPRCdata)
+SELECT p.prop_atr_code AS PRC, 'table rptdb.csd.pgm_ref missing at install' AS PRC_Description
+FROM (SELECT DISTINCT prop_atr_code FROM #myPRCdata) p
+ORDER BY PRC
+--]RA_no_PRC
+-----------------
 
 --Checkers
 
@@ -578,7 +585,7 @@ NfmlPIs,NhispPIs,NhndcpPIs,NnonWhtAsnPIs,
 p.M as email
 FROM #myPropInfo p
 JOIN csd.prop prop ON prop.prop_id = p.prop_id
-JOIN csd.org org ON org.org_code = prop.org_code
+JOIN FLflpdb.flp.org org ON org.org_code = prop.org_code
 JOIN csd.prop_stts prop_stts ON prop_stts.prop_stts_code = prop.prop_stts_code
 JOIN csd.natr_rqst natr_rqst ON natr_rqst.natr_rqst_code = prop.natr_rqst_code
 LEFT JOIN #myRA ra ON ra.lead = p.lead
@@ -688,7 +695,7 @@ bs.awd_id, bs.budg_yr, bs.splt_id, bs.budg_splt_tot_dol,
 prop_stts_txt, prop.prop_titl_txt
 FROM #myPropInfo p
 JOIN csd.prop prop ON prop.prop_id = p.prop_id
-JOIN csd.org org ON org.org_code = prop.org_code
+JOIN FLflpdb.flp.org org ON org.org_code = prop.org_code
 JOIN csd.prop_stts prop_stts ON prop_stts.prop_stts_code = prop.prop_stts_code
 JOIN csd.natr_rqst natr_rqst ON natr_rqst.natr_rqst_code = prop.natr_rqst_code
 JOIN csd.budg_splt bs on bs.prop_id=p.prop_id 
@@ -758,7 +765,7 @@ b.sr_tot_cnt, b.sr_sumr_mnths, b.sr_acad_mnths, b.sr_cal_mnths,
 p.M as email
 FROM #myPropInfo p
 JOIN csd.prop prop ON prop.prop_id = p.prop_id
-JOIN csd.org org ON org.org_code = prop.org_code
+JOIN FLflpdb.flp.org org ON org.org_code = prop.org_code
 JOIN csd.prop_stts prop_stts ON prop_stts.prop_stts_code = prop.prop_stts_code
 JOIN csd.natr_rqst natr_rqst ON natr_rqst.natr_rqst_code = prop.natr_rqst_code
 LEFT JOIN csd.awd_istr ai on prop.rcom_awd_istr = ai.awd_istr_code
@@ -810,3 +817,81 @@ DROP TABLE #myDmog
 DROP TABLE #myCtry, #myCovrInfo
 DROP TABLE #myBSprc
 DROP TABLE #myBudg
+
+--table permission checking
+-- These are all the tables we use (or would think of using.)
+SELECT 'abst' AS tbl INTO #myTbl
+union all SELECT 'addl_pi_invl'
+union all SELECT 'awd_istr'
+union all SELECT 'budg_pgm_ref'
+union all SELECT 'budg_splt'
+union all SELECT 'ctry'
+union all SELECT 'ej_upld_doc_vw'
+union all SELECT 'eps_blip'
+union all SELECT 'inst'
+union all SELECT 'natr_rqst'
+union all SELECT 'org' -- use flp
+union all SELECT 'panl'
+union all SELECT 'panl_prop'
+union all SELECT 'panl_revr'
+union all SELECT 'pgm_annc'
+union all SELECT 'pgm_ele' -- use flp
+union all SELECT 'pgm_ref' -- only non-public table
+union all SELECT 'PI_dmog'
+union all SELECT 'pi_vw'
+union all SELECT 'po_vw'
+union all SELECT 'prop'
+union all SELECT 'prop_atr'
+union all SELECT 'prop_rev_anly_vw'
+union all SELECT 'prop_spcl_item_vw'
+union all SELECT 'prop_stts'
+union all SELECT 'prop_subm_ctl_vw'
+union all SELECT 'rev_prop'
+union all SELECT 'rev_prop_txt_flds_vw'
+union all SELECT 'rev_prop_vw'
+union all SELECT 'revr'
+union all SELECT 'revr_opt_addr_line'
+union all SELECT 'cmnt_prop' -- begin flp tables
+union all SELECT 'ej_diry_note'
+union all SELECT 'obj_clas_pars' -- use flp
+union all SELECT 'panl_asgn_view'
+union all SELECT 'panl_prop_summ'
+union all SELECT 'panl_rcom_def'
+union all SELECT 'proj_summ'
+union all SELECT 'PROP_COVR'
+union all SELECT 'obj_clas' -- don't use
+union all SELECT 'pgm_ele_pars' -- don't need
+union all SELECT 'pgm_ref_pars' -- doesn't exist
+union all SELECT 'org_pars' -- don't need 
+order by tbl
+
+-- tables with not public read access in rptdb or FLflpdb
+-- the conclusion: use flp.obj_clas_pars, flp.org, flp.pgm_ele
+select t.* 
+FROM (SELECT t.* from #myTbl t
+where not exists (SELECT * FROM rptdb.dbo.sysobjects so 
+JOIN rptdb.dbo.sysprotects sp ON sp.id = so.id and sp.action = 193 and sp.uid = 0
+WHERE so.name = t.tbl)) t
+where not exists (SELECT * FROM FLflpdb.dbo.sysobjects so 
+JOIN FLflpdb.dbo.sysprotects sp ON sp.id = so.id and sp.action = 193 and sp.uid = 0
+WHERE so.name = t.tbl)
+
+select dbu.name as db, t.tbl, so.crdate, so.type, su.name as username
+from #myTbl t
+JOIN FLflpdb.dbo.sysobjects so ON so.name = t.tbl
+JOIN FLflpdb.dbo.sysusers dbu ON dbu.uid = so.uid
+JOIN FLflpdb.dbo.sysprotects sp ON sp.id = so.id and sp.action = 193 
+JOIN FLflpdb.dbo.sysusers su ON su.uid = sp.uid
+union all
+select dbu.name as db, t.tbl, so.crdate, so.type, su.name as username
+from #myTbl t
+JOIN rptdb.dbo.sysobjects so ON so.name = t.tbl
+JOIN rptdb.dbo.sysusers dbu ON dbu.uid = so.uid
+JOIN rptdb.dbo.sysprotects sp ON sp.id = so.id and sp.action = 193 
+JOIN rptdb.dbo.sysusers su ON su.uid = sp.uid
+order by tbl, username, db
+
+Drop table #myTbl
+
+
+

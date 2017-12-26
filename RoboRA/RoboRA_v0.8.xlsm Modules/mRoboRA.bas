@@ -81,7 +81,8 @@ Sub List_Templates() ' list RA templates available (used by data validation)
 Dim templateName As String
 Dim nTemplates As Integer
 Dim dirRAtemplate As String
-dirRAtemplate = Advanced.Range("dirRAtemplate").Value
+dirRAtemplate = Range("dirRAtemplate").Value
+If Len(dirRAtemplate) < 2 Then dirRAtemplate = Range("dirSharedRAtemplate").Value
 If VBA.Right$(dirRAtemplate, 1) <> Application.pathSeparator Then dirRAtemplate = dirRAtemplate & Application.pathSeparator
 
 nTemplates = 0
@@ -116,9 +117,16 @@ MsgBox ("Error " & Err.Number & ":" & Err.Description & vbNewLine & "while tryin
 Resume ExitHandler
 End Sub
 
+Sub Picker_dirSharedRAtemplate()
+Dim folderName As String
+folderName = FolderPicker("Choose folder containing base RA templates *RAt.docx", Range("dirRAtemplate").Value)
+If folderName <> "" Then Range("dirSharedRAtemplate").Value = folderName
+Call List_Templates
+End Sub
+
 Sub Picker_dirRAtemplate()
 Dim folderName As String
-folderName = FolderPicker("Choose input folder containing RA templates *RAt.docx", Range("dirRAtemplate").Value)
+folderName = FolderPicker("Choose folder for personal RA templates *RAt.docx", Range("dirRAtemplate").Value)
 If folderName <> "" Then Range("dirRAtemplate").Value = folderName
 Call List_Templates
 End Sub
@@ -135,8 +143,8 @@ Sub CheckRAFolders()
 ' This runs on workbook open
 #If Mac Then
 #Else
-  If Len(Range("dirRAtemplate").Value) < 2 Then
-    Range("dirRAtemplate").Value = "\\collaboration.inside.nsf.gov@SSL\DavWWWRoot\eng\meritreview\SiteAssets\ENG Tools Websites and Best Practices\RoboRA\RAtemplates\"
+  If Len(Range("dirSharedRAtemplate").Value) < 2 Then
+    Range("dirSharedRAtemplate").Value = "\\collaboration.inside.nsf.gov@SSL\DavWWWRoot\eng\meritreview\SiteAssets\ENG Tools Websites and Best Practices\RoboRA\RAtemplates\"
     Call List_Templates
   End If
   If Len(Range("dirRAoutput").Value) < 2 Then Call Picker_dirRAoutput

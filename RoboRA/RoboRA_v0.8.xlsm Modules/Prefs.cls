@@ -10,7 +10,7 @@ Attribute VB_Exposed = True
 Private Sub Worksheet_SelectionChange(ByVal Target As Range)
 If Selection.count = 1 Then
     If Not (Intersect(Target, Range("SharedRATemplateTable")) Is Nothing) Then
-        Prefs.Range("dirSharedRAtemplate").Value = Prefs.Range("I" & Target.Row).Value
+        Prefs.Range("dirSharedRAtemplate").Value = Prefs.Range("J" & Target.Row).Value
     End If
 End If
 End Sub
