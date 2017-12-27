@@ -29,8 +29,8 @@ Function autoPasteRA(IE As InternetExplorerMedium, prop_id As String, RA As Stri
 Dim i As Integer, j As Integer
 Dim overwriteQ As Variant
 
-overwriteQ = RoboRA.Range("overwrite_option").Value
-If (Len(prop_id) <> 7) Then ' Probably have a prop_id; go to Jacket
+overwriteQ = Range("overwrite_option").Value
+If (Len(prop_id) <> 7) Then ' warn that this is not a proposal id
     autoPasteRA = prop_id & " not a prop_id" & vbNewLine
     Exit Function
 End If
@@ -76,15 +76,51 @@ Else
 End If
 End Function
 
+' Initialization and Preference states
+' noSharedRAtemplate folder:  Fresh copy of RoboRA
+'   - choose default, ListTemplates, & show splash
+'\\collaboration.inside.nsf.gov@SSL\DavWWWRoot\eng\meritreview\SiteAssets\ENG Tools Websites and Best Practices\RoboRA\RAtemplates\*RAt.docx
+Sub CheckRAFolders()
+' This runs on workbook open
+If Len(Range("dirSharedRAtemplate").Value) < 2 Then
+  Prefs.Activate
+#If Mac Then ' show mac instructions, and End.  Don't initialize
+  Prefs.Range("WelcomeMac").Activate
+  End
+#Else ' initialize on PC
+  Range("dirSharedRAtemplate").Value = "\\collaboration.inside.nsf.gov@SSL\DavWWWRoot\eng\meritreview\SiteAssets\ENG Tools Websites and Best Practices\RoboRA\RAtemplates\"
+#End If
+End If
+Call List_Templates
+End Sub
 
+' List_Templates is called when we at least have the base (online) template folder name, even if it is not accessible at the moment.
+' Prefer the local template folder name, if we have one, but if it contains no templates, offer to copy.
+'
+' Templates: personal if non-blank or base (should never be blank, but may be offline)
+' Whenever personal templates change, listTemplates
+'    if none, or  offer to renew from base.  (fail to renew, blank?  If no templates offer to renew.)
+' refresh or renew personal templates?
+
+Function folderRAtemplate() As String
+' choose base or local templates.
+Dim dirRAtemplate As String
+dirRAtemplate = Range("dirRAtemplate").Value
+If Len(dirRAtemplate) < 2 Then dirRAtemplate = Range("dirSharedRAtemplate").Value
+If Len(dirRAtemplate) < 2 Then
+  Prefs.Activate
+  MsgBox ("Please set RAtemplate folder on Prefs tab before continuing")
+  End
+End If
+If VBA.Right$(dirRAtemplate, 1) <> Application.pathSeparator Then dirRAtemplate = dirRAtemplate & Application.pathSeparator
+End Function
+
+' do we neet to hangle path separators for http vs file?
 Sub List_Templates() ' list RA templates available (used by data validation)
 Dim templateName As String
 Dim nTemplates As Integer
 Dim dirRAtemplate As String
-dirRAtemplate = Range("dirRAtemplate").Value
-If Len(dirRAtemplate) < 2 Then dirRAtemplate = Range("dirSharedRAtemplate").Value
-If VBA.Right$(dirRAtemplate, 1) <> Application.pathSeparator Then dirRAtemplate = dirRAtemplate & Application.pathSeparator
-
+dirRAtemplate = folderRAtemplate()
 nTemplates = 0
 Application.ScreenUpdating = False
 On Error GoTo ErrHandler
@@ -117,9 +153,13 @@ MsgBox ("Error " & Err.Number & ":" & Err.Description & vbNewLine & "while tryin
 Resume ExitHandler
 End Sub
 
+'Pickers for RA templates, RA output, and RoboRA location
+'Note: RoboRA must be saved on a drive due to current limitations of MailMerge.
+
+
 Sub Picker_dirSharedRAtemplate()
 Dim folderName As String
-folderName = FolderPicker("Choose folder containing base RA templates *RAt.docx", Range("dirRAtemplate").Value)
+folderName = FolderPicker("Choose folder containing base RA templates *RAt.docx", Range("dirSharedRAtemplate").Value)
 If folderName <> "" Then Range("dirSharedRAtemplate").Value = folderName
 Call List_Templates
 End Sub
@@ -138,18 +178,7 @@ If folderName <> "" Then Range("dirRAoutput").Value = folderName
 End Sub
 
 
-'\\collaboration.inside.nsf.gov@SSL\DavWWWRoot\eng\meritreview\SiteAssets\ENG Tools Websites and Best Practices\RoboRA\RAtemplates\*RAt.docx
-Sub CheckRAFolders()
-' This runs on workbook open
-#If Mac Then
-#Else
-  If Len(Range("dirSharedRAtemplate").Value) < 2 Then
-    Range("dirSharedRAtemplate").Value = "\\collaboration.inside.nsf.gov@SSL\DavWWWRoot\eng\meritreview\SiteAssets\ENG Tools Websites and Best Practices\RoboRA\RAtemplates\"
-    Call List_Templates
-  End If
-  If Len(Range("dirRAoutput").Value) < 2 Then Call Picker_dirRAoutput
-#End If
-End Sub
+
 
 
 

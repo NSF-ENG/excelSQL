@@ -22,15 +22,15 @@ Call UpdateProgressBar(0.3)
         & "DROP TABLE #myPid, #myLead, #myRA DROP TABLE #myRevInfo, #mySumm")
 Call UpdateProgressBar(0.5)
     Call doQuery(ckCoding.ListObjects("ckCodingQTable").QueryTable, myPids _
-        & .Range("RA_leads") & .Range("RA_propPRCs") & .Range("RA_revs") _
+        & .Range("RA_leads") & .Range("RA_propPRCs") & .Range("RA_revs") & .Range("RA_budg") _
         & .Range("RA_prop") & .Range("RA_confl") & .Range("RA_panl") & .Range("RA_propCheck") _
-        & "DROP TABLE #myPid, #myLead, #myRA, #myPRCs, #myPRCdata DROP TABLE #myRevs, #myRevPanl, #myRevMarks, #myRevSumm DROP TABLE #myPropBudg, #myProp DROP TABLE #myPPConfl, #myPanl, #myProjPanl, #myProjPanlSumm")
+        & "DROP TABLE #myPid, #myLead, #myRA, #myPRCs, #myPRCdata DROP TABLE #myRevs, #myRevPanl, #myRevMarks, #myRevSumm DROP TABLE #myBudg, #myPropBudg, #myProp DROP TABLE #myPPConfl, #myPanl, #myProjPanl, #myProjPanlSumm")
    Call ckCodingCF
 Call UpdateProgressBar(0.6)
     Call doQuery(RAData.ListObjects("RADataQTable").QueryTable, myPids _
         & .Range("RA_leads") & .Range("RA_propPRCs") & .Range("RA_revs") _
         & .Range("RA_prop") & .Range("RA_confl") & .Range("RA_panl") & .Range("RA_allRAdata") & .Range("RA_allRAdata2") _
-        & "DROP TABLE #myPid, #myLead, #myRA, #myProp, #myPropBudg, #myRevs, #myRevPanl, #myRevMarks, #myRevSumm, #myPPConfl, #myPanl, #myProjPanl, #myProjPanlSumm DROP TABLE #myDmog")
+        & "DROP TABLE #myPid, #myLead, #myRA, #myProp, #myBudg, #myPropBudg, #myRevs, #myRevPanl, #myRevMarks, #myRevSumm, #myPPConfl, #myPanl, #myProjPanl, #myProjPanlSumm DROP TABLE #myDmog")
 End With
 Call CleanUpSheet(ckCoding)
 Call CleanUpSheet(Conflict)
@@ -42,20 +42,20 @@ Sub AwdCodingQueries(myPids As String)
 With HiddenSettings
     'these can be done for awards only
     Call doQuery(Budgets.ListObjects("BudgetsQTable").QueryTable, myPids _
-        & .Range("RA_leads") & .Range("RA_propPRCs") & .Range("RA_budgBlocks") _
+        & .Range("RA_leads") & .Range("RA_propPRCs") & .Range("RA_budg") & .Range("RA_budgBlocks") _
         & "DROP TABLE #myPid, #myLead, #myRA, #myPRCs, #myPRCdata DROP TABLE #myBudg")
 Call UpdateProgressBar(0.7)
         
     Call doQuery(ckAwd.ListObjects("ckAwdQTable").QueryTable, myPids _
-        & .Range("RA_leads") & .Range("RA_propPRCs") & .Range("RA_prop") _
+        & .Range("RA_leads") & .Range("RA_propPRCs") & .Range("RA_budg") & .Range("RA_prop") _
         & .Range("RA_awdCheck") _
-        & "DROP TABLE #myPid, #myLead, #myRA, #myPRCs, #myPRCdata DROP TABLE #myProp, #myPropBudg DROP TABLE #myCtry, #myCovrInfo, #myBudgPRC ")
+        & "DROP TABLE #myPid, #myLead, #myRA, #myPRCs, #myPRCdata DROP TABLE #myProp, #myBudg, #myPropBudg DROP TABLE #myCtry, #myCovrInfo, #myBudgPRC ")
     Call ckAwdCF
 Call UpdateProgressBar(0.8)
     
     Call doQuery(ckSplits.ListObjects("ckSplitsQTable").QueryTable, myPids _
-        & .Range("RA_leads") & .Range("RA_propPRCs") & .Range("RA_prop") & .Range("RA_splits") _
-        & "DROP TABLE #myPid, #myLead, #myRA, #myPRCs, #myPRCdata DROP TABLE #myProp, #myPropBudg DROP TABLE #myBSprc")
+        & .Range("RA_leads") & .Range("RA_propPRCs") & .Range("RA_budg") & .Range("RA_prop") & .Range("RA_splits") _
+        & "DROP TABLE #myPid, #myLead, #myRA, #myPRCs, #myPRCdata DROP TABLE #myProp, #myBudg, #myPropBudg DROP TABLE #myBSprc")
     Call ckSplitsCF
 Call UpdateProgressBar(0.9)
 End With
@@ -211,7 +211,7 @@ Private Sub ckAwdCF()
         .Item(1).StopIfTrue = False
     End With
     With Range("ckAwdQTable[[prop_titl_txt]]").FormatConditions
-        .Add Type:=xlExpression, Formula1:="=$AW2"
+        .Add Type:=xlExpression, Formula1:="=$BC2"
         .Item(.count).SetFirstPriority
         With .Item(1).Interior
             .PatternColorIndex = xlAutomatic

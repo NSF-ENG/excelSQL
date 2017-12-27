@@ -156,7 +156,7 @@ strRAtemplate = Application.Trim(pt.RowRange.Cells(t, 1))
             SaveAsAOCELetter:=False
           '.SaveAs Filename:=strRAoutput, FileFormat:=wdFormatXMLDocumentMacroEnabled, _
            '        AddToRecentFiles:=True, ReadOnlyRecommended:=False
-          .Close SaveChanges:=wdSaveChanges
+          .Close savechanges:=wdSaveChanges
           End With 'document
        ' ActiveWindow.Close
       End If ' done mailmerge
@@ -164,7 +164,7 @@ strRAtemplate = Application.Trim(pt.RowRange.Cells(t, 1))
      End With 'table range
   End If
    If Not (wdDoc Is Nothing) Then
-     wdDoc.Close SaveChanges:=wdDoNotSaveChanges
+     wdDoc.Close savechanges:=wdDoNotSaveChanges
      Set wdDoc = Nothing
    End If
  Next t
@@ -173,7 +173,7 @@ ExitHandler:
 Unload ufProgress
 If hasAuto Then Call closeEJacket(IE)
 If Not (wdDoc Is Nothing) Then
-   wdDoc.Close SaveChanges:=wdDoNotSaveChanges
+   wdDoc.Close savechanges:=wdDoNotSaveChanges
    Set wdDoc = Nothing
 End If
 If warn <> "" Then
@@ -249,8 +249,8 @@ Call UpdateProgressBar(0.6)
         CreateBookmarks:=1, DocStructureTags:=True, _
         BitmapMissingFonts:=True, UseISO19005_1:=False
 Call UpdateProgressBar(0.9)
- wdApp.ActiveDocument.Close SaveChanges:=0 ' don't save changes
- wdDoc.Close SaveChanges:=0
+ wdApp.ActiveDocument.Close savechanges:=0 ' don't save changes
+ wdDoc.Close savechanges:=0
  Set wdDoc = Nothing
  Unload ufProgress
 End Sub
