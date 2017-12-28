@@ -23,6 +23,13 @@ Attribute VB_Exposed = False
 'End Sub
 ' when done: unload ufProgress
 
+'Note: this userform does not always stay on top of excel when it is "not responding" because a query is long.
+' For PC, the following will probably help
+' http://www.jkp-ads.com/Articles/keepuserformontop02.asp
+' https://www.mrexcel.com/forum/excel-questions/386643-userform-always-top.html
+' http://www.vbaexpress.com/forum/showthread.php?5071-Solved-Keep-userform-on-top-at-all-times
+' For Mac, i need to check if this is a problem before trying to solve it.
+
 Private Sub UserForm_Initialize()
     ' Set the width of the progress bar to 0.
     gCancelProgress = False

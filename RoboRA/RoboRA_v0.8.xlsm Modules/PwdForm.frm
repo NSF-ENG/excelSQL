@@ -17,7 +17,7 @@ Option Explicit
 ' Jack Snoeyink      Nov 24, 2017
 ' This userform will be created into a global variable on the first query,
 ' and will hold the reportserver userid and password while the spreadsheet is open.
-' We therefore need to simply hide, rather than unload.
+' We therefore need to hide, rather than unload.
 
 Private Sub UserForm_Initialize()
 ' take saved values first time this is opened

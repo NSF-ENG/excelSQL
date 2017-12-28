@@ -14,32 +14,42 @@ Sub OptionButton_AreYouSure()
             vbOKCancel) <> vbOK Then Range("overwrite_option").Value = 2
 End Sub
 
+Sub CopyLocationAndClose()
+' if opened on a mac
+CopyText (ThisWorkbook.FullName)
+#If Mac Then
+ThisWorkbook.Close savechanges:=False
+#Else
+If MsgBox("This is for mac users; I've copied the location; do you really want me to close without saving?", vbOKCancel) <> vbOK Then End
+#End If
+End Sub
+
 Sub PullDataFromTables()
 Dim sql2 As String
 Dim awdSQL As String
 Dim allSQL As String
 ' Query pulling from tables
-sql2 = "' as RAtemplate FROM csd.prop prop WHERE prop_stts_code like '" _
+sql2 = "' as RAtemplate FROM csd.prop p WHERE prop_stts_code like '" _
         & Advanced.Range("prop_stts_code") & "' AND prop_id IN "
 
 With HiddenSettings
- awdSQL = IDsFromColumnRange("INSERT INTO #myPid " & .Range("RA_pidSelect") _
+ awdSQL = IDsFromColumnRange("INSERT INTO #myPidRAt " & .Range("RA_pidRAtSelect") _
         & "'" & RoboRA.Range("AwdTemplate") & sql2, "AwdPropTable[[prop_id]]")
- allSQL = awdSQL & IDsFromColumnRange("INSERT INTO #myPid " & .Range("RA_pidSelect") _
+ allSQL = awdSQL & IDsFromColumnRange("INSERT INTO #myPidRAt " & .Range("RA_pidRAtSelect") _
         & "'" & RoboRA.Range("DeclTemplate") & sql2, "DeclPropTable[[prop_id]]") _
-    & IDsFromColumnRange("INSERT INTO #myPid " & .Range("RA_pidSelect") _
+    & IDsFromColumnRange("INSERT INTO #myPidRAt " & .Range("RA_pidRAtSelect") _
         & "'" & RoboRA.Range("StdDeclTemplate") & sql2, "StdDeclPropTable[[prop_id]]") _
-    & IDsFromColumnRange("INSERT INTO #myPid " & .Range("RA_pidSelect") _
+    & IDsFromColumnRange("INSERT INTO #myPidRAt " & .Range("RA_pidRAtSelect") _
         & "'" & RoboRA.Range("StdNDPDeclTemplate") & sql2, "StdNDPDeclPropTable[[prop_id]]")
- Call BasicQueries(.Range("RA_pidCreate") & allSQL)
- Call AwdCodingQueries(.Range("RA_pidCreate") & awdSQL)
+ Call BasicQueries(.Range("RA_pidRAt") & allSQL)
+ Call AwdCodingQueries(.Range("RA_pidRAt") & awdSQL)
 End With
 End Sub
 
 
 Sub RefreshFromBlock()
 ' Advanced query with parameters from PD-3PO like block
-  mySQLFrom = "INTO #myPid FROM csd.prop prop" & vbNewLine
+  mySQLFrom = "INTO #myPidRAt FROM csd.prop prop" & vbNewLine
   mySQLWhere = ""
   With Advanced
     If hasValue("from_date") Then mySQLWhere = mySQLWhere & "AND prop.nsf_rcvd_date >= {ts '" & VBA.Format$(.Range("from_date"), "yyyy-mm-dd hh:mm:ss") & "'} " & vbNewLine

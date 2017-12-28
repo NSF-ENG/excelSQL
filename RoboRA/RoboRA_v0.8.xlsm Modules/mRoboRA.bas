@@ -80,7 +80,7 @@ End Function
 ' noSharedRAtemplate folder:  Fresh copy of RoboRA
 '   - choose default, ListTemplates, & show splash
 '\\collaboration.inside.nsf.gov@SSL\DavWWWRoot\eng\meritreview\SiteAssets\ENG Tools Websites and Best Practices\RoboRA\RAtemplates\*RAt.docx
-Sub CheckRAFolders()
+Sub ckInitialization()
 ' This runs on workbook open
 If Len(Range("dirSharedRAtemplate").Value) < 2 Then
   Prefs.Activate
@@ -94,6 +94,7 @@ End If
 Call List_Templates
 End Sub
 
+
 ' List_Templates is called when we at least have the base (online) template folder name, even if it is not accessible at the moment.
 ' Prefer the local template folder name, if we have one, but if it contains no templates, offer to copy.
 '
@@ -103,16 +104,16 @@ End Sub
 ' refresh or renew personal templates?
 
 Function folderRAtemplate() As String
-' choose base or local templates.
+' return the name of folder of local or base templates.
 Dim dirRAtemplate As String
-dirRAtemplate = Range("dirRAtemplate").Value
-If Len(dirRAtemplate) < 2 Then dirRAtemplate = Range("dirSharedRAtemplate").Value
+dirRAtemplate = fixEndSeparator(Range("dirRAtemplate").Value)
+If Len(dirRAtemplate) < 2 Then dirRAtemplate = fixEndSeparator(Range("dirSharedRAtemplate").Value)
 If Len(dirRAtemplate) < 2 Then
   Prefs.Activate
   MsgBox ("Please set RAtemplate folder on Prefs tab before continuing")
   End
 End If
-If VBA.Right$(dirRAtemplate, 1) <> Application.pathSeparator Then dirRAtemplate = dirRAtemplate & Application.pathSeparator
+folderRAtemplate = dirRAtemplate
 End Function
 
 ' do we neet to hangle path separators for http vs file?

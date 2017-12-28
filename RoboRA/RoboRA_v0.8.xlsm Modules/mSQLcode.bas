@@ -3,7 +3,7 @@ Option Explicit
 Sub saveSQLcode()
 ' assume text in clipboard contains substrings like --[name SQL code --]name
 ' and defines or updates Range(name) with the SQL code
-' in the bottom of cols A:C in the HiddenSettings Sheet
+' in the bottom of cols A:C in HiddenSettings
    'VBA Macro using late binding to edit text in clipboard.
     'Modified by Jack Snoeyink Aug 2016 from original by Justin Kay, 8/15/2014
     'Thanks to http://akihitoyamashiro.com/en/VBA/LateBindingDataObject.htm

@@ -11,7 +11,6 @@ Dim tb As ListObject
 Dim pt As PivotTable
 Dim r As Long, lastRow As Long
 
-If ws.Name = "HiddenSettings" Or ws.Name = "Advanced" Then Exit Sub ' don't clear sql code at bottom of HiddenSettings, or Advanced tab
 On Error Resume Next
 For Each tb In ws.ListObjects
   If Not tb.TotalsRowRange Is Nothing Then
@@ -94,19 +93,11 @@ Dim lo As ListObject
 For Each ws In ThisWorkbook.Sheets
   Call ClearMatchingTables("*QTable", ws)
   Call RefreshPivotTables(ws)
-  Call CleanUpSheet(ws)
+  ' be careful not to clean up sheets with info below tables.
+  If ws.Name = "HiddenSettings" Or ws.Name = "Advanced" Or ws.Name = "Prefs" Then Call CleanUpSheet(ws)
 Next
 Call PivotCacheClearRubbish
 End Sub
-
-Function pathSeparator() As String
-'path separators differ on Mac and PC
-#If Mac Then
-    pathSeparator = "/"
-#Else
-    pathSeparator = "\"
-#End If
-End Function
 
 Function wordAddinPath() As String
 ' This is where VBA Add-ins go on Mac and PC
@@ -118,12 +109,52 @@ Function wordAddinPath() As String
 #End If
 End Function
 
+' Try to handle path separators on Mac & PC
+
+Function fixEndSeparator(s As String) As String
+'fix or add separator to end of name
+Select Case Right(s, 1)
+ Case "/", "\": fixEndSeparator = Left(s, Len(s) - 1) & Application.pathSeparator
+ Case Else: fixEndSeparator = s & Application.pathSeparator
+End Select
+End Function
+
+Function fixSeparators(s As String) As String
+' convert mac or pc separators to current
+fixSeparators = Replace(Replace(s, "/", Application.pathSeparator), "\", Application.pathSeparator)
+End Function
+
+Function fixSeparatorsAddEnd(s As String) As String
+' convert mac or pc separators and add one at end if needed.
+Select Case Right(s, 1)
+ Case "/", "\": s = Left(s, Len(s) - 1) & Application.pathSeparator
+ Case Else: s = s & Application.pathSeparator
+End Select
+fixSeparatorsAddEnd = Replace(Replace(s, "/", Application.pathSeparator), "\", Application.pathSeparator)
+End Function
+
+Sub test_fixEndSeparator()
+  Debug.Print fixEndSeparator("r:\back\")
+  Debug.Print fixEndSeparator("r:/fwd/")
+  Debug.Print fixEndSeparator("r:\no")
+  Debug.Print fixEndSeparator("r:")
+  Debug.Print fixEndSeparator("")
+End Sub
+
+Sub test_fixSeparatorsAddEnd()
+  Debug.Print fixSeparatorsAddEnd("r:\back\")
+  Debug.Print fixSeparatorsAddEnd("r:/fwd/")
+  Debug.Print fixSeparatorsAddEnd("r:\no")
+  Debug.Print fixSeparatorsAddEnd("r:/")
+  Debug.Print fixSeparatorsAddEnd("r:\")
+  Debug.Print fixSeparatorsAddEnd("")
+End Sub
 
 Function FolderPicker(title As String, Optional initFolder As String = vbNullString) As String
 '
 With Application.FileDialog(msoFileDialogFolderPicker)
     .title = title
-    .InitialFileName = initFolder & pathSeparator()
+    .InitialFileName = fixEndSeparator(initFolder)
     .Show
     If .SelectedItems.count > 0 Then FolderPicker = .SelectedItems(1)
 End With
@@ -146,32 +177,33 @@ Sub createPath(path As String)
 ' needs error handling
     Dim i As Long
     Dim arrPath As Variant
-    Dim separator As String, s As String
-    separator = pathSeparator() ' Mac or PC
-    arrPath = Split(path, separator)
-    s = arrPath(LBound(arrPath)) & separator
+    Dim s As String
+    arrPath = Split(fixSeparators(path), Application.separator)
+    s = arrPath(LBound(arrPath)) & Application.separator
     For i = LBound(arrPath) + 1 To UBound(arrPath)
-        s = s & arrPath(i) & separator
+        s = s & arrPath(i) & Application.separator
         If Dir(s, vbDirectory) = "" Then
           MkDir s
-9        End If
+        End If
     Next
 End Sub
+
+' Mac porting: this one will be problematic, and isn't used often. Refactor?
+
 Sub renewFiles(from As String, topath As String, Optional verbosity As Integer = 1)
 ' copy files matching from (include filter *.* or *RAt.docm or *.do*) that have been updated or that don't exist in topath
 ' old files get "backup"datetime added, so nothing is lost.
 ' unused
 Dim FSO As Object
 Dim fromdate As Date, todate As Date
-Dim frompath As String, fName As String, separator As String
-separator = pathSeparator() ' mac or PC
+Dim frompath As String, fName As String
 Set FSO = CreateObject("scripting.filesystemobject")
 If Not FSO.FolderExists(topath) Then
   Call confirm("Create folder " & topath, True) ' abort if vbCancel or vbNo
   createPath (topath)
 End If
-If VBA.Right$(topath, 1) <> separator Then topath = topath & separator ' add separator if needed
-frompath = VBA.Left$(from, InStrRev(from, separator))
+topath = fixEndSeparator(topath)
+frompath = VBA.Left$(from, InStrRev(from, Application.separator))
 fName = Dir(from) ' get first matching file
 While fName <> ""
     fromdate = FileDateTime(frompath & fName)

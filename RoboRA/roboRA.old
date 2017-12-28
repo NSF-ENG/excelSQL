@@ -7,8 +7,8 @@
 -- and makes budget numbers available. 
 
 -- Commments with [name and ]name delimit code that will be copied into the hidden SQL worksheet of RoboRA.xlsm
--- You can simply copy the entire thing into the clipboard and run "saveSQLcode" on that sheet.
--- All other code is for testing.  Some comments are for developing long queries in pieces.
+-- You can simply copy the entire thing into the clipboard and run "copySQLcode" on that sheet.
+-- All other code is for testing.  Many comments are for developing long queries in pieces.
 --
 -- When SQL has run-time parameters, either break into static strings to use in VBA as str1 & param & str2 
 --    or use @varnames that will be declared before your string
@@ -16,19 +16,18 @@
 
 -- get lists of relevant prop_ids in many ways
 -- This will mostly be generated on the fly. 
---[RA_pidRAt
---DROP TABLE #myPidRAt
+--[RA_pidCreate
 SET NOCOUNT ON 
-CREATE TABLE #myPidRAt (lead_prop_id char(7) null, prop_id char(7), pi_id char(9), inst_id char(10), PO char(7), RAtemplate varchar(63))
---]RA_pidRAt
-INSERT INTO #myPidRAt 
---[RA_pidRAtSelect
-SELECT DISTINCT p.lead_prop_id, p.prop_id, p.pi_id, p.inst_id, p.pm_ibm_logn_id as PO, 
---]RA_pidRAtSelect
+CREATE TABLE #myPid (prop_id char(7), lead_prop_id char(7) null, pi_id char(9), inst_id char(10), PO char(7), RAtemplate varchar(63))
+--]RA_pidCreate
+INSERT INTO #myPid 
+--[RA_pidSelect
+SELECT DISTINCT prop.prop_id, prop.lead_prop_id, prop.pi_id, prop.inst_id, prop.pm_ibm_logn_id as PO, 
+--]RA_pidSelect
 '' as RAtemplate 
-FROM csd.prop p
-JOIN csd.panl_prop pp ON p.prop_id = pp.prop_id
-WHERE p.prop_stts_code LIKE '0[01289]' AND
+FROM csd.prop prop
+JOIN csd.panl_prop pp ON prop.prop_id = pp.prop_id
+WHERE prop.prop_stts_code LIKE '0[01289]' AND
 pp.panl_id in ('p172027','p170288','p180207','p180208')
 --pm_logn_id = 'jsnoeyi'
 
@@ -36,26 +35,26 @@ pp.panl_id in ('p172027','p170288','p180207','p180208')
 -- Every other query will begin with this: 
 --  Add collabs not already there, then make props, leads, and get RA update time
 --[RA_leads
--- Needs: #myPidRAt
+-- Needs: #myPid (& drops it)
 -- DROP TABLE #myProp, #myLead, #myRA
-CREATE INDEX myPid_idx ON #myPidRAt(prop_id)
-INSERT INTO #myPidRAt SELECT DISTINCT p.lead_prop_id, p.prop_id, p.pi_id, p.inst_id, p.pm_ibm_logn_id as PO, pid.RAtemplate 
-FROM #myPidRAt pid
+CREATE INDEX myPid_idx ON #myPid(prop_id)
+INSERT INTO #myPid SELECT DISTINCT p.prop_id, p.lead_prop_id, p.pi_id, p.inst_id, p.pm_ibm_logn_id as PO, pid.RAtemplate 
+FROM #myPid pid
 JOIN csd.prop p ON p.lead_prop_id = pid.lead_prop_id
 WHERE pid.lead_prop_id is not NULL  
-    AND NOT EXISTS (SELECT * FROM #myPidRAt px WHERE px.prop_id = p.prop_id AND px.RAtemplate = pid.RAtemplate)
+    AND NOT EXISTS (SELECT * FROM #myPid px WHERE px.prop_id = p.prop_id)
 --get props
---  prop.lead_prop_id, prop.pi_id, prop.inst_id, prop.pm_ibm_logn_id as PO, 
 SELECT CASE WHEN p.lead_prop_id IS NULL THEN 'I' WHEN p.lead_prop_id <> p.prop_id THEN 'N' ELSE 'L' END AS ILN, 
   isnull(p.lead_prop_id,p.prop_id) AS lead, p.prop_id, p.pi_id, pi_last_name as L, pi_frst_name as F, 
-  inst_shrt_name as I, inst.st_code, pi_emai_addr AS M, p.PO
-INTO #myProp FROM (SELECT DISTINCT lead_prop_id, prop_id, pi_id, inst_id, PO FROM #myPidRAt) p
+  inst_shrt_name as I, inst.st_code, pi_emai_addr AS M, p.PO, p.RAtemplate
+INTO #myProp FROM #myPid p
 LEFT JOIN csd.pi_vw pi ON pi.pi_id = p.pi_id AND pi.prim_addr_flag='Y'
 LEFT JOIN csd.inst inst ON inst.inst_id = p.inst_id
 ORDER BY lead, ILN, p.prop_id
+DROP TABLE #myPid
 CREATE INDEX myProp_idx ON #myProp(prop_id)
 --get leads
-SELECT p.ILN, p.PO, p.lead, p.L
+SELECT p.ILN, p.PO, p.lead, p.L, p.RAtemplate
 INTO #myLead FROM #myProp p WHERE p.ILN < 'M' 
 CREATE INDEX myLead_idx ON #myLead(lead)
 -- determine if we have an RA (doc_type_code '034')
@@ -415,8 +414,8 @@ INTO #myProjPanlSumm FROM #myProjPanl GROUP BY lead
 SELECT nullif(dd_rcom_date,'1900-01-01') AS dd_rcom_date, nsf_rcvd_date, 
 prop.pgm_annc_id, prop.org_code, prop.pgm_ele_code, natr_rqst.natr_rqst_abbr, prop_stts_abbr, prop.obj_clas_code,
 cntx_stmt_id,p.PO,ra.RAupdate, 
-nPanl, isnull(RecRkMin,99)+nullif(avg_score,0)/1000 AS RecRkMin, pn0.RA as rec0, pn1.RA as rec1, pn2.RA as rec2, 
-pid.RAtemplate, org.dir_div_abbr as Div, p.lead, Nrev,Nunmkd,minScore,avg_score,maxScore,allReviews,rs.last_rev_date, 
+nPanl, isnull(RecRkMin,99) AS RecRkMin, pn0.RA as rec0, pn1.RA as rec1, pn2.RA as rec2, 
+p.RAtemplate, org.dir_div_abbr as Div, p.lead,Nrev,Nunmkd,minScore,avg_score,maxScore,allReviews,rs.last_rev_date, 
 rm.Nunrlsbl, projTot.rqst_tot, budg_tot, budRevnMax, 
 prop.rqst_eff_date, prop.rqst_mnth_cnt, 
 rtrim(prop_titl_txt) AS prop_titl_txt, 
@@ -444,7 +443,6 @@ p0.M AS email, convert(varchar(255),(SELECT MAX(CASE r.seq WHEN  0 THEN r.M ELSE
 FROM #myPropInfo r WHERE r.lead = p.lead)) AS allPIemail
 --INTO #myTmp -- save to get types for formatting dummy line
 FROM #myLead p
-JOIN #myPidRAt pid ON pid.prop_id = p.lead
 JOIN csd.prop prop ON prop.prop_id = p.lead
 JOIN FLflpdb.flp.org org ON org.org_code = prop.org_code
 LEFT JOIN FLflpdb.flp.org o2 ON o2.org_code =left(prop.org_code,2)+'000000' 
@@ -903,7 +901,7 @@ order by tbl, username, db
 
 Drop table #myTbl
 
-DROP TABLE #myPidRAt
+
 DROP TABLE #myProp, #myLead, #myRA 
 DROP TABLE #myPRCs, #myPRCdata
 DROP TABLE #myBudg

@@ -25,12 +25,11 @@ Sub MakeIndicatedRAs()
 warn = ""
 
 strThisWorkbook = ThisWorkbook.FullName
-Call CheckRAFolders
-dirRAtemplate = Range("dirRAtemplate").Value
-If VBA.Right$(dirRAtemplate, 1) <> Application.pathSeparator Then dirRAtemplate = dirRAtemplate & Application.pathSeparator
-dirRAoutput = Range("dirRAoutput").Value
-If VBA.Right$(dirRAoutput, 1) <> Application.pathSeparator Then dirRAoutput = dirRAoutput & Application.pathSeparator
-
+dirRAtemplate = folderRAtemplate()
+If Len(Range("dirRAoutput").Value) < 2 Then Call Picker_dirRAoutput
+dirRAoutput = fixEndSeparator(Range("dirRAoutput").Value)
+If Len(Range("dirRAoutput").Value) < 2 Then End
+ 
 'If Not checkRoboRAFolders Then Exit Sub
 'check that templates exist for all actionable items.
 'if any action is upload, check that eJ running.
@@ -196,11 +195,10 @@ Sub makeProjText()
  Dim strWordDoc As String, strThisWorkbook As String, strPDFOutputName As String
  Dim dirRAtemplate As String, dirRAoutput As String
  
-Call CheckRAFolders
-dirRAtemplate = Range("dirRAtemplate").Value
-If VBA.Right$(dirRAtemplate, 1) <> Application.pathSeparator Then dirRAtemplate = dirRAtemplate & Application.pathSeparator
-dirRAoutput = Range("dirRAoutput").Value
-If VBA.Right$(dirRAoutput, 1) <> Application.pathSeparator Then dirRAoutput = dirRAoutput & Application.pathSeparator
+dirRAtemplate = folderRAtemplate()
+If Len(Range("dirRAoutput").Value) < 2 Then Call Picker_dirRAoutput
+dirRAoutput = fixEndSeparator(Range("dirRAoutput").Value)
+If Len(Range("dirRAoutput").Value) < 2 Then End
  
  strThisWorkbook = ThisWorkbook.FullName
  strWordDoc = dirRAtemplate & "RAhelpTemplate.docx"
