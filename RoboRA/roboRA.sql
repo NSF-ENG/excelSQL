@@ -415,7 +415,7 @@ INTO #myProjPanlSumm FROM #myProjPanl GROUP BY lead
 SELECT nullif(dd_rcom_date,'1900-01-01') AS dd_rcom_date, nsf_rcvd_date, 
 prop.pgm_annc_id, prop.org_code, prop.pgm_ele_code, natr_rqst.natr_rqst_abbr, prop_stts_abbr, prop.obj_clas_code,
 cntx_stmt_id,p.PO,ra.RAupdate, 
-nPanl, isnull(RecRkMin,99)+nullif(avg_score,0)/1000 AS RecRkMin, pn0.RA as rec0, pn1.RA as rec1, pn2.RA as rec2, 
+nPanl, isnull(RecRkMin,99)+(9-nullif(avg_score,0))/2000 AS RecRkMin, pn0.RA as rec0, pn1.RA as rec1, pn2.RA as rec2, 
 pid.RAtemplate, org.dir_div_abbr as Div, p.lead, Nrev,Nunmkd,minScore,avg_score,maxScore,allReviews,rs.last_rev_date, 
 rm.Nunrlsbl, projTot.rqst_tot, budg_tot, budRevnMax, 
 prop.rqst_eff_date, prop.rqst_mnth_cnt, 

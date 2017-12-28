@@ -14,7 +14,7 @@ Sub OptionButton_AreYouSure()
             vbOKCancel) <> vbOK Then Range("overwrite_option").Value = 2
 End Sub
 
-Sub CopyLocationAndClose()
+Sub copyLocationAndClose()
 ' if opened on a mac
 CopyText (ThisWorkbook.FullName)
 #If Mac Then

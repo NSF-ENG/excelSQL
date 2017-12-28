@@ -1,0 +1,54 @@
+'https://www.mrexcel.com/forum/excel-questions/332415-vba-code-excel-copy-source-file-sharepoint-another-destination-2.html
+Option Explicit
+ 
+#If Win64 Then
+  Private Declare PtrSafe Function URLDownloadToFile Lib "urlmon" Alias _
+          "URLDownloadToFileA" ( _
+          ByVal pCaller As LongLong, _
+          ByVal szURL As String, _
+          ByVal szFileName As String, _
+          ByVal dwReserved As LongLong, _
+          ByVal lpfnCB As LongLong) As LongLong
+#Else
+  Private Declare Function URLDownloadToFile Lib "urlmon" Alias _
+          "URLDownloadToFileA" ( _
+          ByVal pCaller As Long, _
+          ByVal szURL As String, _
+          ByVal szFileName As String, _
+          ByVal dwReserved As Long, _
+          ByVal lpfnCB As Long) As Long
+#End If
+ 
+Sub MyMacro()
+ 
+  Const strUrl As String = "http://teams/Dept/Shared Documents/Reports/Pivot_Source_Data/filename.csv"
+  Const strSavePath As String = "C:\Reports\Pivot_Source_Data\xxxxxxxx.CSV"
+ 
+  If Dir(Left(strSavePath, InStrRev(strSavePath, "\")), vbDirectory) = "" Then
+    MsgBox "Destination folder is not found for the file:" & vbLf & strSavePath, vbCritical, "Error"
+    Exit Sub
+  End If
+ 
+  If DownLoadFile(strUrl, strSavePath) Then
+    MsgBox "File from:" & vbLf & strUrl & vbLf & "is saved to:" & vbLf & strSavePath
+  Else
+    MsgBox "Can't download file:" & vbLf & strUrl, vbCritical, "Error"
+  End If
+ 
+End Sub
+ 
+Function DownLoadFile(Url As String, SavePathName As String) As Boolean
+    DownLoadFile = URLDownloadToFile(0, Replace(Url, "\", "/"), SavePathName, 0, 0) = 0
+End Function
+ 
+'Sub DownloadFileFromWeb()
+'
+'  Const strUrl As String = "http://teams/Dept/Shared Documents/Reports/Pivot_Source_Data/filename.csv"
+'
+'  Dim strSavePath As String
+'  Dim returnValue As Variant 'LongLong/Long
+'
+'  strSavePath = "C:\Reports\Pivot_Source_Data\xxxxxxxx.CSV"
+'  returnValue = URLDownloadToFile(0, strUrl, strSavePath, 0, 0)
+'
+'End Sub

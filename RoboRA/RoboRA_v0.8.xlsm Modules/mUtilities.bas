@@ -94,7 +94,7 @@ For Each ws In ThisWorkbook.Sheets
   Call ClearMatchingTables("*QTable", ws)
   Call RefreshPivotTables(ws)
   ' be careful not to clean up sheets with info below tables.
-  If ws.Name = "HiddenSettings" Or ws.Name = "Advanced" Or ws.Name = "Prefs" Then Call CleanUpSheet(ws)
+  If ws.Name <> "HiddenSettings" And ws.Name <> "Advanced" And ws.Name <> "Prefs" Then Call CleanUpSheet(ws)
 Next
 Call PivotCacheClearRubbish
 End Sub
@@ -140,6 +140,8 @@ Sub test_fixEndSeparator()
   Debug.Print fixEndSeparator("r:")
   Debug.Print fixEndSeparator("")
 End Sub
+
+
 
 Sub test_fixSeparatorsAddEnd()
   Debug.Print fixSeparatorsAddEnd("r:\back\")

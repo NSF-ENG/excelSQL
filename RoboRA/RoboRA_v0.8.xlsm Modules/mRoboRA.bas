@@ -123,11 +123,11 @@ Dim nTemplates As Integer
 Dim dirRAtemplate As String
 dirRAtemplate = folderRAtemplate()
 nTemplates = 0
-Application.ScreenUpdating = False
+'Application.ScreenUpdating = False
 On Error GoTo ErrHandler
-With Advanced.ListObjects("AvailableTemplates")
-  If Not .DataBodyRange Is Nothing Then .DataBodyRange.Delete
+With Prefs.ListObjects("AvailableTemplates")
   templateName$ = Dir(dirRAtemplate & "*RAt.docx") ' ensure consistency with messages below
+  If templateName$ <> "" Then If Not .DataBodyRange Is Nothing Then .DataBodyRange.Delete
     Do While templateName$ <> ""
       If VBA.Left$(templateName$, 1) <> "~" Then
         .ListRows.Add AlwaysInsert:=True
@@ -141,8 +141,7 @@ Application.ScreenUpdating = True
 If nTemplates = 0 Then
   If MsgBox("Did not find any RA templates in " & dirRAtemplate & "; shall I copy the standard templates to that folder?" _
            & vbNewLine & "Note: RA template names must end with RAt.docx; award templates must start with Awd and standard templates (autoloaded) must start with Std", vbOKCancel) = vbOK Then
-    Call renewFiles("\\collaboration.inside.nsf.gov@SSL\DavWWWRoot\eng\meritreview\SiteAssets\ENG Tools Websites and Best Practices\RoboRA\RAtemplates\*.docx", _
-                             Range("dirRAtemplate").Value & "\")
+    Call renewFiles("\\collaboration.inside.nsf.gov@SSL\DavWWWRoot\eng\meritreview\SiteAssets\ENG Tools Websites and Best Practices\RoboRA\RAtemplates\*.docx", dirRAtemplate)
     Call List_Templates
   End If
 End If
@@ -150,7 +149,11 @@ ExitHandler:
 Exit Sub
 ErrHandler:
 Application.ScreenUpdating = True
-MsgBox ("Error " & Err.Number & ":" & Err.Description & vbNewLine & "while trying to list templates.  Ensure template directory, " & Range("dirRAtemplate").Value & ", is accessible.")
+If Err.Number = 52 Then
+MsgBox ("Cannot access template folder " & dirRAtemplate & vbNewLine & "I'll hope this is a network connection issue that will be fixed.")
+Else
+MsgBox ("Error " & Err.Number & ":" & Err.Description & vbNewLine & "while trying to list templates.  Ensure template folder, " & dirRAtemplate & ", is accessible.")
+End If
 Resume ExitHandler
 End Sub
 
