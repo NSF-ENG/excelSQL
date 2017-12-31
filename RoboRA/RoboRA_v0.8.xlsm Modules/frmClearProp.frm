@@ -35,7 +35,6 @@ If cboxClearSavedPwd.Value Then
   Range("dirSharedRAtemplate") = ""
   Range("dirRAtemplate") = ""
   Range("dirRAoutput") = ""
-  HiddenSettings.Range("user_id").Value = ""
   HiddenSettings.Range("rpt_pwd").Value = ""
 End If
 Unload Me

@@ -175,6 +175,10 @@ If Not (wdDoc Is Nothing) Then
    wdDoc.Close savechanges:=wdDoNotSaveChanges
    Set wdDoc = Nothing
 End If
+If Not (wdApp Is Nothing) Then
+  wdApp.Quit
+  Set wdApp = Nothing
+End If
 If warn <> "" Then
   AppActivate Application.Caption
   DoEvents
@@ -250,5 +254,6 @@ Call UpdateProgressBar(0.9)
  wdApp.ActiveDocument.Close savechanges:=0 ' don't save changes
  wdDoc.Close savechanges:=0
  Set wdDoc = Nothing
+ Set wdApp = Nothing
  Unload ufProgress
 End Sub

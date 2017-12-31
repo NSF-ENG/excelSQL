@@ -94,13 +94,18 @@ Dim cb As DataObject
     Set cb = CreateObject("new:{1C3B4210-F441-11CE-B9EA-00AA006B1A69}")
 #End If
 cb.GetFromClipboard
-txt = Split(cb.GetText(), vbLf)
-prop_id = ""
-For i = LBound(txt) To UBound(txt)
-  p = Val(Left(txt(i), 10))
-'  Debug.Print i & Left(txt(i), 10) & p
-  If (p >= 100000# And p < 100000000#) Then prop_id = prop_id & Format(p, "0000000") & vbLf ' a hack to recognize prop_ids
-Next
+On Error Resume Next
+prop_id = cb.GetText()
+On Error GoTo 0
+If prop_id <> "" Then
+    txt = Split(prop_id, vbLf)
+    prop_id = ""
+    For i = LBound(txt) To UBound(txt)
+      p = Val(Left(txt(i), 10))
+    '  Debug.Print i & Left(txt(i), 10) & p
+      If (p >= 100000# And p < 100000000#) Then prop_id = prop_id & Format(p, "0000000") & vbLf ' a hack to recognize prop_ids
+    Next
+End If
 If Len(prop_id) < 8 Then
  MsgBox ("No prop_ids in clipboard. Please copy your eJacket MyWork page, select a cell in any prop_id table, then click Paste From MyWork.")
  Exit Sub

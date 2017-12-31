@@ -180,17 +180,17 @@ Sub createPath(path As String)
     Dim i As Long
     Dim arrPath As Variant
     Dim s As String
-    arrPath = Split(fixSeparators(path), Application.separator)
-    s = arrPath(LBound(arrPath)) & Application.separator
+    arrPath = Split(fixSeparators(path), Application.pathSeparator)
+    s = arrPath(LBound(arrPath)) & Application.pathSeparator
     For i = LBound(arrPath) + 1 To UBound(arrPath)
-        s = s & arrPath(i) & Application.separator
+        s = s & arrPath(i) & Application.pathSeparator
         If Dir(s, vbDirectory) = "" Then
           MkDir s
         End If
     Next
 End Sub
 
-' Mac porting: this one will be problematic, and isn't used often. Refactor?
+' Mac porting: this one may be problematic, and isn't used often. Refactor?
 
 Sub renewFiles(from As String, topath As String, Optional verbosity As Integer = 1)
 ' copy files matching from (include filter *.* or *RAt.docm or *.do*) that have been updated or that don't exist in topath
@@ -205,7 +205,7 @@ If Not FSO.FolderExists(topath) Then
   createPath (topath)
 End If
 topath = fixEndSeparator(topath)
-frompath = VBA.Left$(from, InStrRev(from, Application.separator))
+frompath = VBA.Left$(from, InStrRev(from, Application.pathSeparator))
 fName = Dir(from) ' get first matching file
 While fName <> ""
     fromdate = FileDateTime(frompath & fName)
