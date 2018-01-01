@@ -114,7 +114,7 @@ cb.Clear
 If MsgBox("OK to paste these proposal ids starting in cell " & Selection.Address & "?" & vbNewLine & prop_id, vbOKCancel) = vbOK Then
     txt = Split(prop_id, vbLf)
     Range(ActiveCell, ActiveCell.Offset(UBound(txt) - LBound(txt))).Value = Application.Transpose(txt)
-    HiddenSettings.Range("select_prop_stts").Value = 3 ' set to DD_concur
+   ' HiddenSettings.Range("select_prop_stts").Value = 3 ' set to DD_concur
 End If
 End Sub
 
