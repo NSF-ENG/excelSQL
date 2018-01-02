@@ -120,8 +120,7 @@ ExitHandler:
   On Error GoTo 0
   Exit Sub
 ErrHandler:
-    AppActivate Application.Caption
-    DoEvents
+    activateApp
     Select Case MsgBox("doQuery Error on " & db & " query " & VBA.Left$(SQL, 50) & vbNewLine & Err.Number & ":" & Err.Description, vbAbortRetryIgnore)
     Case vbAbort: End
     Case vbRetry: If handlePwd Then GoTo RetryHandler

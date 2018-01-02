@@ -1,7 +1,16 @@
 Attribute VB_Name = "mUtilities"
 Option Explicit
 ' general utilities PD-3PO family of tools, Jack Snoeyink, Oct 2017
-
+Sub activateApp()
+' activate the application window
+    DoEvents
+    #If Mac Then
+    AppActivate Application.Name
+    #Else 'PC
+    AppActivate Application.Caption
+    #End If 'PC
+    DoEvents
+End Sub
 Sub CleanUpSheet(ws As Worksheet, Optional emptyRow As Long = 4)
 ' delete blank rows on sheet below lowest listObject range
 ' pass emptyrow as the index of the first row that could be empty.
@@ -38,17 +47,9 @@ Application.DisplayAlerts = True
 On Error GoTo 0
 End Sub
 Sub RefreshPivotTables(ws As Worksheet)
-' refreshing pivot tables that are tied to a given query table  (PD-3PO only?)
+' refreshing pivot tables on worksheet
  Dim pt As PivotTable
  For Each pt In ws.PivotTables
-   If Not (pt Is Nothing) Then pt.RefreshTable
-  Next
-End Sub
-Sub RefreshPivotTablesQT(ws As Worksheet, QT As QueryTable)
-' refreshing pivot tables that are tied to a given query table  (PD-3PO only?)
- Dim pt As PivotTable
- For Each pt In ws.PivotTables
-   pt.PivotTableWizard SourceType:=xlDatabase, SourceData:=QT.ListObject.Name
    If Not (pt Is Nothing) Then pt.RefreshTable
   Next
 End Sub
@@ -113,8 +114,8 @@ End Function
 
 Function fixEndSeparator(s As String) As String
 'fix or add separator to end of name
-Select Case Right(s, 1)
- Case "/", "\": fixEndSeparator = Left(s, Len(s) - 1) & Application.pathSeparator
+Select Case VBA.Right$(s, 1)
+ Case "/", "\": fixEndSeparator = VBA.Left$(s, Len(s) - 1) & Application.pathSeparator
  Case Else: fixEndSeparator = s & Application.pathSeparator
 End Select
 End Function
@@ -126,8 +127,8 @@ End Function
 
 Function fixSeparatorsAddEnd(s As String) As String
 ' convert mac or pc separators and add one at end if needed.
-Select Case Right(s, 1)
- Case "/", "\": s = Left(s, Len(s) - 1) & Application.pathSeparator
+Select Case VBA.Right$(s, 1)
+ Case "/", "\": s = VBA.Left$(s, Len(s) - 1) & Application.pathSeparator
  Case Else: s = s & Application.pathSeparator
 End Select
 fixSeparatorsAddEnd = Replace(Replace(s, "/", Application.pathSeparator), "\", Application.pathSeparator)
@@ -153,20 +154,35 @@ Sub test_fixSeparatorsAddEnd()
 End Sub
 
 Function FolderPicker(title As String, Optional initFolder As String = vbNullString) As String
-'
+'Mac version derived thanks to https://www.rondebruin.nl/mac/mac017.htm
+#If Mac Then
+    Dim RootFolder As String
+    Dim scriptstr As String
+    On Error Resume Next
+    RootFolder = MacScript("return (path to desktop folder) as String")
+    If Val(Application.Version) < 15 Then
+        scriptstr = "(choose folder with prompt """ & title & """" _
+           & " default location alias """ & RootFolder & """) as string"
+    Else
+        scriptstr = "return posix path of (choose folder with prompt """ & title & """" _
+            & " default location alias """ & RootFolder & """) as string"
+    End If
+    FolderPicker = MacScript(scriptstr)
+    On Error GoTo 0
+#Else 'PC
 With Application.FileDialog(msoFileDialogFolderPicker)
     .title = title
     .InitialFileName = fixEndSeparator(initFolder)
     .Show
     If .SelectedItems.count > 0 Then FolderPicker = .SelectedItems(1)
 End With
+#End If 'PC
 End Function
 
 Function confirm(msg As String, Optional abortQ As Boolean = False) As Integer
 ' Allow user to confirm action.  vbCancel, or vbNo with abort=True will call End, aborting calling Sub.
 ' Otherwise you can check the return value =vbNo to skip the action
-AppActivate Application.Caption
-DoEvents
+activateApp
 confirm = MsgBox(msg, vbYesNoCancel)
 If confirm <> vbYes And (confirm = vbCancel Or abortQ) Then
     MsgBox ("Aborting action: please recheck parameters before initiating action.")

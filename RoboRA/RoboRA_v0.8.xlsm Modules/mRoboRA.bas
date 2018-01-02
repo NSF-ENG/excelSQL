@@ -24,57 +24,6 @@ Private Sub test_SummarizeQuestMarks()
 Debug.Print SummarizeQuestMarks("?Testing? Is this OK? ""And this?"" This houldn't be??  ?Done?.")
 End Sub
 
-Function autoPasteRA(IE As InternetExplorerMedium, prop_id As String, RA As String) As String
-' stuff RA into text box using mAutocoder functions
-Dim i As Integer, j As Integer
-Dim overwriteQ As Variant
-
-overwriteQ = Prefs.Range("overwrite_option").Value
-If (Len(prop_id) <> 7) Then ' warn that this is not a proposal id
-    autoPasteRA = prop_id & " not a prop_id" & vbNewLine
-    Exit Function
-End If
-
-IE.Navigate ("https://www.ejacket.nsf.gov/ej/showProposal.do?Continue=Y&ID=" & prop_id)
-Call myWait(IE)
-IE.Navigate ("https://www.ejacket.nsf.gov/ej/processReviewAnalysis.do?dispatch=add&uniqId=" & prop_id & VBA.LCase$(VBA.Left$(VBA.Environ$("USERNAME"), 7)))
-Call myWait(IE)
-
-If IE.Document.getElementsByName("text")(0) Is Nothing Then
-  autoPasteRA = prop_id & " can't visit eJ RA" & vbNewLine
-  Exit Function
-End If
-
-With IE.Document.getElementsByName("text")(0)
-  .Focus
-  If (Len(.Value) < 10) Or (overwriteQ = 3) Then
-   .Focus
-   .Value = RA
-  ElseIf (overwriteQ = 2) Then ' ask permission to overwrite
-    AppActivate Application.Caption
-    DoEvents
-    If (MsgBox("OK to overwrite existing RA for " & prop_id & vbNewLine & .Value, vbOKCancel) = vbOK) Then
-     .Focus
-     .Value = RA
-    Else ' permission not granted
-      autoPasteRA = prop_id & " not overwritten." & vbNewLine
-      Exit Function
-    End If
-  Else ' never overwrite
-    autoPasteRA = prop_id & " has text in RA field." & vbNewLine
-    Exit Function
-  End If
-End With
-
-Call myWait(IE)
-If Not IE.Document.getElementsByName("save")(0) Is Nothing Then
-  IE.Document.getElementsByName("save")(0).Click
-  Call myWait(IE)
-  autoPasteRA = ""
-Else
-  autoPasteRA = prop_id & " can't save eJ RA" & vbNewLine
-End If
-End Function
 
 ' Initialization and Preference states
 ' noSharedRAtemplate folder:  Fresh copy of RoboRA
@@ -96,7 +45,7 @@ End Sub
 
 Sub ckRAFolders()
 Dim tmp As String
-If Left(ActiveWorkbook.FullName, 4) Then
+If VBA.Left$(ActiveWorkbook.FullName, 4) Then
   MsgBox ("RoboRA must be saved on a drive before attempting Mail Merge.  (See Prefs tab #3)")
   End
 End If
@@ -179,7 +128,7 @@ Sub Picker_dirRoboRA()
 Dim folderName As String
 folderName = FolderPicker("Choose folder on a drive (not SharePoint or OneDrive) to save RoboRA", "R:\")
 If folderName <> "" Then
-  If Left(folderName, 4) = "http" Then
+  If VBA.Left$(folderName, 4) = "http" Then
     MsgBox ("Please choose a folder on a drive, and not with an http address (i.e. not SharePoint or OneDrive)")
   Else
     Prefs.Range("dirRoboRA").Value = folderName

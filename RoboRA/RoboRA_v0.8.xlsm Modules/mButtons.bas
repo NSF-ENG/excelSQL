@@ -21,6 +21,10 @@ ThisWorkbook.Close savechanges:=False
 End Sub
 
 Sub PullDataFromTables()
+#If Mac Then
+   MsgBox ("Reportserver queries need to be done on a PC, including VDI/Citrix, in this version of RoboRA.")
+   Prefs.Range("WelcomeMac").Activate
+#Else 'PC
 Dim sql2 As String
 Dim awdSQL As String
 Dim allSQL As String
@@ -40,10 +44,15 @@ With HiddenSettings
  Call BasicQueries(.Range("RA_pidRAt") & allSQL)
  Call AwdCodingQueries(.Range("RA_pidRAt") & awdSQL)
 End With
+#End If 'PC
 End Sub
 
 Sub RepullAwds()
 ' Repull AwdCoding for proposals identified as Awd on RAData.
+#If Mac Then
+   MsgBox ("Reportserver queries need to be done on a PC, including VDI/Citrix, in this version of RoboRA.")
+   Prefs.Range("WelcomeMac").Activate
+#Else 'PC
 Dim i As Integer
 Dim rt As Range, rpid As Range
 Dim props As String
@@ -52,22 +61,28 @@ Set rt = RAData.Range("RADataQTable[RAtemplate]")
 Set rpid = RAData.Range("RADataQTable[lead]")
 props = ""
 For i = 1 To rt.Rows.count
-  If Left(rt(i).Value, 3) = "Awd" Then props = props & ",'" & rpid(i).Value & "'"
+  If VBA.Left$(rt(i).Value, 3) = "Awd" Then props = props & ",'" & rpid(i).Value & "'"
 Next i
 If Len(props) > 1 Then
   With HiddenSettings
     SQL = "INSERT INTO #myPidRAt " & .Range("RA_pidRAtSelect") _
           & " '' as RAtemplate FROM csd.prop prop WHERE prop_stts_code like '" _
-          & Advanced.Range("prop_stts_code") & "' AND prop_id IN (" & Mid(props, 2) & ")" & vbNewLine
+          & Advanced.Range("prop_stts_code") & "' AND prop_id IN (" & VBA.Mid$(props, 2) & ")" & vbNewLine
     Call AwdCodingQueries(.Range("RA_pidRAt") & SQL)
   End With
 Else
   MsgBox ("No projects have an RAtemplate starting with Awd, so ignoring the Repull button.")
 End If
+#End If 'PC
 End Sub
 
 Sub RefreshFromBlock()
-' Advanced query with parameters from PD-3PO like block
+' Advanced query with parameters from PD-3PO like block;
+' uses globals mySQLFrom,mySQLWhere
+#If Mac Then
+   MsgBox ("Reportserver queries need to be done on a PC, including VDI/Citrix, in this version of RoboRA.")
+   Prefs.Range("WelcomeMac").Activate
+#Else 'PC
   mySQLFrom = "INTO #myPidRAt FROM csd.prop prop" & vbNewLine
   mySQLWhere = ""
   With Advanced
@@ -97,6 +112,7 @@ Sub RefreshFromBlock()
    Call BasicQueries(query)
    Call AwdCodingQueries(query)
   End With
+#End If 'PC
 End Sub
 
 Sub pasteFromMyWork()
@@ -120,9 +136,9 @@ If prop_id <> "" Then
     txt = Split(prop_id, vbLf)
     prop_id = ""
     For i = LBound(txt) To UBound(txt)
-      p = Val(Left(txt(i), 10))
-    '  Debug.Print i & Left(txt(i), 10) & p
-      If (p >= 100000# And p < 100000000#) Then prop_id = prop_id & Format(p, "0000000") & vbLf ' a hack to recognize prop_ids
+      p = Val(VBA.Left$(txt(i), 10))
+    '  Debug.Print i & VBA.Left$(txt(i), 10) & p
+      If (p >= 100000# And p < 100000000#) Then prop_id = prop_id & VBA.Format(p, "0000000") & vbLf ' a hack to recognize prop_ids
     Next
 End If
 If Len(prop_id) < 8 Then
@@ -140,6 +156,10 @@ End Sub
 Sub testPermissions()
 ' it turns out that the only non-public table we use is csd.pgm_ref
 ' If we can't access it, then limit the PRCGlossary query
+#If Mac Then
+   MsgBox ("Reportserver queries need to be done on a PC, including VDI/Citrix, in this version of RoboRA.")
+   Prefs.Range("WelcomeMac").Activate
+#Else 'PC
 Dim rtn As Long
 Call handlePwd
 rtn = tryConnection("select * from csd.pgm_ref where pgm_ref_code = '7929'")
@@ -150,4 +170,5 @@ ElseIf MsgBox("Accessing table rptdb.csd.pgm_ref got this response:" & vbNewLine
   Prefs.Range("test_table_permissions").Value = "rptdb.csd.pgm_ref table removed since access unavailable " & VBA.Format(Now(), "Medium Date")
   HiddenSettings.Range("RA_PRCGlossary").Value = HiddenSettings.Range("RA_no_PRC").Value
 End If
+#End If 'PC
 End Sub

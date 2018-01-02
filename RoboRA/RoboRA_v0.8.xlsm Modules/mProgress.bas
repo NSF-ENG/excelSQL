@@ -12,7 +12,5 @@ Sub UpdateProgressBar(PctDone As Single)
         .FrameProgress.Caption = "Completed " & VBA.Format$(PctDone, "0%")
         .LabelProgress.Width = PctDone * (.FrameProgress.Width - 10)
     End With
-    DoEvents
-    AppActivate Application.Caption
-    DoEvents
+    activateApp
 End Sub

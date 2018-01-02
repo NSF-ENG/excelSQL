@@ -12,16 +12,20 @@ Sub MakeIndicatedRAs()
  Dim t As Integer
  Dim nRA As Integer
  Dim countRA As Integer
- Dim wdApp As Object
- Dim wdDoc As Object
  Dim strWordDoc As Variant
  Dim strThisWorkbook As String, strOutputPath As String, strFilename As String, strRAtemplate As String, strRAoutput As String
  Dim dirRAtemplate As String, dirRAoutput As String
  Dim prop_id As String
  Dim warn As String
  Dim autoDeclineQ As Boolean, hasAuto As Boolean
- Dim IE As InternetExplorerMedium
  Dim pt As PivotTable
+ #If Mac Then
+   MsgBox ("Making RA drafts needs to be done on a PC, including VDI/Citrix, in this version of RoboRA, because Macs don't have the libraries needed to Autoload to eJacket.")
+   Prefs.Range("WelcomeMac").Activate
+ #Else 'PC
+ Dim wdApp As Object
+ Dim wdDoc As Object
+ Dim IE As InternetExplorerMedium
 warn = ""
 
 Call ckRAFolders
@@ -179,8 +183,7 @@ If Not (wdApp Is Nothing) Then
   Set wdApp = Nothing
 End If
 If warn <> "" Then
-  AppActivate Application.Caption
-  DoEvents
+  activateApp
   MsgBox ("Warnings copied to clipboard: " & vbNewLine & warn)
   CopyText (warn)
 End If
@@ -189,14 +192,20 @@ Exit Sub
 ErrHandler:
   MsgBox ("Error in MakeIndicatedRAs: " & Err.Number & ":" & Err.Description)
   Resume ExitHandler
+#End If 'PC
 End Sub
 
 Sub makeProjText()
 'derived from macro recording with assistance from several stackoverflow posts
 
-Dim wdApp As Object, wdDoc As Object
 Dim strWordDoc As String, strThisWorkbook As String, strPDFOutputName As String
 Dim dirRAtemplate As String, dirRAoutput As String
+' #If Mac Then
+'   MsgBox ("Functions that do mail merge need to be run on a PC, including VDI/Citrix.")
+'   Prefs.Range("WelcomeMac").Activate
+' #Else 'PC
+ Dim wdApp As Object
+ Dim wdDoc As Object
  
 Call ckRAFolders
 dirRAtemplate = folderRAtemplate()
@@ -243,7 +252,7 @@ Call UpdateProgressBar(0.6)
     'export format pdf=17, opt for screen=1,wdExportCreateHeadingBookmarks=1
     wdApp.ActiveDocument.ExportAsFixedFormat OutputFileName:=strPDFOutputName, ExportFormat:= _
         17, OpenAfterExport:=True, OptimizeFor:= _
-        1, Range:=0, from:=1, to:=1, _
+        1, Range:=0, from:=1, To:=1, _
         Item:=0, IncludeDocProps:=True, KeepIRM:=True, _
         CreateBookmarks:=1, DocStructureTags:=True, _
         BitmapMissingFonts:=True, UseISO19005_1:=False

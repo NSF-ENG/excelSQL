@@ -1,10 +1,100 @@
 Attribute VB_Name = "mAutocoder"
 Option Explicit
 
-Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
-'Private Declare PtrSafe Sub keybd_event Lib "user32" (ByVal bVk As Byte, ByVal bScan As Byte, ByVal dwFlags As Long, ByVal dwExtraInfo As Long)
-'Private Declare PtrSafe Function MapVirtualKey Lib "user32" Alias "MapVirtualKeyA" (ByVal wCode As Long, ByVal wMapType As Long) As Long
-'Private Const VK_RETURN = &HD
+#If Mac Then
+ #If MAC_OFFICE_VERSION >= 15 Then
+  #If VBA7 Then ' 64-bit Excel 2016 for Mac
+   Declare PtrSafe Function GetTickCount Lib _
+"/Applications/Microsoft Excel.app/Contents/Frameworks/MicrosoftOffice.framework/MicrosoftOffice" () As Long
+  #Else ' 32-bit Excel 2016 for Mac
+   Declare Function GetTickCount Lib _
+"/Applications/Microsoft Excel.app/Contents/Frameworks/MicrosoftOffice.framework/MicrosoftOffice" () As Long
+  #End If
+ #Else
+  #If VBA7 Then ' does not exist, but why take a chance
+   Declare PtrSafe Function GetTickCount Lib _
+"Applications:Microsoft Office 2011:Office:MicrosoftOffice.framework:MicrosoftOffice" () As Long
+  #Else ' 32-bit Excel 2011 for Mac
+   Declare Function GetTickCount Lib _
+"Applications:Microsoft Office 2011:Office:MicrosoftOffice.framework:MicrosoftOffice" () As Long
+  #End If
+ #End If
+#Else 'PC
+    #If VBA7 Then
+      Public Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As LongPtr)
+    #Else
+      Public Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
+    #End If
+#End If
+
+Private Sub BusyWait(t As Long)
+#If Mac Then
+' busy wait t clock ticks
+    Dim EndTick As Long
+    EndTick = GetTickCount + t
+    Do
+        DoEvents
+    Loop Until GetTickCount >= EndTick
+#Else 'PC
+    DoEvents
+    Sleep (t)
+    DoEvents
+#End If
+End Sub
+
+#If Mac Then ' mac does not have the HTML object libraries
+#Else 'PC
+
+Function autoPasteRA(IE As InternetExplorerMedium, prop_id As String, RA As String) As String
+' stuff RA into text box using mAutocoder functions
+Dim i As Integer, j As Integer
+Dim overwriteQ As Variant
+
+overwriteQ = Prefs.Range("overwrite_option").Value
+If (Len(prop_id) <> 7) Then ' warn that this is not a proposal id
+    autoPasteRA = prop_id & " not a prop_id" & vbNewLine
+    Exit Function
+End If
+
+IE.Navigate ("https://www.ejacket.nsf.gov/ej/showProposal.do?Continue=Y&ID=" & prop_id)
+Call myWait(IE)
+IE.Navigate ("https://www.ejacket.nsf.gov/ej/processReviewAnalysis.do?dispatch=add&uniqId=" & prop_id & VBA.LCase$(VBA.Left$(VBA.Environ$("USERNAME"), 7)))
+Call myWait(IE)
+
+If IE.Document.getElementsByName("text")(0) Is Nothing Then
+  autoPasteRA = prop_id & " can't visit eJ RA" & vbNewLine
+  Exit Function
+End If
+
+With IE.Document.getElementsByName("text")(0)
+  .Focus
+  If (Len(.Value) < 10) Or (overwriteQ = 3) Then
+   .Focus
+   .Value = RA
+  ElseIf (overwriteQ = 2) Then ' ask permission to overwrite
+    activateApp
+    If (MsgBox("OK to overwrite existing RA for " & prop_id & vbNewLine & .Value, vbOKCancel) = vbOK) Then
+     .Focus
+     .Value = RA
+    Else ' permission not granted
+      autoPasteRA = prop_id & " not overwritten." & vbNewLine
+      Exit Function
+    End If
+  Else ' never overwrite
+    autoPasteRA = prop_id & " has text in RA field." & vbNewLine
+    Exit Function
+  End If
+End With
+
+Call myWait(IE)
+If Not IE.Document.getElementsByName("save")(0) Is Nothing Then
+  IE.Document.getElementsByName("save")(0).Click
+  Call myWait(IE)
+  autoPasteRA = ""
+Else
+  autoPasteRA = prop_id & " can't save eJ RA" & vbNewLine
+End If
+End Function
 
 Function openEJacket() As InternetExplorerMedium
     Set openEJacket = New InternetExplorerMedium
@@ -26,17 +116,14 @@ Sub myWait(IE)
     Dim count As Long
     Dim delaytime As Long
     delaytime = 10 * Prefs.Range("delayTime").Value
-    Sleep delaytime
+    BusyWait delaytime
     count = 0
     While IE.Busy And (Not IE.ReadyState = READYSTATE_COMPLETE) And (count < 40)
-        DoEvents
-        Sleep delaytime
-        DoEvents
+        BusyWait delaytime
         count = count + 1
     Wend
     If count > 35 Then
-        AppActivate Application.Caption
-        DoEvents
+        activateApp
         MsgBox count & " in myWait.  We seem to be having problems with Internet Explorer."
     End If
 End Sub
@@ -219,3 +306,4 @@ x = "https://www.ejacket.nsf.gov" ' Sheet1.Range("F1").Value ' change sheet acco
         Debug.Print i & ":" & IE.Document.all(i).Name & "," & IE.Document.all(i).InnerText
     Next
 End Sub
+#End If 'pc
