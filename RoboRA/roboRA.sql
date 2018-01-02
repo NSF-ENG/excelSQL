@@ -23,14 +23,14 @@ CREATE TABLE #myPidRAt (lead_prop_id char(7) null, prop_id char(7), pi_id char(9
 --]RA_pidRAt
 INSERT INTO #myPidRAt 
 --[RA_pidRAtSelect
-SELECT DISTINCT p.lead_prop_id, p.prop_id, p.pi_id, p.inst_id, p.pm_ibm_logn_id as PO, 
+SELECT DISTINCT prop.lead_prop_id, prop.prop_id, prop.pi_id, prop.inst_id, prop.pm_ibm_logn_id as PO, 
 --]RA_pidRAtSelect
 '' as RAtemplate 
-FROM csd.prop p
-JOIN csd.panl_prop pp ON p.prop_id = pp.prop_id
-WHERE p.prop_stts_code LIKE '0[01289]' AND
-pp.panl_id in ('p172027','p170288','p180207','p180208')
---pm_logn_id = 'jsnoeyi'
+FROM csd.prop prop
+--JOIN csd.panl_prop pp ON p.prop_id = pp.prop_id
+WHERE prop.prop_stts_code LIKE '0[01289]' AND
+--pp.panl_id in ('p172027','p170288','p180207','p180208')
+pm_ibm_logn_id = 'jsnoeyi'
 
 
 -- Every other query will begin with this: 
@@ -81,12 +81,12 @@ ORDER BY PEC
 --]RA_PECglossary
 
 -- check institutions of reviewers with conflicts
-select top 200 pp.prop_id, panl_id, count(revr_id) as nConfl
-from csd.panl_prop pp 
-JOIN csd.rev_prop rp on rp.prop_id = pp.prop_id AND rp.rev_stts_code = 'C'
-where panl_id like 'P17%'
-group by pp.prop_id, panl_id
-order by nConfl desc
+--select top 200 pp.prop_id, panl_id, count(revr_id) as nConfl
+--from csd.panl_prop pp 
+--JOIN csd.rev_prop rp on rp.prop_id = pp.prop_id AND rp.rev_stts_code = 'C'
+--where panl_id like 'P17%'
+--group by pp.prop_id, panl_id
+--order by nConfl desc
 
 --[RA_ckConfRevrInst
 --Needs: RA_lead(#myLead)
@@ -432,7 +432,7 @@ p4.prop_id as prop_id4, p4.L as last4, p4.F as frst4, p4.I as inst4, p4.D as rqs
 p5.prop_id as prop_id5, p5.L as last5, p5.F as frst5, p5.I as inst5, p5.D as rqst5, p5.T as b5tot, p5.R as PRC5,
 p6.prop_id as prop_id6, p6.L as last6, p6.F as frst6, p6.I as inst6, p6.D as rqst6, p6.T as b6tot, p6.R as PRC6,
 rtrim(pa.dflt_prop_titl_txt) AS solicitation, org.org_long_name as Div_name, 
-pgm_ele_name, sign_blck_name, prop_stts_txt, natr_rqst_txt, obj_clas_name,
+pgm_ele_name, sign_blck_name, prop_stts_txt, natr_rqst_txt, --obj_clas_name,
 o2.dir_div_abbr as Dir, o2.org_long_name as Dir_name, getdate() AS pulldate, 
 p0.M AS email, convert(varchar(255),(SELECT MAX(CASE r.seq WHEN  0 THEN r.M ELSE '' END)+
  MAX(CASE r.seq WHEN  1 THEN ';'+r.M ELSE '' END)+
@@ -450,7 +450,7 @@ JOIN FLflpdb.flp.org org ON org.org_code = prop.org_code
 LEFT JOIN FLflpdb.flp.org o2 ON o2.org_code =left(prop.org_code,2)+'000000' 
 LEFT JOIN FLflpdb.flp.pgm_ele pe ON pe.pgm_ele_code = prop.pgm_ele_code
 LEFT JOIN csd.pgm_annc pa ON pa.pgm_annc_id = prop.pgm_annc_id
-JOIN FLflpdb.flp.obj_clas_pars oc ON oc.obj_clas_code = prop.obj_clas_code
+--JOIN FLflpdb.flp.obj_clas_pars oc ON oc.obj_clas_code = prop.obj_clas_code
 JOIN csd.prop_stts prop_stts ON prop_stts.prop_stts_code = prop.prop_stts_code
 JOIN csd.natr_rqst natr_rqst ON natr_rqst.natr_rqst_code = prop.natr_rqst_code
 LEFT JOIN #myRA ra ON ra.lead = p.lead
@@ -493,8 +493,8 @@ UNION ALL SELECT @olddate,@olddate -- example to set mail merge format.
 ,'1234567','PI last name for format.','PI first name..','Inst name for formatting',99999999.0,99999999.0,'Proposal PRCs assgnd; see glossary '
 ,'Solicitation name retrieved from pgm_annc. This example is for formatting; please do not remove this line............'
 ,'Division or directorate name retrieved by org_code from org. This example is for formatting; please do not remove this line............'
-,'Program Element name retrieved','Name for PO signature','Proposal status details','Nature of request full name','Object Class full name','DIR'
-,'Directorate name retrieved by modified org_code from org. This example is for formatting; please do not remove this line............'
+,'Program Element name retrieved','Name for PO signature','Proposal status details','Nature of request full name' --,'Object Class full name'
+,'DIR','Directorate name retrieved by modified org_code from org. This example is for formatting; please do not remove this line............'
 ,@olddate,'Email of lead PI on the project','list of all emails for Pis on Lead and non-lead proposals on the project.  Does not include the co-Pis. '
 --]RA_allRAdata2
 
