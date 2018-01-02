@@ -24,11 +24,10 @@ Sub MakeIndicatedRAs()
  Dim pt As PivotTable
 warn = ""
 
+Call ckRAFolders
 strThisWorkbook = ThisWorkbook.FullName
 dirRAtemplate = folderRAtemplate()
-If Len(Range("dirRAoutput").Value) < 2 Then Call Picker_dirRAoutput
-dirRAoutput = fixEndSeparator(Range("dirRAoutput").Value)
-If Len(Range("dirRAoutput").Value) < 2 Then End
+dirRAoutput = fixEndSeparator(Prefs.Range("dirRAoutput").Value)
  
 'If Not checkRoboRAFolders Then Exit Sub
 'check that templates exist for all actionable items.
@@ -40,14 +39,14 @@ If pt.Name = "templatesUsed" Then Exit For
 Next
 If Not pt Is Nothing Then pt.RefreshTable
 If pt Is Nothing Or Err.Number <> 0 Then
-  MsgBox "Can't refresh pivot table templatesUsed on HiddenSettings tab."
+  MsgBox "Internal Error: Can't refresh pivot table templatesUsed on HiddenSettings tab."
   GoTo ErrHandler:
 End If
 On Error GoTo 0
 
 nRA = 0
 hasAuto = Prefs.CheckBoxes("cbAutoloadAll").Value = 1
-With Range("RADataQTable[RAtemplate]")
+With RAData.Range("RADataQTable[RAtemplate]")
  For i = 1 To .Rows.count  ' quick check
   strRAtemplate = Application.Trim(.Cells(i, 1))
   If Len(strRAtemplate) > 2 And strRAtemplate <> "(blank)" And (VBA.Left$(strRAtemplate, 2) <> "zz") Then
@@ -57,7 +56,7 @@ With Range("RADataQTable[RAtemplate]")
  Next i
 End With
 If nRA = 0 Then
-    MsgBox ("On RAData, please select RAtemplates to indicate which RAs to prepare. If dropdown in RAtemplate column is empty, pick the RAtemplate folder on the Advanced tab.")
+    MsgBox ("On RAData, please select RAtemplates to indicate which RAs to prepare. If dropdown in RAtemplate column is empty, select the RAtemplate folder in Prefs #2.")
     GoTo ExitHandler:
 End If
 
@@ -77,7 +76,7 @@ On Error GoTo 0
 ' Sort by RecRkMin because our dummy line for formatting must come first.
    With RAData.ListObjects("RADataQTable").Sort
         .SortFields.Clear
-        .SortFields.Add Key:=Range("RADataQTable[[#All],[RecRkMin]]"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortTextAsNumbers
+        .SortFields.Add Key:=RAData.Range("RADataQTable[[#All],[RecRkMin]]"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortTextAsNumbers
         .Header = xlYes
         .MatchCase = False
         .Orientation = xlTopToBottom
@@ -110,7 +109,7 @@ strRAtemplate = Application.Trim(pt.RowRange.Cells(t, 1))
     wdApp.Visible = True
     
         
-    With Range("RADataQTable[RAtemplate]") ' need RAfname as next column!!!
+    With RAData.Range("RADataQTable[RAtemplate]") ' need RAfname as next column!!!
       For i = 2 To .Rows.count ' do the RAs, skipping the first
         If strRAtemplate = Application.Trim(.Cells(i, 1)) Then ' we have an RA to do
         countRA = countRA + 1
@@ -143,7 +142,7 @@ strRAtemplate = Application.Trim(pt.RowRange.Cells(t, 1))
               RAtext = FixIPSText(StripDoubleBrackets(.Text))
               .Collapse
             End With ' selection
-            prop_id = Application.Trim(Range("RADataQTable[[prop_id0]]").Cells(i, 1).Value)
+            prop_id = Application.Trim(RAData.Range("RADataQTable[[prop_id0]]").Cells(i, 1).Value)
             
             warn = warn & autoPasteRA(IE, prop_id, RAtext)
             .ReadOnlyRecommended = True
@@ -195,18 +194,16 @@ End Sub
 Sub makeProjText()
 'derived from macro recording with assistance from several stackoverflow posts
 
- Dim wdApp As Object, wdDoc As Object
- Dim strWordDoc As String, strThisWorkbook As String, strPDFOutputName As String
- Dim dirRAtemplate As String, dirRAoutput As String
+Dim wdApp As Object, wdDoc As Object
+Dim strWordDoc As String, strThisWorkbook As String, strPDFOutputName As String
+Dim dirRAtemplate As String, dirRAoutput As String
  
+Call ckRAFolders
 dirRAtemplate = folderRAtemplate()
-If Len(Range("dirRAoutput").Value) < 2 Then Call Picker_dirRAoutput
-dirRAoutput = fixEndSeparator(Range("dirRAoutput").Value)
-If Len(Range("dirRAoutput").Value) < 2 Then End
- 
- strThisWorkbook = ThisWorkbook.FullName
- strWordDoc = dirRAtemplate & "RAhelpTemplate.docx"
- strPDFOutputName = dirRAoutput & "RAhelp" & VBA.Format$(Now(), "_yymmdd_hhmm")
+dirRAoutput = fixEndSeparator(Prefs.Range("dirRAoutput").Value)
+strThisWorkbook = ThisWorkbook.FullName
+strWordDoc = dirRAtemplate & "RAhelpTemplate.docx"
+strPDFOutputName = dirRAoutput & "RAhelp" & VBA.Format$(Now(), "_yymmdd_hhmm")
  
 ufProgress.Show vbModeless
 
@@ -246,7 +243,7 @@ Call UpdateProgressBar(0.6)
     'export format pdf=17, opt for screen=1,wdExportCreateHeadingBookmarks=1
     wdApp.ActiveDocument.ExportAsFixedFormat OutputFileName:=strPDFOutputName, ExportFormat:= _
         17, OpenAfterExport:=True, OptimizeFor:= _
-        1, Range:=0, from:=1, To:=1, _
+        1, Range:=0, from:=1, to:=1, _
         Item:=0, IncludeDocProps:=True, KeepIRM:=True, _
         CreateBookmarks:=1, DocStructureTags:=True, _
         BitmapMissingFonts:=True, UseISO19005_1:=False

@@ -74,7 +74,7 @@ End Sub
 Private Sub ckCodingCF()
 'conditional formating for ckCoding
   Call ckCoding.Cells.FormatConditions.Delete
-    With Range("ckCodingQTable").FormatConditions
+    With ckCoding.Range("ckCodingQTable").FormatConditions
          .Add Type:=xlExpression, Formula1:="=MOD($S2,2)"
 '         .Item(.count).SetLastPriority
          With .Item(1).Interior
@@ -85,7 +85,7 @@ Private Sub ckCodingCF()
          .Item(1).StopIfTrue = False
     End With
     
-    With Range("ckCodingQTable[[nRev]:[Nunrlsbl]]").FormatConditions
+    With ckCoding.Range("ckCodingQTable[[nRev]:[Nunrlsbl]]").FormatConditions
     .Add Type:=xlExpression, Formula1:="=AND($T2<""M"",$AL2<$AM2+3)"
     .Item(.count).SetFirstPriority
     With .Item(1).Interior
@@ -96,7 +96,7 @@ Private Sub ckCodingCF()
     .Item(1).StopIfTrue = False
     End With
     
-    With Range("ckCodingQTable[[pgm_annc_id]:[PO]]").FormatConditions
+    With ckCoding.Range("ckCodingQTable[[pgm_annc_id]:[PO]]").FormatConditions
     .Add Type:=xlExpression, Formula1:="=AND($T2=""N"", C2<>C1)"
     .Item(.count).SetFirstPriority
     With .Item(1).Interior
@@ -107,7 +107,7 @@ Private Sub ckCodingCF()
     .Item(1).StopIfTrue = False
     End With
     
-    With Range("ckCodingQTable[prop_titl_txt]").FormatConditions
+    With ckCoding.Range("ckCodingQTable[prop_titl_txt]").FormatConditions
       .Add Type:=xlExpression, Formula1:="=$AU2"
       .Item(.count).SetFirstPriority
     With .Item(1).Interior
@@ -118,7 +118,7 @@ Private Sub ckCodingCF()
     .Item(1).StopIfTrue = False
     End With
     
-    With Range("ckCodingQTable[[bas_rsch_pct]:[other_pct]]").FormatConditions
+    With ckCoding.Range("ckCodingQTable[[bas_rsch_pct]:[other_pct]]").FormatConditions
       .Add Type:=xlExpression, Formula1:="=($J2+$I2)<>1"
     .Item(.count).SetFirstPriority
     With .Item(1).Interior
@@ -129,7 +129,7 @@ Private Sub ckCodingCF()
     .Item(1).StopIfTrue = False
     End With
     
-   With Range("ckCodingQTable[[st_code]:[wmd]]").FormatConditions
+   With ckCoding.Range("ckCodingQTable[[st_code]:[wmd]]").FormatConditions
     .Add Type:=xlExpression, Formula1:="=O2"
     .Item(.count).SetFirstPriority
     With .Item(1).Interior
@@ -144,7 +144,7 @@ End Sub
 Private Sub ckSplitsCF()
 'conditional formating for ckSplits
   Call ckSplits.Cells.FormatConditions.Delete
-    With Range("ckSplitsQTable").FormatConditions
+    With ckSplits.Range("ckSplitsQTable").FormatConditions
          .Add Type:=xlExpression, Formula1:="=MOD($S2,2)"
 '         .Item(.count).SetLastPriority
          With .Item(1).Interior
@@ -155,7 +155,7 @@ Private Sub ckSplitsCF()
          .Item(1).StopIfTrue = False
     End With
     
-    With Range("ckSplitsQTable").FormatConditions
+    With ckSplits.Range("ckSplitsQTable").FormatConditions
     .Add Type:=xlExpression, Formula1:="=$U1<>$U2"
     .Item(.count).SetFirstPriority
     With .Item(1).Borders(xlTop)
@@ -166,7 +166,7 @@ Private Sub ckSplitsCF()
     .Item(1).StopIfTrue = False
     End With
     
-    With Range("ckSplitsQTable[bObj],ckSplitsQTable[bOrg],ckSplitsQTable[bPEC],ckSplitsQTable[bPO],ckSplitsQTable[bPRCs]").FormatConditions
+    With ckSplits.Range("ckSplitsQTable[bObj],ckSplitsQTable[bOrg],ckSplitsQTable[bPEC],ckSplitsQTable[bPO],ckSplitsQTable[bPRCs]").FormatConditions
     .Add Type:=xlExpression, Formula1:="=E2<>F2"
     .Item(.count).SetFirstPriority
     With .Item(1).Interior
@@ -181,8 +181,8 @@ End Sub
 Private Sub ckAwdCF()
 'conditional formating for ckAwd
   Call ckAwd.Cells.FormatConditions.Delete
-  Range("ckAwdQTable").RowHeight = 15 ' don't let abstracts mess up row height
-    With Range("ckAwdQTable").FormatConditions
+  ckAwd.Range("ckAwdQTable").RowHeight = 15 ' don't let abstracts mess up row height
+    With ckAwd.Range("ckAwdQTable").FormatConditions
          .Add Type:=xlExpression, Formula1:="=MOD($M2,2)"
 '         .Item(.count).SetLastPriority
          With .Item(1).Interior
@@ -192,7 +192,7 @@ Private Sub ckAwdCF()
          End With
          .Item(1).StopIfTrue = False
     End With
-    With Range("ckAwdQTable[[pgm_annc_id]:[cntx_stmt_id]]").FormatConditions
+    With ckAwd.Range("ckAwdQTable[[pgm_annc_id]:[cntx_stmt_id]]").FormatConditions
         .Add Type:=xlExpression, Formula1:="=AND($N2=""N"",C2<>C1)"
         .Item(.count).SetFirstPriority
         With .Item(1).Interior
@@ -202,7 +202,7 @@ Private Sub ckAwdCF()
         End With
         .Item(1).StopIfTrue = False
     End With
-    With Range("ckAwdQTable[[rqst_eff_date]:[Country]]").FormatConditions
+    With ckAwd.Range("ckAwdQTable[[rqst_eff_date]:[Country]]").FormatConditions
         .Add Type:=xlExpression, Formula1:="=AND($N2=""N"",Trim(X2)<>Trim(X1))"
         .Item(.count).SetFirstPriority
         With .Item(1).Interior
@@ -212,7 +212,7 @@ Private Sub ckAwdCF()
         End With
         .Item(1).StopIfTrue = False
     End With
-    With Range("ckAwdQTable[[prop_titl_txt]]").FormatConditions
+    With ckAwd.Range("ckAwdQTable[[prop_titl_txt]]").FormatConditions
         .Add Type:=xlExpression, Formula1:="=$BC2"
         .Item(.count).SetFirstPriority
         With .Item(1).Interior

@@ -29,7 +29,7 @@ Function autoPasteRA(IE As InternetExplorerMedium, prop_id As String, RA As Stri
 Dim i As Integer, j As Integer
 Dim overwriteQ As Variant
 
-overwriteQ = Range("overwrite_option").Value
+overwriteQ = Prefs.Range("overwrite_option").Value
 If (Len(prop_id) <> 7) Then ' warn that this is not a proposal id
     autoPasteRA = prop_id & " not a prop_id" & vbNewLine
     Exit Function
@@ -82,19 +82,32 @@ End Function
 '\\collaboration.inside.nsf.gov@SSL\DavWWWRoot\eng\meritreview\SiteAssets\ENG Tools Websites and Best Practices\RoboRA\RAtemplates\*RAt.docx
 Sub ckInitialization()
 ' This runs on workbook open
-If Len(Range("dirSharedRAtemplate").Value) < 2 Then
+If Len(Prefs.Range("dirSharedRAtemplate").Value) < 2 Then
   Prefs.Activate
 #If Mac Then ' show mac instructions, and End.  Don't initialize
   Prefs.Range("WelcomeMac").Activate
   End
 #Else ' initialize on PC
-  Range("dirSharedRAtemplate").Value = "\\collaboration.inside.nsf.gov@SSL\DavWWWRoot\eng\meritreview\SiteAssets\ENG Tools Websites and Best Practices\RoboRA\RAtemplates\"
+  Prefs.Range("dirSharedRAtemplate").Value = "\\collaboration.inside.nsf.gov@SSL\DavWWWRoot\eng\meritreview\SiteAssets\ENG Tools Websites and Best Practices\RoboRA\RAtemplates\"
+  Call List_Templates
 #End If
 End If
-Call List_Templates
 End Sub
 
-
+Sub ckRAFolders()
+Dim tmp As String
+If Left(ActiveWorkbook.FullName, 4) Then
+  MsgBox ("RoboRA must be saved on a drive before attempting Mail Merge.  (See Prefs tab #3)")
+  End
+End If
+tmp = folderRAtemplate()
+tmp = Prefs.Range("dirRAoutput").Value
+If Len(tmp) < 2 Then
+  MsgBox ("Please select a folder for the output pdf & RA drafts")
+  Call Picker_dirRAoutput
+  If Len(Prefs.Range("dirRAoutput").Value) < 2 Then End
+End If
+End Sub
 ' List_Templates is called when we at least have the base (online) template folder name, even if it is not accessible at the moment.
 ' Prefer the local template folder name, if we have one, but if it contains no templates, offer to copy.
 '
@@ -110,13 +123,13 @@ dirRAtemplate = fixEndSeparator(Range("dirRAtemplate").Value)
 If Len(dirRAtemplate) < 2 Then dirRAtemplate = fixEndSeparator(Range("dirSharedRAtemplate").Value)
 If Len(dirRAtemplate) < 2 Then
   Prefs.Activate
-  MsgBox ("Please set RAtemplate folder on Prefs tab before continuing")
+  MsgBox ("Please select RAtemplates folder on Prefs tab (#2) before continuing")
   End
 End If
 folderRAtemplate = dirRAtemplate
 End Function
 
-' do we neet to hangle path separators for http vs file?
+' do we need to change path separators for http vs file?
 Sub List_Templates() ' list RA templates available (used by data validation)
 Dim templateName As String
 Dim nTemplates As Integer
@@ -150,9 +163,11 @@ Exit Sub
 ErrHandler:
 Application.ScreenUpdating = True
 If Err.Number = 52 Then
-MsgBox ("Cannot access template folder " & dirRAtemplate & vbNewLine & "I'll hope this is a network connection issue that will be fixed.")
+  MsgBox ("Cannot access template folder " & dirRAtemplate & vbNewLine _
+        & "I'll hope this is a network connection issue that will be fixed.")
 Else
-MsgBox ("Error " & Err.Number & ":" & Err.Description & vbNewLine & "while trying to list templates.  Ensure template folder, " & dirRAtemplate & ", is accessible.")
+  MsgBox ("Error " & Err.Number & ":" & Err.Description & vbNewLine _
+        & "while trying to list templates.  Ensure template folder, " & dirRAtemplate & ", is accessible.")
 End If
 Resume ExitHandler
 End Sub
@@ -160,30 +175,43 @@ End Sub
 'Pickers for RA templates, RA output, and RoboRA location
 'Note: RoboRA must be saved on a drive due to current limitations of MailMerge.
 
+Sub Picker_dirRoboRA()
+Dim folderName As String
+folderName = FolderPicker("Choose folder on a drive (not SharePoint or OneDrive) to save RoboRA", "R:\")
+If folderName <> "" Then
+  If Left(folderName, 4) = "http" Then
+    MsgBox ("Please choose a folder on a drive, and not with an http address (i.e. not SharePoint or OneDrive)")
+  Else
+    Prefs.Range("dirRoboRA").Value = folderName
+    ActiveWorkbook.SaveAs Filename:=fixEndSeparator(folderName) & ActiveWorkbook.Name, _
+                        FileFormat:=xlOpenXMLWorkbookMacroEnabled, CreateBackup:=False
+  End If
+End If
+End Sub
 
 Sub Picker_dirSharedRAtemplate()
 Dim folderName As String
-folderName = FolderPicker("Choose folder containing base RA templates *RAt.docx", Range("dirSharedRAtemplate").Value)
-If folderName <> "" Then Range("dirSharedRAtemplate").Value = folderName
-Call List_Templates
+folderName = FolderPicker("Choose folder containing base RA templates *RAt.docx", Prefs.Range("dirSharedRAtemplate").Value)
+If folderName <> "" Then
+  Prefs.Range("dirSharedRAtemplate").Value = folderName
+  Call List_Templates
+End If
 End Sub
 
 Sub Picker_dirRAtemplate()
 Dim folderName As String
-folderName = FolderPicker("Choose folder for personal RA templates *RAt.docx", Range("dirRAtemplate").Value)
-If folderName <> "" Then Range("dirRAtemplate").Value = folderName
-Call List_Templates
+folderName = FolderPicker("Choose folder for personal RA templates *RAt.docx", Prefs.Range("dirRAtemplate").Value)
+If folderName <> "" Then
+  Prefs.Range("dirRAtemplate").Value = folderName
+  Call List_Templates
+End If
 End Sub
 
 Sub Picker_dirRAoutput()
 Dim folderName As String
-folderName = FolderPicker("Choose output folder for populated RA drafts", Range("dirRAoutput").Value)
-If folderName <> "" Then Range("dirRAoutput").Value = folderName
+folderName = FolderPicker("Choose output folder for populated RA drafts", Prefs.Range("dirRAoutput").Value)
+If folderName <> "" Then Prefs.Range("dirRAoutput").Value = folderName
 End Sub
-
-
-
-
 
 
 'Sub installMacros()

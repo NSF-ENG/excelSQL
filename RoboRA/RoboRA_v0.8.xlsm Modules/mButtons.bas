@@ -5,23 +5,19 @@ Sub ClearData()
  frmClearProp.Show
 End Sub
 
-Sub setPrefs()
-
-End Sub
-
 Sub OptionButton_AreYouSure()
   If MsgBox("Are you sure that you want to overwrite RAs that may exist in eJacket?", _
-            vbOKCancel) <> vbOK Then Range("overwrite_option").Value = 2
+            vbOKCancel) <> vbOK Then Prefs.Range("overwrite_option").Value = 2
 End Sub
 
 Sub copyLocationAndClose()
 ' if opened on a mac
 CopyText (ThisWorkbook.FullName)
 #If Mac Then
-ThisWorkbook.Close savechanges:=False
 #Else
-If MsgBox("This is for mac users; I've copied the location; do you really want me to close without saving?", vbOKCancel) <> vbOK Then End
+If MsgBox("This button is for mac users. I've copied the location; do you really want me to close without saving?", vbOKCancel) <> vbOK Then End
 #End If
+ThisWorkbook.Close savechanges:=False
 End Sub
 
 Sub PullDataFromTables()
@@ -29,9 +25,9 @@ Dim sql2 As String
 Dim awdSQL As String
 Dim allSQL As String
 ' Query pulling from tables
-sql2 = "' as RAtemplate FROM csd.prop p WHERE prop_stts_code like '" _
+sql2 = "' as RAtemplate FROM csd.prop prop WHERE prop_stts_code like '" _
         & Advanced.Range("prop_stts_code") & "' AND prop_id IN "
-
+ 
 With HiddenSettings
  awdSQL = IDsFromColumnRange("INSERT INTO #myPidRAt " & .Range("RA_pidRAtSelect") _
         & "'" & RoboRA.Range("AwdTemplate") & sql2, "AwdPropTable[[prop_id]]")
@@ -46,6 +42,29 @@ With HiddenSettings
 End With
 End Sub
 
+Sub RepullAwds()
+' Repull AwdCoding for proposals identified as Awd on RAData.
+Dim i As Integer
+Dim rt As Range, rpid As Range
+Dim props As String
+Dim SQL As String
+Set rt = RAData.Range("RADataQTable[RAtemplate]")
+Set rpid = RAData.Range("RADataQTable[lead]")
+props = ""
+For i = 1 To rt.Rows.count
+  If Left(rt(i).Value, 3) = "Awd" Then props = props & ",'" & rpid(i).Value & "'"
+Next i
+If Len(props) > 1 Then
+  With HiddenSettings
+    SQL = "INSERT INTO #myPidRAt " & .Range("RA_pidRAtSelect") _
+          & " '' as RAtemplate FROM csd.prop prop WHERE prop_stts_code like '" _
+          & Advanced.Range("prop_stts_code") & "' AND prop_id IN (" & Mid(props, 2) & ")" & vbNewLine
+    Call AwdCodingQueries(.Range("RA_pidRAt") & SQL)
+  End With
+Else
+  MsgBox ("No projects have an RAtemplate starting with Awd, so ignoring the Repull button.")
+End If
+End Sub
 
 Sub RefreshFromBlock()
 ' Advanced query with parameters from PD-3PO like block
@@ -74,7 +93,7 @@ Sub RefreshFromBlock()
   
   Dim query As String
   With HiddenSettings
-   query = "SET NOCOUNT ON" & vbNewLine & .Range("RA_pidSelect") & "convert(varchar(63),'') as RAtemplate " & vbNewLine & mySQLFrom & mySQLWhere
+   query = "SET NOCOUNT ON" & vbNewLine & .Range("RA_pidRAtSelect") & "convert(varchar(63),'') as RAtemplate " & vbNewLine & mySQLFrom & mySQLWhere
    Call BasicQueries(query)
    Call AwdCodingQueries(query)
   End With
@@ -107,13 +126,13 @@ If prop_id <> "" Then
     Next
 End If
 If Len(prop_id) < 8 Then
- MsgBox ("No prop_ids in clipboard. Please copy your eJacket MyWork page, select a cell in any prop_id table, then click Paste From MyWork.")
+ MsgBox ("No prop_ids in clipboard. Please copy your eJacket My Work page, select a cell in any prop_id table, then click Paste From MyWork.")
  Exit Sub
 End If
 cb.Clear
 If MsgBox("OK to paste these proposal ids starting in cell " & Selection.Address & "?" & vbNewLine & prop_id, vbOKCancel) = vbOK Then
     txt = Split(prop_id, vbLf)
-    Range(ActiveCell, ActiveCell.Offset(UBound(txt) - LBound(txt))).Value = Application.Transpose(txt)
+    RoboRA.Range(ActiveCell, ActiveCell.Offset(UBound(txt) - LBound(txt))).Value = Application.Transpose(txt)
    ' HiddenSettings.Range("select_prop_stts").Value = 3 ' set to DD_concur
 End If
 End Sub

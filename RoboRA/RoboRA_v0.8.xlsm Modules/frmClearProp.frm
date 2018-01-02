@@ -32,9 +32,10 @@ If cboxClearPropParams.Value Then Advanced.Range("query_params").Cells.Value = H
 If cboxClearPropAddOmit.Value Then Call ClearMatchingTables("*PropTable", RoboRA)
 If cboxClearPropData.Value Then Call ClearQTables
 If cboxClearSavedPwd.Value Then
-  Range("dirSharedRAtemplate") = ""
-  Range("dirRAtemplate") = ""
-  Range("dirRAoutput") = ""
+  Prefs.Range("dirSharedRAtemplate") = ""
+  Prefs.Range("dirRAtemplate") = ""
+  Prefs.Range("dirRAoutput") = ""
+  Prefs.Range("dirRoboRA") = ""
   HiddenSettings.Range("rpt_pwd").Value = ""
 End If
 Unload Me

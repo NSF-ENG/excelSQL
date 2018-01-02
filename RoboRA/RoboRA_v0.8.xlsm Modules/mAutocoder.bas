@@ -25,7 +25,7 @@ Sub myWait(IE)
     ' wait for IE to be ready
     Dim count As Long
     Dim delaytime As Long
-    delaytime = 10 * Range("delayTime").Value
+    delaytime = 10 * Prefs.Range("delayTime").Value
     Sleep delaytime
     count = 0
     While IE.Busy And (Not IE.ReadyState = READYSTATE_COMPLETE) And (count < 40)
