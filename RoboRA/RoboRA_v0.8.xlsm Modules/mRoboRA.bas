@@ -45,7 +45,7 @@ End Sub
 
 Sub ckRAFolders()
 Dim tmp As String
-If VBA.Left$(ActiveWorkbook.FullName, 4) Then
+If VBA.Left$(ActiveWorkbook.FullName, 4) = "http" Then
   MsgBox ("RoboRA must be saved on a drive before attempting Mail Merge.  (See Prefs tab #3)")
   End
 End If
@@ -74,6 +74,11 @@ If Len(dirRAtemplate) < 2 Then
   Prefs.Activate
   MsgBox ("Please select RAtemplates folder on Prefs tab (#2) before continuing")
   End
+End If
+If Len(Dir(dirRAtemplate & "*RAt.docx")) < 2 Then
+   Prefs.Activate
+   MsgBox ("I did not find any RA templates in " & dirRAtemplate & vbNewLine & "Please ensure that there is an appropriate RAtemplates folder selected on Prefs #2 before continuing")
+   End
 End If
 folderRAtemplate = dirRAtemplate
 End Function
@@ -159,7 +164,11 @@ End Sub
 Sub Picker_dirRAoutput()
 Dim folderName As String
 folderName = FolderPicker("Choose output folder for populated RA drafts", Prefs.Range("dirRAoutput").Value)
-If folderName <> "" Then Prefs.Range("dirRAoutput").Value = folderName
+If folderName <> "" Then
+  Prefs.Range("dirRAoutput").Value = folderName
+  RoboRA.Range("dirRAoutput2").Value = folderName
+  Advanced.Range("dirRAoutput3").Value = folderName
+End If
 End Sub
 
 

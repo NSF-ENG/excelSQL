@@ -79,7 +79,8 @@ Function FixIPSText(s As String) As String
 
 Dim fromC As String, toC As String
 Dim i As Long
-'Do not edit & save on Mac or it well munge the special characters
+'Do not edit & save on Mac or it will munge the special characters
+'I need to fix this.
 fromC = VBA.ChrW$(160) & "–”“’‘•γθιΰαβεηκλμνξοςστυωϊϋ"
 toC = " -""""''*aeeaaaaceeiiiioooouuu"
 

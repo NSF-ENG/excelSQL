@@ -68,6 +68,8 @@ If Len(props) > 1 Then
     SQL = "INSERT INTO #myPidRAt " & .Range("RA_pidRAtSelect") _
           & " '' as RAtemplate FROM csd.prop prop WHERE prop_stts_code like '" _
           & Advanced.Range("prop_stts_code") & "' AND prop_id IN (" & VBA.Mid$(props, 2) & ")" & vbNewLine
+ufProgress.Show vbModeless
+Call UpdateProgressBar(0.3)
     Call AwdCodingQueries(.Range("RA_pidRAt") & SQL)
   End With
 Else
