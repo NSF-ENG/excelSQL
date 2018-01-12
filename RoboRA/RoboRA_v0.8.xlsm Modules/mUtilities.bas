@@ -209,7 +209,7 @@ End Sub
 ' Mac porting: this one may be problematic, and isn't used often. Refactor?
 
 Sub renewFiles(from As String, topath As String, Optional verbosity As Integer = 1)
-' copy files matching from (include filter *.* or *RAt.docm or *.do*) that have been updated or that don't exist in topath
+' copy files matching from (include filter *.* or *RAt.docx or *.do*) that have been updated or that don't exist in topath
 ' old files get "backup"datetime added, so nothing is lost.
 ' unused
 Dim FSO As Object
@@ -221,7 +221,7 @@ If Not FSO.FolderExists(topath) Then
   createPath (topath)
 End If
 topath = fixEndSeparator(topath)
-frompath = VBA.Left$(from, InStrRev(from, Application.pathSeparator))
+frompath = VBA.Left$(from, VBA.InStrRev(from, Application.pathSeparator))
 fName = Dir(from) ' get first matching file
 While fName <> ""
     fromdate = FileDateTime(frompath & fName)

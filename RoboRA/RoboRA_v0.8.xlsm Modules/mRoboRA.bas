@@ -6,7 +6,7 @@ Public Function SummarizeQuestMarks(abstr As String) As String
 Dim i As Long
 Dim s As String
 s = " "
-i = InStrRev(abstr, "?")
+i = VBA.InStrRev(abstr, "?")
 Do While i > 0
   If i < 4 Then
     s = VBA.Mid$(abstr, i, 5) & "|" & s
@@ -15,7 +15,7 @@ Do While i > 0
     i = i - 3
     s = VBA.Mid$(abstr, i, 8) & "|" & s
   End If
-  i = InStrRev(abstr, "?", i - 1)
+  i = VBA.InStrRev(abstr, "?", i - 1)
 Loop
 SummarizeQuestMarks = s
 End Function
@@ -50,6 +50,11 @@ If VBA.Left$(ActiveWorkbook.FullName, 4) = "http" Then
   End
 End If
 tmp = folderRAtemplate()
+If Len(Dir(tmp & "*RAt.docx")) < 2 Then
+   Prefs.Activate
+   MsgBox ("I did not find any RA templates in " & tmp & vbNewLine & "Please ensure that there is an appropriate RAtemplates folder selected on Prefs #2 before continuing")
+   End
+End If
 tmp = Prefs.Range("dirRAoutput").Value
 If Len(tmp) < 2 Then
   MsgBox ("Please select a folder for the output pdf & RA drafts")
@@ -57,6 +62,7 @@ If Len(tmp) < 2 Then
   If Len(Prefs.Range("dirRAoutput").Value) < 2 Then End
 End If
 End Sub
+
 ' List_Templates is called when we at least have the base (online) template folder name, even if it is not accessible at the moment.
 ' Prefer the local template folder name, if we have one, but if it contains no templates, offer to copy.
 '
@@ -74,11 +80,6 @@ If Len(dirRAtemplate) < 2 Then
   Prefs.Activate
   MsgBox ("Please select RAtemplates folder on Prefs tab (#2) before continuing")
   End
-End If
-If Len(Dir(dirRAtemplate & "*RAt.docx")) < 2 Then
-   Prefs.Activate
-   MsgBox ("I did not find any RA templates in " & dirRAtemplate & vbNewLine & "Please ensure that there is an appropriate RAtemplates folder selected on Prefs #2 before continuing")
-   End
 End If
 folderRAtemplate = dirRAtemplate
 End Function

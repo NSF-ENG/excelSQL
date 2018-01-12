@@ -2,9 +2,9 @@ VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} ufProgress 
    Caption         =   "RoboRA Progress Bar"
    ClientHeight    =   688
-   ClientLeft      =   96
-   ClientTop       =   416
-   ClientWidth     =   4288
+   ClientLeft      =   90
+   ClientTop       =   420
+   ClientWidth     =   4290
    OleObjectBlob   =   "ufProgress.frx":0000
    StartUpPosition =   1  'CenterOwner
 End

@@ -17,7 +17,7 @@ Sub MakeIndicatedRAs()
  Dim dirRAtemplate As String, dirRAoutput As String
  Dim prop_id As String
  Dim warn As String
- Dim autoDeclineQ As Boolean, hasAuto As Boolean
+ Dim autoDeclineQ As Boolean, hasAuto As Boolean, newWordQ As Boolean
  Dim pt As PivotTable
  #If Mac Then
    MsgBox ("Making RA drafts needs to be done on a PC, including VDI/Citrix, in this version of RoboRA, because Macs don't have the libraries needed to Autoload to eJacket.")
@@ -70,11 +70,10 @@ ufProgress.Show vbModeless
 
 If hasAuto Then Set IE = openEJacket()
     
-On Error Resume Next ' start Word  'JSS mac version?
+On Error Resume Next ' connect to or start Word  'JSS mac version?
 Set wdApp = GetObject(, "Word.Application")
-If wdApp Is Nothing Then
-    Set wdApp = CreateObject("Word.Application")
-End If
+newWordQ = wdApp Is Nothing ' Do we need to create a new wdApp?
+If newWordQ Then Set wdApp = CreateObject("Word.Application")
 On Error GoTo 0
 
 ' Sort by RecRkMin because our dummy line for formatting must come first.
@@ -102,7 +101,7 @@ strRAtemplate = Application.Trim(pt.RowRange.Cells(t, 1))
            .AllowMultiSelect = False
            If .Show <> -1 Then GoTo ExitHandler: 'Show File Picker; abort on cancel
            strWordDoc = .SelectedItems(1)
-           Set wdDoc = wdApp.Documents.Open(strWordDoc)
+           Set wdDoc = wdApp.Documents.Open(Filename:=strWordDoc, ReadOnly:=True)
        End With
        Set fd = Nothing
     Loop
@@ -111,14 +110,15 @@ strRAtemplate = Application.Trim(pt.RowRange.Cells(t, 1))
     autoDeclineQ = (Prefs.CheckBoxes("cbAutoloadAll").Value = 1) Or (VBA.Left$(strRAtemplate, 3) = "Std")
     wdDoc.Activate
     wdApp.Visible = True
-    
+    DoEvents
+    wdDoc.ActiveWindow.View.ReadingLayout = False ' avoid windows '13 reading layout default
         
     With RAData.Range("RADataQTable[RAtemplate]") ' need RAfname as next column!!!
       For i = 2 To .Rows.count ' do the RAs, skipping the first
         If strRAtemplate = Application.Trim(.Cells(i, 1)) Then ' we have an RA to do
         countRA = countRA + 1
         UpdateProgressBar (countRA / (nRA + 1))
-        strRAoutput = dirRAoutput & Application.Trim(.Cells(i, 2)) & VBA.Format$(Now, "yymmdd_hhmm") & ".docm" ' make output file name
+        strRAoutput = dirRAoutput & Application.Trim(.Cells(i, 2)) & VBA.Format$(Now, "yymmdd_hhmm") & ".docx" ' make output file name
     '    Application.ScreenUpdating = False
     '    Application.DisplayAlerts = False
        With wdDoc.MailMerge
@@ -151,8 +151,8 @@ strRAtemplate = Application.Trim(pt.RowRange.Cells(t, 1))
             warn = warn & autoPasteRA(IE, prop_id, RAtext)
             .ReadOnlyRecommended = True
           End If
-          .AttachedTemplate = dirRAoutput & "RoboRACleanCopy.dotm" 'JSS what if this is on a different computer?
-          .SaveAs2 Filename:=strRAoutput, FileFormat:=wdFormatXMLDocumentMacroEnabled, LockComments:=False, Password:="", AddToRecentFiles _
+          .AttachedTemplate = dirRAoutput & "RoboRACleanCopy.dotm" 'All the macros are in this template
+          .SaveAs2 Filename:=strRAoutput, FileFormat:=wdFormatXMLDocument, LockComments:=False, Password:="", AddToRecentFiles _
             :=True, WritePassword:="", ReadOnlyRecommended:=False, EmbedTrueTypeFonts _
             :=False, SaveNativePictureFormat:=False, SaveFormsData:=False, _
             SaveAsAOCELetter:=False
@@ -178,7 +178,7 @@ If Not (wdDoc Is Nothing) Then
    wdDoc.Close savechanges:=wdDoNotSaveChanges
    Set wdDoc = Nothing
 End If
-If Not (wdApp Is Nothing) Then
+If newWordQ And Not (wdApp Is Nothing) Then
   wdApp.Quit
   Set wdApp = Nothing
 End If
@@ -200,6 +200,7 @@ Sub makeProjText()
 
 Dim strWordDoc As String, strThisWorkbook As String, strPDFOutputName As String
 Dim dirRAtemplate As String, dirRAoutput As String
+Dim newWordQ As Boolean
 ' #If Mac Then
 '   MsgBox ("Functions that do mail merge need to be run on a PC, including VDI/Citrix.")
 '   Prefs.Range("WelcomeMac").Activate
@@ -218,18 +219,19 @@ ufProgress.Show vbModeless
 
 On Error Resume Next
 Set wdApp = GetObject(, "Word.Application")
-If wdApp Is Nothing Then
-    Set wdApp = CreateObject("Word.Application")
-End If
+newWordQ = wdApp Is Nothing ' Do we need to create a new wdApp?
+If newWordQ Then Set wdApp = CreateObject("Word.Application")
 On Error GoTo 0
  
 '    Application.ScreenUpdating = False
 '    Application.DisplayAlerts = False
 Call UpdateProgressBar(0.05)
 
- Set wdDoc = wdApp.Documents.Open(strWordDoc)
+ Set wdDoc = wdApp.Documents.Open(Filename:=strWordDoc, ReadOnly:=True)
  wdDoc.Activate
  wdApp.Visible = True
+ DoEvents
+ wdDoc.ActiveWindow.View.ReadingLayout = False
 
 Call UpdateProgressBar(0.1)
 'Connection:= "Provider=Microsoft.ACE.OLEDB.12.0;User ID=Admin;Data Source=C:\Users\Jack Snoeyink\Desktop\tmp.xlsm';Mode=Read;Extended Properties=""HDR=YES;IMEX=1;"";Jet OLEDB:System database="""";Jet OLEDB:Registry Path="""";Jet OLEDB:Engine Type=3"
@@ -257,9 +259,13 @@ Call UpdateProgressBar(0.6)
         CreateBookmarks:=1, DocStructureTags:=True, _
         BitmapMissingFonts:=True, UseISO19005_1:=False
 Call UpdateProgressBar(0.9)
+ExitHandler:
  wdApp.ActiveDocument.Close savechanges:=0 ' don't save changes
  wdDoc.Close savechanges:=0
  Set wdDoc = Nothing
- Set wdApp = Nothing
+ If newWordQ Then Set wdApp = Nothing
  Unload ufProgress
+ Exit Sub
+ErrHandler:
+'if err.Number = 4605 then msgbox("Word complains about opening in reading; please see Prefs #7.")
 End Sub

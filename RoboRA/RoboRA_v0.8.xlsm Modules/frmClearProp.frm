@@ -2,9 +2,9 @@ VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmClearProp 
    Caption         =   "Reset/Clear RoboRA"
    ClientHeight    =   2850
-   ClientLeft      =   88
-   ClientTop       =   424
-   ClientWidth     =   4296
+   ClientLeft      =   90
+   ClientTop       =   420
+   ClientWidth     =   4290
    OleObjectBlob   =   "frmClearProp.frx":0000
    StartUpPosition =   1  'CenterOwner
 End
@@ -32,6 +32,7 @@ If cboxClearPropParams.Value Then Advanced.Range("query_params").Cells.Value = H
 If cboxClearPropAddOmit.Value Then Call ClearMatchingTables("*PropTable", RoboRA)
 If cboxClearPropData.Value Then Call ClearQTables
 If cboxClearSavedPwd.Value Then
+  Prefs.Range("test_table_permissions") = ""
   Prefs.Range("dirSharedRAtemplate") = "" '\\collaboration.inside.nsf.gov@SSL\DavWWWRoot\eng\meritreview\SiteAssets\ENG Tools Websites and Best Practices\RoboRA\RAtemplates\"
   Prefs.Range("dirRAtemplate") = ""
   Prefs.Range("dirRAoutput") = ""

@@ -103,10 +103,10 @@ Function StripDoubleBrackets(s As String) As String
 ' does not handle nesting.
 Dim i As Long, j As Long, k As Long, lenS As Long
 
-j = InStrRev(s, "]]")
+j = VBA.InStrRev(s, "]]")
 Do While j > 0
-    i = InStrRev(s, "[[", j)
-    k = InStrRev(s, "]]", j - 1)
+    i = VBA.InStrRev(s, "[[", j)
+    k = VBA.InStrRev(s, "]]", j - 1)
     If i < k Then
       MsgBox "Warning: Consecutive close comment brackets with no open." & vbNewLine & VBA.Mid$(s, k, j - k + 1)
       j = k
@@ -116,7 +116,7 @@ Do While j > 0
     Else
       s = VBA.Left$(s, i - 1) & VBA.Right$(s, Len(s) - j - 1)
     End If
-    j = InStrRev(s, "]]", i)
+    j = VBA.InStrRev(s, "]]", i)
 Loop
 
 StripDoubleBrackets = s

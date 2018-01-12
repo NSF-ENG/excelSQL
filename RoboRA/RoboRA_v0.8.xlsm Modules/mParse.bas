@@ -51,9 +51,9 @@ If VBA.Left$(field, 1) = "~" Then ' have negation
   field = VBA.Right$(field, Len(field) - 1)
 End If
 
-hasComma = (InStr(field, ",") > 0) 'have list
-hasRange = (InStr(field, "::") > 0) 'have range
-hasSqlWildcard = (InStr(field, "%") > 0) Or (InStr(field, "_") > 0) Or ((InStr(field, "[") > 0) And (InStr(field, "]") > 0))
+hasComma = (VBA.InStr(field, ",") > 0) 'have list
+hasRange = (VBA.InStr(field, "::") > 0) 'have range
+hasSqlWildcard = (VBA.InStr(field, "%") > 0) Or (VBA.InStr(field, "_") > 0) Or ((VBA.InStr(field, "[") > 0) And (VBA.InStr(field, "]") > 0))
 If (hasSqlWildcard And (hasRange Or hasComma)) Then
  MsgBox "Can't use SQL wildcards in a range or comma separated list: " & fieldname & " = " & field
  End
@@ -66,7 +66,7 @@ If Len(field) < 1 Then ' do nothing; andwhere is blank
 ElseIf hasComma Then ' IN/NOT IN list
   andWhere = " AND " & optNeg & tablename & fieldname & " IN ('" & Replace(Replace(Join(Split(Replace(Replace(field, """", ""), "'", ""), ","), "','") & "') ", " '", "'"), "' ", "'") & andMore & ")"
 ElseIf hasRange Then ' BETWEEN / NOT BETWEEN
-  andWhere = " AND " & optNeg & tablename & fieldname & " BETWEEN '" & Replace(Replace(VBA.Left$(field, InStr(field, "::") - 1), """", ""), "'", "") & "' AND '" & Replace(Replace(VBA.Mid$(field, InStr(field, "::") + 2), """", ""), "'", "") & "' " & andMore & ")"
+  andWhere = " AND " & optNeg & tablename & fieldname & " BETWEEN '" & Replace(Replace(VBA.Left$(field, VBA.InStr(field, "::") - 1), """", ""), "'", "") & "' AND '" & Replace(Replace(VBA.Mid$(field, VBA.InStr(field, "::") + 2), """", ""), "'", "") & "' " & andMore & ")"
 ElseIf hasSqlWildcard Then ' LIKE / NOT LIKE
   andWhere = " AND " & optNeg & tablename & fieldname & " LIKE '" & Replace(Replace(field, """", ""), "'", "") & "' " & andMore & ")"
 Else ' = / NOT =
@@ -94,8 +94,8 @@ If Len(andclause) > 2 Then
     If isIntField Then andclause = Replace(andclause, "'", "") ' for integer field, strip quotes.
     mySQLWhere = mySQLWhere & andclause & andMore & vbLf
     If tablename <> "prop" Then ' need to join a new table to prop
-       If InStr(tablename, ".") = 0 Then tablename = "csd." & tablename 'fully qualify, if not already
-       tablealias = VBA.Mid$(tablename, InStrRev(tablename, ".") + 1)
+       If VBA.InStr(tablename, ".") = 0 Then tablename = "csd." & tablename 'fully qualify, if not already
+       tablealias = VBA.Mid$(tablename, VBA.InStrRev(tablename, ".") + 1)
        mySQLFrom = mySQLFrom & "JOIN " & tablename & " " & tablealias _
         & " ON prop." & joinname & " = " & tablealias & "." & joinname & vbLf
     End If

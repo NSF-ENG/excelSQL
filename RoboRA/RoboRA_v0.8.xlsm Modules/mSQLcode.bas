@@ -22,10 +22,10 @@ Sub saveSQLcode()
     
 '    If cb.ContainsText Then
     s = cb.GetText()
-    i = InStr(s, "--[")
+    i = VBA.InStr(s, "--[")
     If i = 0 Then MsgBox (" No --[rangename --]rangename  pairs found in text " & vbNewLine & VBA.Left$(s, 100))
     While i > 0
-        j = InStr(i, s, vbLf)
+        j = VBA.InStr(i, s, vbLf)
         If j = 0 Then
             MsgBox ("Need line feed (vbLF) here: " & VBA.Mid$(s, i, 100))
             End
@@ -43,9 +43,9 @@ Sub saveSQLcode()
          End
         End If
         On Error GoTo 0
-        k = InStr(j, s, "--]" & varname)
+        k = VBA.InStr(j, s, "--]" & varname)
         If k = 0 Then
-           k = InStr(j, s, "--]")
+           k = VBA.InStr(j, s, "--]")
            If k = 0 Then
             MsgBox ("Error: unterminated --[" & varname)
             k = Len(s) + 1
@@ -56,7 +56,7 @@ Sub saveSQLcode()
         HiddenSettings.Cells(r, 1).Value = varname
         HiddenSettings.Cells(r, 2).Value = Now
         HiddenSettings.Cells(r, 3).Value = VBA.Mid$(s, j + 1, k - j - 1)
-        i = InStr(k, s, "--[")
+        i = VBA.InStr(k, s, "--[")
     Wend
     cb.Clear
     Set cb = Nothing
