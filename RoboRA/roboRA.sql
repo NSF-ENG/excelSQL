@@ -27,6 +27,7 @@ SELECT DISTINCT prop.lead_prop_id, prop.prop_id, prop.pi_id, prop.inst_id, prop.
 --]RA_pidRAtSelect
 '' as RAtemplate 
 FROM csd.prop prop
+--where prop.prop_id = '1811442'
 --JOIN csd.panl_prop pp ON p.prop_id = pp.prop_id
 WHERE prop.prop_stts_code LIKE '0[01289]' AND
 --pp.panl_id in ('p172027','p170288','p180207','p180208')
@@ -147,7 +148,7 @@ CREATE INDEX myPRCs_ix ON #myPRCs(prop_id)
 -- Needs: RA_lead(#myProp)
 --DROP TABLE #myBudg
 SELECT p.lead, p.prop_id, eb.revn_num, eb.budg_seq_yr, eb.budg_tot_dol,
-sub_ctr_dol, frgn_trav_dol, pdoc_grnt_dol, part_dol, grad_pers_tot_cnt,
+sub_ctr_dol, cnsl_dol, cptr_serv_dol, frgn_trav_dol, pdoc_grnt_dol, part_dol, fl_part_cnt, grad_pers_tot_cnt,
 sr_pers_cnt,sr_summ_mnth_cnt,sr_acad_mnth_cnt, sr_cal_mnth_cnt
 INTO #myBudg FROM #myProp p
 JOIN csd.eps_blip eb ON eb.prop_id = p.prop_id 
@@ -173,7 +174,8 @@ CREATE INDEX myBudg_idx ON #myBudg(prop_id, budg_seq_yr)
 -- Needs: RA_lead(#myProp), RA_propPRCs(#myPRCs), RA_budg(#myBudg)
 --DROP TABLE #myPropBudg, #myPropInfo
 SELECT p.prop_id, eb.revn_num as RN, SUM(eb.budg_tot_dol) as T,
- nullif(SUM(sub_ctr_dol),0) AS sub_ctr_tot, nullif(SUM(frgn_trav_dol),0) AS frgn_trav_tot, nullif(SUM(pdoc_grnt_dol),0) AS pdoc_tot,nullif(SUM(part_dol),0) AS part_tot_dol, nullif(SUM(grad_pers_tot_cnt),0) AS grad_tot_cnt,
+ nullif(SUM(sub_ctr_dol),0) AS sub_ctr_tot, nullif(SUM(cnsl_dol),0) AS cnsl_tot_dol, nullif(SUM(cptr_serv_dol),0) AS cptr_serv_tot, nullif(SUM(frgn_trav_dol),0) AS frgn_trav_tot, 
+nullif(SUM(pdoc_grnt_dol),0) AS pdoc_tot,nullif(SUM(part_dol),0) AS part_tot_dol, nullif(SUM(fl_part_cnt),0) AS part_tot_cnt, nullif(SUM(grad_pers_tot_cnt),0) AS grad_tot_cnt,
  nullif(SUM(sr_pers_cnt),0) AS sr_tot_cnt, nullif(SUM(sr_summ_mnth_cnt),0) AS sr_sumr_mnths, nullif(SUM(sr_acad_mnth_cnt),0) AS sr_acad_mnths, nullif(SUM(sr_cal_mnth_cnt),0) AS sr_cal_mnths
 INTO #myPropBudg FROM #myProp p
 JOIN #myBudg eb ON p.prop_id = eb.prop_id 
@@ -247,15 +249,15 @@ SELECT isnull((SELECT MIN(pp.panl_id) FROM csd.panl_prop pp
  CASE WHEN rpv.rev_prop_unrl_flag = 'Y' THEN 1 ELSE 0 END as unrlsbl,
  CASE WHEN rpv.rev_prop_rtng_ind IS NULL OR rpv.rev_rlse_flag = 'Y' OR rpv.rev_prop_unrl_flag = 'Y' THEN 0 ELSE 1 END as unmkd,
  CASE WHEN rpv.rev_rlse_flag = 'Y' AND rp.rev_stts_code IN ('C','D','N','P','S') THEN 1 ELSE 0 END as rlsdCDNPS,
- CASE WHEN rp.rev_stts_code IN ('C','D','N','R') OR rp.rev_prop_rtng_code = nullif(rs.string,' ') THEN 0 ELSE 1 END as diffFLeJ,
- id=identity(18), 0 as seq
-INTO #myRevs FROM #myLead p
+ CASE WHEN rp.rev_stts_code IN ('C','D','N','R') OR rp.rev_prop_rtng_code = nullif(rs.string,' ') THEN 0 ELSE 1 END as diffFLeJ, id=identity(18), 0 as seq
+INTO #myRevs 
+FROM #myLead p
 JOIN csd.rev_prop rp ON rp.prop_id = p.lead
 LEFT JOIN csd.rev_prop_vw rpv ON rpv.revr_id = rp.revr_id AND rpv.prop_id = rp.prop_id  
 LEFT JOIN tempdb.guest.revScores rs ON rs.yn = rpv.rev_prop_rtng_ind -- this table uses the same 1-9 scale above, but handles split scores
 WHERE (rpv.rev_rlse_flag = 'Y' OR rp.rev_stts_code = 'C' OR rp.rev_prop_rtng_code IN ('E','V','G','F','P') -- has eJ review
-       OR rpv.rev_prop_rtng_ind > 'NNNNN') -- has FL review.  checked: no stts N or D come in.  R,S,P do, all good.
-  AND isnull(rpv.rev_subm_flag,'U') <> 'D' -- ignore reviews deleted on FL, even if that takes overnight to propagate to eJ.
+       OR (rpv.rev_prop_rtng_ind > 'NNNNN' -- has FL review.  checked: no stts N or D come in.  R,S,P do, all good.
+           AND isnull(rpv.rev_subm_flag,'U') <> 'D') ) -- ignore reviews deleted on FL, even if that takes overnight to propagate to eJ.
 ORDER BY lead, confl, score DESC, revr_id -- move C last
 CREATE INDEX myRevs_ix0 ON #myRevs(lead)
 CREATE INDEX myRevs_ix1 ON #myRevs(lead, confl)
@@ -263,6 +265,8 @@ CREATE INDEX myRevs_ix2 ON #myRevs(panl_id, lead, confl)
 SELECT lead, MIN(id) as 'start' INTO #myStarts FROM #myRevs GROUP BY lead
 UPDATE #myRevs SET seq = id-M.start FROM #myRevs r, #myStarts M WHERE r.lead = M.lead 
 DROP TABLE #myStarts
+
+--select * from #myRevs
 
 SELECT lead,  nullif(sum(confl),0) as Nconfl,
 nullif(sum(unrlsbl),0) as Nunrlsbl,nullif(sum(rlsdCDNPS),0) as NrlsdCDNPS, 
@@ -415,7 +419,7 @@ INTO #myProjPanlSumm FROM #myProjPanl GROUP BY lead
 SELECT nullif(dd_rcom_date,'1900-01-01') AS dd_rcom_date, nsf_rcvd_date, 
 prop.pgm_annc_id, prop.org_code, prop.pgm_ele_code, natr_rqst.natr_rqst_abbr, prop_stts_abbr, prop.obj_clas_code,
 cntx_stmt_id,p.PO,ra.RAupdate, 
-nPanl, isnull(RecRkMin,99)+(9-nullif(avg_score,0))/2000 AS RecRkMin, pn0.RA as rec0, pn1.RA as rec1, pn2.RA as rec2, 
+nPanl, isnull(RecRkMin,99)+(9-isnull(avg_score,0))/2000 AS RecRkMin, pn0.RA as rec0, pn1.RA as rec1, pn2.RA as rec2, 
 pid.RAtemplate, org.dir_div_abbr as Div, p.lead, Nrev,Nunmkd,minScore,avg_score,maxScore,allReviews,rs.last_rev_date, 
 rm.Nunrlsbl, projTot.rqst_tot, budg_tot, budRevnMax, 
 prop.rqst_eff_date, prop.rqst_mnth_cnt, 
@@ -644,14 +648,15 @@ convert(varchar,rev_prop.rev_type_code) AS type, convert(varchar,rev_prop.rev_st
 FROM #myRevInfo rv, csd.revr revr, csd.rev_prop rev_prop, csd.revr_opt_addr_line revr_opt_addr_line, csd.rev_prop_txt_flds_vw rev_txt
 WHERE rv.lead = rev_prop.prop_id AND rv.lead = rev_txt.PROP_ID AND rv.revr_id = rev_prop.revr_id AND rv.revr_id = revr.revr_id AND rv.revr_id = revr_opt_addr_line.revr_id
   AND rv.revr_id = rev_txt.REVR_ID AND ((revr_opt_addr_line.addr_lne_type_code='E'))
-UNION ALL SELECT p.lead, p.L, ' PanlSumm' as docType, p.PO, panl_prop_summ.PANL_ID,  ' '+panl.panl_name, panl_rcom_def.RCOM_TXT,
-convert(varchar,panl_prop_summ.RCOM_SEQ_NUM), convert(varchar,panl_prop_summ.PROP_ORDR), panl.panl_bgn_date, panl_prop_summ.last_updt_tmsp,
-panl_rcom_def.RCOM_ABBR, panl_prop_summ.PANL_SUMM_TXT
+UNION ALL SELECT p.lead, p.L, ' PanlSumm' as docType, p.PO, pps.PANL_ID,  ' '+panl.panl_name, prd.RCOM_TXT,
+revr_last_name, convert(varchar,pps.PROP_ORDR), panl.panl_bgn_date, pps.last_updt_tmsp,
+prd.RCOM_ABBR, pps.PANL_SUMM_TXT
     FROM #myLead p 
-    JOIN FLflpdb.flp.panl_prop_summ panl_prop_summ ON panl_prop_summ.PROP_ID = p.lead
-    JOIN csd.panl panl ON panl.panl_id = panl_prop_summ.PANL_ID
-    LEFT JOIN FLflpdb.flp.panl_rcom_def panl_rcom_def ON panl_rcom_def.RCOM_SEQ_NUM = panl_prop_summ.RCOM_SEQ_NUM AND panl_rcom_def.PANL_ID = panl_prop_summ.PANL_ID
-
+    JOIN FLflpdb.flp.panl_prop_asgn pa ON pa.prop_id = p.lead
+    JOIN csd.revr revr ON revr_id = pa.scrb_user_id 
+    JOIN csd.panl panl ON panl.panl_id = pa.panl_id
+    LEFT JOIN FLflpdb.flp.panl_prop_summ pps ON pps.PROP_ID = p.lead AND pps.panl_id = pa.panl_id
+    LEFT JOIN FLflpdb.flp.panl_rcom_def prd ON prd.RCOM_SEQ_NUM = pps.RCOM_SEQ_NUM AND prd.PANL_ID = pa.PANL_ID
 UNION ALL SELECT p.lead, p.L, 'POCmnt', p.PO, p.prop_id, cmt.cmnt_cre_id, '', '', convert(varchar,cmt.cmnt_prop_stts_code), cmt.beg_eff_date, cmt.end_eff_date,'', cmt.cmnt
 FROM #myProp p, FLflpdb.flp.cmnt_prop cmt WHERE p.prop_id = cmt.prop_id AND (p.ILN < 'M' OR LEN(cmt.cmnt) <> (SELECT LEN(l.cmnt) FROM FLflpdb.flp.cmnt_prop l WHERE p.lead = l.prop_id))
 UNION ALL SELECT p.lead, p.L, 'RA' as docType, p.PO, '', ra.last_updt_user, '', '', null, null, ra.last_updt_tmsp, '', ra.prop_rev_anly_txt
@@ -664,18 +669,6 @@ UNION ALL SELECT p.lead, p.L, 'xDiaryNt',p.PO, p.prop_id, crtd_by_user, ej_diry_
 FROM #myProp p, FLflpdb.flp.ej_diry_note d WHERE d.prop_id = p.prop_id
 ORDER BY lead, docType, revr_last_name, revr_id
 --]RA_projText
-
---consider adding scribe?  I'm having timing issues with these
---select pav.panl_id +'('+rtrim(revr.revr_last_name)+')', pav.* from FLflpdb.flp.panl_asgn_view pav JOIN csd.revr revr ON revr.revr_id = pav.Scribe WHERE panl_id = 'p180637'
---select p.* from #myLead p
-
---SELECT prop_id, pav.panl_id, '('+rtrim(revr.revr_last_name)+')' as scribe
---FROM #myLead p
---JOIN FLflpdb.flp.panl_asgn_view pav ON pav.prop_id 
---JOIN csd.revr revr ON revr.revr_id = pav.Scribe 
---WHERE panl_id = 'p180637'
-
-
 
 --splits details
 --[RA_splits
@@ -789,7 +782,7 @@ nullif((SELECT budg_tot_dol FROM #myBudg e WHERE e.prop_id = p.prop_id AND budg_
 nullif((SELECT budg_tot_dol FROM #myBudg e WHERE e.prop_id = p.prop_id AND budg_seq_yr = 4),0) as y4_tot,
 nullif((SELECT budg_tot_dol FROM #myBudg e WHERE e.prop_id = p.prop_id AND budg_seq_yr = 5),0) as y5_tot,
 nullif((SELECT budg_tot_dol FROM #myBudg e WHERE e.prop_id = p.prop_id AND budg_seq_yr = 6),0) as y6_tot,
-b.sub_ctr_tot, b.pdoc_tot,b.part_tot_dol, b.grad_tot_cnt, 
+b.sub_ctr_tot, b.cnsl_tot_dol, b.cptr_serv_tot, b.pdoc_tot,b.part_tot_dol, b.part_tot_cnt, b.grad_tot_cnt, 
 b.sr_tot_cnt, b.sr_sumr_mnths, b.sr_acad_mnths, b.sr_cal_mnths, 
 p.M as email
 FROM #myPropInfo p
@@ -864,7 +857,7 @@ union all SELECT 'revr_opt_addr_line'
 union all SELECT 'cmnt_prop' -- begin flp tables
 union all SELECT 'ej_diry_note'
 union all SELECT 'obj_clas_pars' -- use flp
-union all SELECT 'panl_asgn_view'
+union all SELECT 'panl_prop_asgn'
 union all SELECT 'panl_prop_summ'
 union all SELECT 'panl_rcom_def'
 union all SELECT 'proj_summ'
@@ -875,7 +868,7 @@ union all SELECT 'pgm_ref_pars' -- doesn't exist
 union all SELECT 'org_pars' -- don't need 
 order by tbl
 
--- tables with not public read access in rptdb or FLflpdb
+-- tables with no public read access in rptdb or FLflpdb
 -- the conclusion: use flp.obj_clas_pars, flp.org, flp.pgm_ele
 select t.* 
 FROM (SELECT t.* from #myTbl t
@@ -915,5 +908,3 @@ DROP TABLE #myRevInfo, #mySumm
 DROP TABLE #myDmog
 DROP TABLE #myCtry, #myCovrInfo
 DROP TABLE #myBSprc
-
-

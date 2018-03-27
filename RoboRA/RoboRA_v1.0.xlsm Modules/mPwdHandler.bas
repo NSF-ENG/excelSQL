@@ -15,7 +15,7 @@ Sub activateApp()
 ' activate the application window
     DoEvents
     #If Mac Then
-    AppActivate Application.Name
+    AppActivate Application.name
     #Else 'PC
     AppActivate Application.Caption
     #End If 'PC
@@ -117,7 +117,7 @@ Public Sub doQuery(QT As QueryTable, SQL As String, Optional backgroundFlag As B
 If gPwdForm Is Nothing And Not handlePwd Then Exit Sub ' abort
 RetryHandler:
 DoEvents
-On Error GoTo ErrHandler
+On Error GoTo errHandler
   With QT
     .Connection = "ODBC;" & makeConnectionString(db)
     #If Mac Then
@@ -130,7 +130,7 @@ On Error GoTo ErrHandler
 ExitHandler:
   On Error GoTo 0
   Exit Sub
-ErrHandler:
+errHandler:
     activateApp
     Select Case MsgBox("doQuery Error on " & db & " query " & VBA.Left$(SQL, 50) & vbNewLine & Err.Number & ":" & Err.Description, vbAbortRetryIgnore)
     Case vbAbort: End
